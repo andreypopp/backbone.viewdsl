@@ -14,16 +14,9 @@ Specs are strings which can point to some JS object:
 
 ## Wrap DOM with views
 
-Wrap DOM with views, using standard tags (implemented):
+Wrap DOM with views, using standard tags:
 
     <div view="myapp/views:MyView" class="some-class"></div>
-
-Wrap DOM with views, using custom tag:
-
-    <block view="myapp/views:MyView"
-      param="this.someParam"
-      another-param="12"
-      />
 
 Attribute `view` should be a spec.
 
@@ -37,20 +30,16 @@ Passing parameters to views:
 
 ## Value interpolation
 
-Interpolate values:
+Interpolate string values, DOM nodes and jQuery elements:
 
     <div>
-      {{ this.somevalue }}
+      {{ somevalue }}
     </div>
 
-## If blocks (implemented)
+## If blocks
 
     <div if="hasCounts">
 
     </div>
-
-    <block if="hasCounts">
-
-    </block>
 
 Element would be removed if `hasCounts()` or `hasCounts` evaluates to `false`.
