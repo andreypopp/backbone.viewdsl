@@ -4,13 +4,13 @@ LIB = $(SRC:%.coffee=lib/%.js)
 all: test
 
 test: build build-tests
-	@mocha-phantomjs runner.html
+	mocha-phantomjs runner.html
 
 build:
-	@$(MAKE) -q -C.. build
+	$(MAKE) -C.. build
 
 build-tests: $(LIB)
 
 lib/%.js: %.coffee
-	@coffee -bcp $< > $@
+	coffee -bcp $< > $@
 

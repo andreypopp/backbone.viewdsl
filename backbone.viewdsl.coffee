@@ -8,6 +8,8 @@ define (require) ->
     Array::slice.call(o)
 
   getByPath = (o, p) ->
+    if p.trim().length == 0
+      return o
     for n in p.split('.')
       o = o[n]
       break if o == undefined
@@ -15,59 +17,81 @@ define (require) ->
 
   getBySpec = (spec) ->
     # TODO: implement AMD loading
-    w getByPath(window, spec)
+    promise getByPath(window, spec)
 
-  domParamName2jsParamName = (paramName) ->
-    throw 'not_implemented'
+  promise = (value) ->
+    p = new rsvp.Promise()
+    p.resolve(value)
+    p
 
   cont = (func) ->
     ->
-      deferred = w.defer()
+      p = new rsvp.Promise()
       args = makeArray(arguments)
       args.splice 0, 0, (result, reason) ->
         if reason != undefined
-          deferred.reject(reason)
+          p.reject(reason)
         else
-          deferred.resolve(result)
+          p.resolve(result)
       func.apply(this, args)
-      deferred.promise
+      p
 
   promiseRequire = cont (next, moduleName) ->
     require moduleName, (module) -> next module
 
-  buildDOM = (context, template) ->
-    node = document.createElement(template)
-    processNode(context, node)
+  processNode = (context, node) ->
+    processAttributes(context, node)
+      .then (pragmas) ->
+        if pragmas.remove and node.parentNode
+          node.parentNode.removeChild(node)
+        # TODO: interpolate TextNodes
+        processNode(context, n) for n in toArray(node.childNodes)
+        node
 
   processAttributes = (context, node) ->
-    if node.attributes.view
+    if node.attributes?.if
+      attr = context[node.attributes.if.value]
+      show = if $.isFunction(attr) then attr() else attr
+      return promise {remove: true} unless show
+
+    if node.attributes?.view
       getBySpec(node.attributes.view.value)
         .then (viewCls) ->
           # TODO: process more parameters, like class and so on
           view = new viewCls(el: node)
           view.render()
           context.addView(view) if context.addView
-          {lazy: view.lazy, remove: false}
+          return {remove: false}
+
     else
-      w {lazy: false, remove: false}
-
-  processNode = (context, node) ->
-    processAttributes(context, node)
-      .then ->
-
-        # TODO: interpolate TextNodes
-
-        # TODO: process <block> node
-        # if node.tagName = 'BLOCK'
-        #   processBlockNode(context, node)
-
-        w.join(processNode(node, context) for node in toArray(node.childNodes))
+      promise {remove: false}
 
   class View extends Backbone.View
+
+    @from: (template, options) ->
+      node = $(template)
+      node = if node.length == 1
+        node[0]
+      else
+        throw new Error('templates only of single element are allowed')
+      view = new this(el: node)
+      processNode(view, node).then ->
+        view.render()
+        view
 
     constructor: ->
       super
       this.views = []
+
+    processDOM: (template) ->
+      # TODO: allow multiple DOM elements
+      node = $(template)[0]
+      processNode(this, node)
+
+    renderDOM: (template) ->
+      this.processDOM(template).then (node) =>
+        this.$el.append(node)
+        this
 
     addView: (view) ->
       this.views.push(view)

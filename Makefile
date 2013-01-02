@@ -6,11 +6,14 @@ all: build
 build: $(LIB)
 
 clean:
-	@rm -f *.js
+	rm -f *.js
 
 test:
-	@$(MAKE) -Ctests test
+	$(MAKE) -Ctests test
+
+watch-test:
+	watch -n 1 make -Ctests build build-tests
 
 %.js: %.coffee
-	@coffee -bcp $< > $@
+	coffee -bcp $< > $@
 
