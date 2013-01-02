@@ -45,10 +45,12 @@ Interpolate values:
 
 ## If blocks (implemented)
 
-    <div if="this.hasCounts">
+    <div if="hasCounts">
 
     </div>
 
-    <block if="this.hasCounts">
+    <block if="hasCounts">
 
     </block>
+
+Element would be removed if `hasCounts()` or `hasCounts` evaluates to `false`.
