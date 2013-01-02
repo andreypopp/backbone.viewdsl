@@ -1,4 +1,6 @@
-# DOMBuilder DSL
+# DSL for defining Backbone.View hierarchies
+
+It's not fully implemented yet!
 
 ## Specs
 
@@ -12,11 +14,9 @@ Specs are strings which can point to some JS object:
 
 ## Wrap DOM with views
 
-Wrap DOM with views, using standard tags:
+Wrap DOM with views, using standard tags (implemented):
 
-    <div view="myapp/views:MyView"
-      class="some-class"
-      ></div>
+    <div view="myapp/views:MyView" class="some-class"></div>
 
 Wrap DOM with views, using custom tag:
 
@@ -43,7 +43,7 @@ Interpolate values:
       {{ this.somevalue }}
     </div>
 
-## If blocks
+## If blocks (implemented)
 
     <div if="this.hasCounts">
 
