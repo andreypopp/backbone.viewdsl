@@ -20,8 +20,7 @@ define (require) ->
           done()
 
       it 'should throw an error if constructing view from multiple elements', ->
-        buildView = -> View.from('<div></div><div></div>')
-        expect(buildView).to.throw(Error)
+        expect(-> View.from('<div></div><div></div>')).to.throw(Error)
 
       it 'should render DOM into view', (done) ->
 
