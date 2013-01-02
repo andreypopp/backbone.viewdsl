@@ -1,0 +1,54 @@
+# DOMBuilder DSL
+
+## Specs
+
+Specs are strings which can point to some JS object:
+
+  * `module1/module2:obj1.obj2`
+    points to `obj2` inside `obj1` in `module1/module2` AMD module.
+
+  * `obj1.obj2`
+    points to `obj2` inside `obj1` inside `window` object
+
+## Wrap DOM with views
+
+Wrap DOM with views, using standard tags:
+
+    <div view="myapp/views:MyView"
+      class="some-class"
+      ></div>
+
+Wrap DOM with views, using custom tag:
+
+    <block view="myapp/views:MyView"
+      param="this.someParam"
+      another-param="12"
+      />
+
+Attribute `view` should be a spec.
+
+Passing parameters to views:
+
+  * Parameter names are converted to camelCase, so `another-param` becomes
+    `anotherParam`.
+
+  * If parameter value starts with `this.` it then will be passed by reference
+    and the reference will be equal to the one from the passed context.
+
+## Value interpolation
+
+Interpolate values:
+
+    <div>
+      {{ this.somevalue }}
+    </div>
+
+## If blocks
+
+    <div if="this.hasCounts">
+
+    </div>
+
+    <block if="this.hasCounts">
+
+    </block>
