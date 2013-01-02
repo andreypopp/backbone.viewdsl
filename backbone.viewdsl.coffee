@@ -4,6 +4,9 @@ define (require) ->
   Backbone = require 'backbone'
   rsvp = require 'rsvp'
 
+  rsvp.Promise::end = ->
+    this.then undefined, (e) -> throw e
+
   toArray = (o) ->
     Array::slice.call(o)
 
@@ -29,12 +32,18 @@ define (require) ->
     require moduleName, (module) -> p.resolve(module)
     p
 
+  processTextNode = (context, node) ->
+    1
+
   processNode = (context, node) ->
     processAttributes(context, node)
       .then (pragmas) ->
+
         if pragmas.remove and node.parentNode
           node.parentNode.removeChild(node)
-        # TODO: interpolate TextNodes
+
+        processTextNode(context, node)
+
         processNode(context, n) for n in toArray(node.childNodes)
         node
 

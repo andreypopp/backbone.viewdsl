@@ -156,7 +156,6 @@ define("rsvp",
           value = callback(event.detail);
           succeeded = true;
         } catch(e) {
-        	throw e
           failed = true;
           error = e;
         }
