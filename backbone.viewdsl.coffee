@@ -35,14 +35,17 @@ define (require) ->
   join = (promises) ->
     p = new rsvp.Promise()
     results = []
-    resultsToGo = promises.length
-    for pr, idx in promises
-      do (pr, idx) =>
-        pr.then (result) ->
-          results[idx] = result
-          resultsToGo = resultsToGo - 1
-          if resultsToGo == 0
-            p.resolve(results)
+    if promises.length > 0
+      resultsToGo = promises.length
+      for pr, idx in promises
+        do (pr, idx) =>
+          pr.then (result) ->
+            results[idx] = result
+            resultsToGo = resultsToGo - 1
+            if resultsToGo == 0
+              p.resolve(results)
+    else
+      p.resolve(results)
     p
 
   promiseRequire = (moduleName) ->
@@ -71,16 +74,16 @@ define (require) ->
 
         if pragmas.remove and node.parentNode
           node.parentNode.removeChild(node)
+          return
 
         if node.nodeType == 3
           replacements = processTextNode(context, node)
           if replacements
-            replaceChild(node.parentNode, node, replacements)
-          else
-            node
-        else
-          join(processNode(context, n) for n in toArray(node.childNodes))
-            .then -> node
+            node = replaceChild(node.parentNode, node, replacements)
+          return node
+
+        join(processNode(context, n) for n in toArray(node.childNodes))
+          .then -> node
 
   processTextNode = (context, node) ->
     return unless textNodeSplitRe.test node.data
