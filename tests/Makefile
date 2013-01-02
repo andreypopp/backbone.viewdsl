@@ -7,7 +7,7 @@ test: build build-tests
 	mocha-phantomjs runner.html
 
 build:
-	$(MAKE) -C.. build
+	$(MAKE) -qC.. build
 
 build-tests: $(LIB)
 
