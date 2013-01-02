@@ -12,15 +12,16 @@ define (require) ->
 
   getByPath = (o, p) ->
     if p.trim().length == 0
-      return o
+      return [o, window]
     for n in p.split('.')
-      o = o[n]
+      ctx = o
+      o = ctx[n]
       break if o == undefined
-    o
+    [o, ctx]
 
   getBySpec = (spec) ->
     # TODO: implement AMD loading
-    promise getByPath(window, spec)
+    promise getByPath(window, spec)[0]
 
   promise = (value) ->
     p = new rsvp.Promise()
@@ -32,8 +33,33 @@ define (require) ->
     require moduleName, (module) -> p.resolve(module)
     p
 
+  replaceChild = (node, old, news) ->
+    for n in news
+      if typeof n.cloneNode == 'function'
+        node.insertBefore(n, old)
+      else if typeof n.item == 'function' and n.length or n.jquery
+        for nn in n
+          node.insertBefore(nn, old)
+      else
+        n = document.createTextNode(String(n))
+        node.insertBefore(n, old)
+    node.removeChild(old)
+    node
+
+  textNodeSplitRe = /({{)|(}})/
+
   processTextNode = (context, node) ->
-    1
+    return unless textNodeSplitRe.test node.data
+    data = node.data
+    data = data.replace('{{', '{{\uF001')
+    parts = data.split(textNodeSplitRe)
+    parts = parts.filter (e) -> e and e != '{{' and e != '}}'
+    for part in parts
+      if part[0] == '\uF001'
+        [attr, attrCtx] = getByPath(context, part.slice(1).trim())
+        if $.isFunction(attr) then attr.call(attrCtx) else attr
+      else
+        part
 
   processNode = (context, node) ->
     processAttributes(context, node)
@@ -42,15 +68,20 @@ define (require) ->
         if pragmas.remove and node.parentNode
           node.parentNode.removeChild(node)
 
-        processTextNode(context, node)
-
-        processNode(context, n) for n in toArray(node.childNodes)
-        node
+        if node.nodeType == 3
+          replacements = processTextNode(context, node)
+          if replacements
+            replaceChild(node.parentNode, node, replacements)
+          else
+            node
+        else
+          processNode(context, n) for n in toArray(node.childNodes)
+          node
 
   processAttributes = (context, node) ->
     if node.attributes?.if
-      attr = context[node.attributes.if.value]
-      show = if $.isFunction(attr) then attr() else attr
+      [attr, attrCtx] = getByPath(context, node.attributes.if.value)
+      show = if $.isFunction(attr) then attr.call(attrCtx) else attr
       return promise {remove: true} unless show
 
     if node.attributes?.view
@@ -65,14 +96,22 @@ define (require) ->
     else
       promise {remove: false}
 
+  wrapTemplate = (template, requireSingleNode = false) ->
+    nodes = $.parseHTML(template)
+    if requireSingleNode and nodes.length != 1
+      throw new Error('templates only of single element are allowed')
+    if nodes.length > 1 or nodes[0].nodeType == 3
+      fragment = document.createDocumentFragment()
+      for node in nodes
+        fragment.appendChild(node)
+      fragment
+    else
+      nodes[0]
+
   class View extends Backbone.View
 
     @from: (template, options) ->
-      node = $(template)
-      node = if node.length == 1
-        node[0]
-      else
-        throw new Error('templates only of single element are allowed')
+      node = wrapTemplate(template, true)
       view = new this(el: node)
       processNode(view, node).then ->
         view.render()
@@ -83,8 +122,7 @@ define (require) ->
       this.views = []
 
     processDOM: (template) ->
-      # TODO: allow multiple DOM elements
-      node = $(template)[0]
+      node = wrapTemplate(template)
       processNode(this, node)
 
     renderDOM: (template) ->
