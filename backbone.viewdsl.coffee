@@ -48,19 +48,6 @@ define (require) ->
 
   textNodeSplitRe = /({{)|(}})/
 
-  processTextNode = (context, node) ->
-    return unless textNodeSplitRe.test node.data
-    data = node.data
-    data = data.replace('{{', '{{\uF001')
-    parts = data.split(textNodeSplitRe)
-    parts = parts.filter (e) -> e and e != '{{' and e != '}}'
-    for part in parts
-      if part[0] == '\uF001'
-        [attr, attrCtx] = getByPath(context, part.slice(1).trim())
-        if $.isFunction(attr) then attr.call(attrCtx) else attr
-      else
-        part
-
   processNode = (context, node) ->
     processAttributes(context, node)
       .then (pragmas) ->
@@ -75,8 +62,22 @@ define (require) ->
           else
             node
         else
+          # TODO: wait for child nodes to finish
           processNode(context, n) for n in toArray(node.childNodes)
           node
+
+  processTextNode = (context, node) ->
+    return unless textNodeSplitRe.test node.data
+    data = node.data
+    data = data.replace('{{', '{{\uF001')
+    parts = data.split(textNodeSplitRe)
+    parts = parts.filter (e) -> e and e != '{{' and e != '}}'
+    for part in parts
+      if part[0] == '\uF001'
+        [attr, attrCtx] = getByPath(context, part.slice(1).trim())
+        if $.isFunction(attr) then attr.call(attrCtx) else attr
+      else
+        part
 
   processAttributes = (context, node) ->
     if node.attributes?.if
