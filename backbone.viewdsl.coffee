@@ -24,20 +24,10 @@ define (require) ->
     p.resolve(value)
     p
 
-  cont = (func) ->
-    ->
-      p = new rsvp.Promise()
-      args = makeArray(arguments)
-      args.splice 0, 0, (result, reason) ->
-        if reason != undefined
-          p.reject(reason)
-        else
-          p.resolve(result)
-      func.apply(this, args)
-      p
-
-  promiseRequire = cont (next, moduleName) ->
-    require moduleName, (module) -> next module
+  promiseRequire = (moduleName) ->
+    p = new rsvp.Promise()
+    require moduleName, (module) -> p.resolve(module)
+    p
 
   processNode = (context, node) ->
     processAttributes(context, node)
