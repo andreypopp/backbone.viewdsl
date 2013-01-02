@@ -110,6 +110,26 @@ define (require) ->
             done()
           .end()
 
+      it 'should instantiate views by AMD spec', (done) ->
+
+        {LoadedView} = require 'views'
+
+        promise = View.from """
+          <div class="some-class">
+            <div view="views:LoadedView"></div>
+          </div>
+          """
+        promise
+          .then (view) ->
+            expect(view.views.length).to.be.equal 1
+            expect(view instanceof View).to.be.ok
+            subview = view.views[0]
+            expect(subview.el.tagName).to.be.equal 'DIV'
+            expect(subview.$el.text()).to.be.equal 'HI'
+            expect(subview instanceof LoadedView).to.be.ok
+            done()
+          .end()
+
       it 'should instantiate view by global spec inside other view', (done) ->
 
         class MyView extends View

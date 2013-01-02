@@ -7,10 +7,9 @@ test: build build-tests
 	mocha-phantomjs runner.html
 
 build:
-	$(MAKE) -qC.. build
+	$(MAKE) -C .. build
 
 build-tests: $(LIB)
 
 lib/%.js: %.coffee
 	coffee -bcp $< > $@
-

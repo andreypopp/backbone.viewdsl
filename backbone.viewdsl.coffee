@@ -20,17 +20,34 @@ define (require) ->
     [o, ctx]
 
   getBySpec = (spec) ->
-    # TODO: implement AMD loading
-    promise getByPath(window, spec)[0]
+    if /:/.test spec
+      [module, path] = spec.split(':', 2)
+      promiseRequire(module)
+        .then (module) -> getByPath(module, path)[0]
+    else
+      promise getByPath(window, spec)[0]
 
   promise = (value) ->
     p = new rsvp.Promise()
     p.resolve(value)
     p
 
+  join = (promises) ->
+    p = new rsvp.Promise()
+    results = []
+    resultsToGo = promises.length
+    for pr, idx in promises
+      do (pr, idx) =>
+        pr.then (result) ->
+          results[idx] = result
+          resultsToGo = resultsToGo - 1
+          if resultsToGo == 0
+            p.resolve(results)
+    p
+
   promiseRequire = (moduleName) ->
     p = new rsvp.Promise()
-    require moduleName, (module) -> p.resolve(module)
+    require [moduleName], (module) -> p.resolve(module)
     p
 
   replaceChild = (node, old, news) ->
@@ -62,9 +79,8 @@ define (require) ->
           else
             node
         else
-          # TODO: wait for child nodes to finish
-          processNode(context, n) for n in toArray(node.childNodes)
-          node
+          join(processNode(context, n) for n in toArray(node.childNodes))
+            .then -> node
 
   processTextNode = (context, node) ->
     return unless textNodeSplitRe.test node.data
