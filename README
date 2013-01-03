@@ -12,13 +12,30 @@ features:
 
   * string and DOM node values interpolation
 
+## Installation
+
+You can simply get
+[`backbone.viewdsl.js`][https://raw.github.com/andreypopp/backbone.viewdsl/master/backbone.viewdsl.js]
+from the repository or use the repository as a submodule in your project. In
+that case you will need all the dependencies to be in place —
+[jQuery][http://jquery.com], [Backbone][http://http://backbonejs.org] and
+[RSVP.js][https://github.com/tildeio/rsvp.js].
+
+Otherwise you can use awesome [bower][http://twitter.github.com/bower/] package
+manager and install Backbone.ViewDSL with:
+
+    bower install backbone.viewdsl
+
+This way you will have Backbone.ViewDSL and all the dependencies installed under
+`./components` directory.
+
 ## Usage
 
 Backbone.ViewDSL provides a view base class with additional methods to use DSL
 for DOM rendering. There are two ways to use it — the first one is an ad-hoc
 view creation with a `from` static method:
 
-    sidebarPromise = View.from """
+    sidebarPromise = Backbone.ViewDSL.View.from """
       <div class="sidebar">
         <ul class="sidebar-items">
           <li class="sidebar-item">...</li>
