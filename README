@@ -47,8 +47,8 @@ view creation with a `from` static method:
 This way you get a `sidebarPromise`, a promise value which will resolve
 asynchronously in the future. The reason it returns a promise is because
 rendering process may require to load some additional resources using XHR (such
-as additional view classes). You can execute some code with constructed view by
-attaching `then` callback to promise:
+as additional view classes). You can execute some code with constructed a view
+by attaching `then` callback to the promise:
 
     sidebarPromise.then (sidebar) ->
       console.log "View constructed: #{sidebar}"
@@ -74,7 +74,7 @@ resolves to DOM node which is rendered from template.
 
 ## View instantiation
 
-To instantiate view you can use `view` DOM attribute:
+To instantiate a view you can use `view` DOM attribute:
 
     class MyView extends Backbone.ViewDSL.View
 
@@ -84,9 +84,9 @@ To instantiate view you can use `view` DOM attribute:
           """
 
 This way `myapp.views.SidebarView` will be instantiated and rendered with `div.sidebar`
-element as root element. All instantiated views become the "child views" of the
-parent views and stored inside `views` attribute — that means on parent's
-`remove()` call they are also being freed by calling `remove()`.
+element as the view's root element. All instantiated views become the "child
+views" of a parent view and stored inside a `views` attribute — that means on
+parent's `remove()` call they are also being freed by calling `remove()`.
 
 ## String and DOM node values interpolation
 
