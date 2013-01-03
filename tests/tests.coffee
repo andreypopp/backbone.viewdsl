@@ -134,10 +134,21 @@ define (require) ->
 
         class MyView extends View
 
+          initialize: ->
+            this.propParam = 'prop!'
+
+          methodParam: ->
+            this.constructor.name
+
           render: ->
             this.renderDOM """
               <div class="some-class">
-                <div view="SomeView">Some View</div>
+                <div
+                  view="SomeView"
+                  view-some-param="methodParam"
+                  view-another-param="propParam"
+                  view-absent-param="some string"
+                  >Some View</div>
               </div>
               """
 
@@ -150,6 +161,9 @@ define (require) ->
             expect(subview.el.tagName).to.be.equal 'DIV'
             expect(subview.$el.text()).to.be.equal 'Some View'
             expect(subview instanceof SomeView).to.be.ok
+            expect(subview.options.someParam).to.be.equal 'MyView'
+            expect(subview.options.anotherParam).to.be.equal 'prop!'
+            expect(subview.options.absentParam).to.be.equal 'some string'
             done()
           .end()
 

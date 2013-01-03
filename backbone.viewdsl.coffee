@@ -62,6 +62,9 @@
     require [moduleName], (module) -> p.resolve(module)
     p
 
+  hypensToCamelCase = (o) ->
+    o.replace /-([a-z])/g, (g) -> g[1].toUpperCase()
+
   replaceChild = (node, old, news) ->
     for n in news
       if typeof n.cloneNode == 'function'
@@ -116,8 +119,19 @@
     if node.attributes?.view
       getBySpec(node.attributes.view.value)
         .then (viewCls) ->
-          # TODO: process more parameters, like class and so on
-          view = new viewCls(el: node)
+          viewParams = {}
+          for attr in node.attributes when attr.name.slice(0, 5) == 'view-'
+            attrName = hypensToCamelCase(attr.name.slice(5))
+            attrValue = context[attr.value]
+            [attrValue, attrCtx] = getByPath(context, attr.value)
+            viewParams[attrName] = if jQuery.isFunction(attrValue)
+              attrValue.call(attrCtx)
+            else if attrValue == undefined
+              attr.value
+            else
+              attrValue
+          viewParams.el = node
+          view = new viewCls(viewParams)
           view.render()
           context.addView(view) if context.addView
           return {remove: false}

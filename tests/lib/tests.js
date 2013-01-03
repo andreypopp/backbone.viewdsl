@@ -162,8 +162,16 @@ define(function(require) {
             return MyView.__super__.constructor.apply(this, arguments);
           }
 
+          MyView.prototype.initialize = function() {
+            return this.propParam = 'prop!';
+          };
+
+          MyView.prototype.methodParam = function() {
+            return this.constructor.name;
+          };
+
           MyView.prototype.render = function() {
-            return this.renderDOM("<div class=\"some-class\">\n  <div view=\"SomeView\">Some View</div>\n</div>");
+            return this.renderDOM("<div class=\"some-class\">\n  <div\n    view=\"SomeView\"\n    view-some-param=\"methodParam\"\n    view-another-param=\"propParam\"\n    view-absent-param=\"some string\"\n    >Some View</div>\n</div>");
           };
 
           return MyView;
@@ -178,6 +186,9 @@ define(function(require) {
           expect(subview.el.tagName).to.be.equal('DIV');
           expect(subview.$el.text()).to.be.equal('Some View');
           expect(subview instanceof SomeView).to.be.ok;
+          expect(subview.options.someParam).to.be.equal('MyView');
+          expect(subview.options.anotherParam).to.be.equal('prop!');
+          expect(subview.options.absentParam).to.be.equal('some string');
           return done();
         }).end();
       });

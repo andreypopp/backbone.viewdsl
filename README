@@ -88,6 +88,49 @@ element as the view's root element. All instantiated views become the "child
 views" of a parent view and stored inside a `views` attribute — that means on
 parent's `remove()` call they are also being freed by calling `remove()`.
 
+You can also pass parameters to view constructor by using attributes which start
+with `view-` prefix:
+
+    class MyView extends Backbone.ViewDSL.View
+
+      initialize: ->
+        this.sidebar = new SidebarItems()
+
+      render: ->
+        @renderDOM """
+          <div
+            view="myapp.views.SidebarView"
+            view-collection="sidebar"
+            view-style="vertical"
+            class="sidebar"></div>
+          """
+
+This will call a `myapp.views.SidebarView` constructor with `collection` and
+`style` arguments — the first one will be equal to `sidebar` attribute of the
+`MyView` instance, the second one — just a `"vertical"` string value. So this
+will be equivalent to the following code:
+
+    class MyView extends Backbone.View
+
+      initialize: ->
+        this.sidebar = new SidebarItems()
+
+      render: ->
+        this.sidebarView = new myapp.views.SidebarView
+          className: 'sidebar'
+          collection: this.sidebar
+          style: 'vertical'
+        this.sidebarView.render()
+        this.$el.append(this.sidebarView.$el)
+
+      remove: ->
+        super
+        this.sidebarView.remove()
+
+Note that attributes those name contain more hyphens besides ones which are part
+of the prefix will be converted to camelCase so `view-some-param` becomes
+`someParam`.
+
 ## String and DOM node values interpolation
 
 You can insert arbitrary strings, DOM nodes or jQuery elements into template:

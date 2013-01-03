@@ -14,7 +14,7 @@ var __hasProp = {}.hasOwnProperty,
     return root.Backbone.ViewDSL = factory(root.jQuery, root.RSVP, root.Backbone);
   }
 })(this, function(jQuery, RSVP) {
-  var View, getByPath, getBySpec, join, processAttributes, processNode, processTextNode, promise, promiseRequire, replaceChild, textNodeSplitRe, toArray, wrapTemplate;
+  var View, getByPath, getBySpec, hypensToCamelCase, join, processAttributes, processNode, processTextNode, promise, promiseRequire, replaceChild, textNodeSplitRe, toArray, wrapTemplate;
   jQuery = window.jQuery || require && require('jquery');
   RSVP = window.RSVP || require && require('rsvp');
   RSVP.Promise.prototype.end = function() {
@@ -90,6 +90,11 @@ var __hasProp = {}.hasOwnProperty,
       return p.resolve(module);
     });
     return p;
+  };
+  hypensToCamelCase = function(o) {
+    return o.replace(/-([a-z])/g, function(g) {
+      return g[1].toUpperCase();
+    });
   };
   replaceChild = function(node, old, news) {
     var n, nn, _i, _j, _len, _len1;
@@ -179,10 +184,21 @@ var __hasProp = {}.hasOwnProperty,
     }
     if ((_ref2 = node.attributes) != null ? _ref2.view : void 0) {
       return getBySpec(node.attributes.view.value).then(function(viewCls) {
-        var view;
-        view = new viewCls({
-          el: node
-        });
+        var attrName, attrValue, view, viewParams, _i, _len, _ref3, _ref4;
+        viewParams = {};
+        _ref3 = node.attributes;
+        for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
+          attr = _ref3[_i];
+          if (!(attr.name.slice(0, 5) === 'view-')) {
+            continue;
+          }
+          attrName = hypensToCamelCase(attr.name.slice(5));
+          attrValue = context[attr.value];
+          _ref4 = getByPath(context, attr.value), attrValue = _ref4[0], attrCtx = _ref4[1];
+          viewParams[attrName] = jQuery.isFunction(attrValue) ? attrValue.call(attrCtx) : attrValue === void 0 ? attr.value : attrValue;
+        }
+        viewParams.el = node;
+        view = new viewCls(viewParams);
         view.render();
         if (context.addView) {
           context.addView(view);
