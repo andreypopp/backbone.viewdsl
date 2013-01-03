@@ -1,10 +1,16 @@
-define (require) ->
+((root, factory) ->
+  if typeof define == 'function' and define.amd
+    define ['jquery', 'rsvp', 'backbone'], (jQuery, RSVP, Backbone) ->
+      root.Backbone.ViewDSL = factory(jQuery, RSVP, Backbone)
+  else
+    root.Backbone.ViewDSL = factory(root.jQuery, root.RSVP, root.Backbone)
 
-  $ = require 'jquery'
-  Backbone = require 'backbone'
-  rsvp = require 'rsvp'
+) this, (jQuery, RSVP) ->
 
-  rsvp.Promise::end = ->
+  jQuery = window.jQuery or require and require('jquery')
+  RSVP = window.RSVP or require and require('rsvp')
+
+  RSVP.Promise::end = ->
     this.then undefined, (e) -> throw e
 
   toArray = (o) ->
@@ -28,12 +34,12 @@ define (require) ->
       promise getByPath(window, spec)[0]
 
   promise = (value) ->
-    p = new rsvp.Promise()
+    p = new RSVP.Promise()
     p.resolve(value)
     p
 
   join = (promises) ->
-    p = new rsvp.Promise()
+    p = new RSVP.Promise()
     results = []
     if promises.length > 0
       resultsToGo = promises.length
@@ -49,7 +55,7 @@ define (require) ->
     p
 
   promiseRequire = (moduleName) ->
-    p = new rsvp.Promise()
+    p = new RSVP.Promise()
     require [moduleName], (module) -> p.resolve(module)
     p
 
@@ -94,14 +100,14 @@ define (require) ->
     for part in parts
       if part[0] == '\uF001'
         [attr, attrCtx] = getByPath(context, part.slice(1).trim())
-        if $.isFunction(attr) then attr.call(attrCtx) else attr
+        if jQuery.isFunction(attr) then attr.call(attrCtx) else attr
       else
         part
 
   processAttributes = (context, node) ->
     if node.attributes?.if
       [attr, attrCtx] = getByPath(context, node.attributes.if.value)
-      show = if $.isFunction(attr) then attr.call(attrCtx) else attr
+      show = if jQuery.isFunction(attr) then attr.call(attrCtx) else attr
       return promise {remove: true} unless show
 
     if node.attributes?.view
@@ -117,7 +123,7 @@ define (require) ->
       promise {remove: false}
 
   wrapTemplate = (template, requireSingleNode = false) ->
-    nodes = $.parseHTML(template)
+    nodes = jQuery.parseHTML(template)
     if requireSingleNode and nodes.length != 1
       throw new Error('templates only of single element are allowed')
     if nodes.length > 1 or nodes[0].nodeType == 3
