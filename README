@@ -47,7 +47,7 @@ view creation with a `from` static method:
 This way you get a `sidebarPromise`, a promise value which will resolve
 asynchronously in the future. The reason it returns a promise is because
 rendering process may require to load some additional resources using XHR (such
-as additional view classes). You can execute some code with constructed a view
+as additional view classes). You can execute some code with a constructed view
 by attaching `then` callback to the promise:
 
     sidebarPromise.then (sidebar) ->
