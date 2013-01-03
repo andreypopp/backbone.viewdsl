@@ -11,5 +11,8 @@ build:
 
 build-tests: $(LIB)
 
+clean:
+	rm -f $(LIB)
+
 lib/%.js: %.coffee
 	coffee -bcp $< > $@
