@@ -15,13 +15,13 @@ features:
 ## Installation
 
 You can simply get
-[`backbone.viewdsl.js`][https://raw.github.com/andreypopp/backbone.viewdsl/master/backbone.viewdsl.js]
+[`backbone.viewdsl.js`](https://raw.github.com/andreypopp/backbone.viewdsl/master/backbone.viewdsl.js)
 from the repository or use the repository as a submodule in your project. In
 that case you will need all the dependencies to be in place —
-[jQuery][http://jquery.com], [Backbone][http://http://backbonejs.org] and
-[RSVP.js][https://github.com/tildeio/rsvp.js].
+[jQuery](http://jquery.com), [Backbone](http://http://backbonejs.org) and
+[RSVP.js](https://github.com/tildeio/rsvp.js).
 
-Otherwise you can use awesome [bower][http://twitter.github.com/bower/] package
+Otherwise you can use awesome [bower](http://twitter.github.com/bower/) package
 manager and install Backbone.ViewDSL with:
 
     bower install backbone.viewdsl
