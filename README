@@ -1,45 +1,123 @@
-# DSL for defining Backbone.View hierarchies
+Backbone.ViewDSL is a tiny library which provides a DSL for defining
+Backbone.View hierarchies. If you are tired of manually composing views in your
+Backbone application and want to get rid of all accompanying boilerplate then
+this library could help a bit.
 
-It's not fully implemented yet!
+Backbone.ViewDSL provides a DSL built on top of HTML with the following
+features:
+
+  * view instantiation (optionally loaded from AMD modules)
+
+  * conditional exclusion of DOM elements from a final result
+
+  * string and DOM node values interpolation
+
+## Usage
+
+Backbone.ViewDSL provides a view base class with additional methods to use DSL
+for DOM rendering. There are two ways to use it — the first one is an ad-hoc
+view creation with a `from` static method:
+
+    sidebarPromise = View.from """
+      <div class="sidebar">
+        <ul class="sidebar-items">
+          <li class="sidebar-item">...</li>
+          ...
+        </ul>
+      </div>
+      """
+
+This way you get a `sidebarPromise`, a promise value which will resolve
+asynchronously in the future. The reason it returns a promise is because
+rendering process may require to load some additional resources using XHR (such
+as additional view classes). You can execute some code with constructed view by
+attaching `then` callback to promise:
+
+    sidebarPromise.then (sidebar) ->
+      console.log "View constructed: #{sidebar}"
+
+Note that the `div.sidebar` will become the root element, the `el` of the view.
+
+Another way to use `Backbone.ViewDSL.View` is to subclass it and use `renderDOM`
+method for rendering DOM:
+
+    class SidebarView extends Backbone.ViewDSL.View
+      tagName: "div"
+      className: "sidebar"
+      render: ->
+        @renderDOM """
+          <ul class="sidebar-items">
+            <li class="sidebar-item">...</li>
+            ...
+          </ul>
+          """
+
+This way `renderDOM` method will also return a promise but the one which
+resolves to DOM node which is rendered from template.
+
+## View instantiation
+
+To instantiate view you can use `view` DOM attribute:
+
+    class MyView extends Backbone.ViewDSL.View
+
+      render: ->
+        @renderDOM """
+          <div view="myapp.views.SidebarView" class="sidebar"></div>
+          """
+
+This way `myapp.views.SidebarView` will be instantiated and rendered with `div.sidebar`
+element as root element. All instantiated views become the "child views" of the
+parent views and stored inside `views` attribute — that means on parent's
+`remove()` call they are also being freed by calling `remove()`.
+
+## String and DOM node values interpolation
+
+You can insert arbitrary strings, DOM nodes or jQuery elements into template:
+
+    class MyView extends Backbone.ViewDSL.View
+
+      name: ->
+        $ '<span class="name">World</span>'
+
+      render: ->
+        @renderDOM """
+          <div class="hello">
+            Hello, {{name}}!
+          </div>
+          """
+
+This will render a `Hello, <span class="name">World</span>` string inside
+`div.hello` element. Note that you can also return just a raw string from
+`name()` method — it will be converted to DOM `TextNode`; otherwise you can
+return any DOM object.
+
+## Conditional exclusion
+
+To remove DOM nodes conditionally you can use `if` DOM attribute:
+
+    class MyView extends Backbone.ViewDSL.View
+
+      showConditional: ->
+        this.options.showConditional
+
+      render: ->
+        @renderDOM """
+          <div class="conditional" if="showConditional">
+            ...
+          </div>
+          """
+
+Element `div.conditional` will be removed if `showConditional()` method evaluates
+to `false`. Note that you can also refer to view properties and not only methods
+inside `if` attributes.
 
 ## Specs
 
-Specs are strings which can point to some JS object:
+Specs are strings which point to JS objects, specs can point to some global
+object or to some object inside AMD module:
 
-  * `module1/module2:obj1.obj2`
-    points to `obj2` inside `obj1` in `module1/module2` AMD module.
+  * `module1/module2:obj1.obj2` points to `obj2` inside `obj1` in
+    `module1/module2` AMD module.
 
-  * `obj1.obj2`
-    points to `obj2` inside `obj1` inside `window` object
-
-## Wrap DOM with views
-
-Wrap DOM with views, using standard tags:
-
-    <div view="myapp/views:MyView" class="some-class"></div>
-
-Attribute `view` should be a spec.
-
-Passing parameters to views:
-
-  * Parameter names are converted to camelCase, so `another-param` becomes
-    `anotherParam`.
-
-  * If parameter value starts with `this.` it then will be passed by reference
-    and the reference will be equal to the one from the passed context.
-
-## Value interpolation
-
-Interpolate string values, DOM nodes and jQuery elements:
-
-    <div>
-      {{ somevalue }}
-    </div>
-
-## If blocks
-
-    <div if="hasCounts">
-
-    </div>
-
-Element would be removed if `hasCounts()` or `hasCounts` evaluates to `false`.
+  * `obj1.obj2` points to `obj2` inside `obj1` inside `window` object
