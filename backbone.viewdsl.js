@@ -5,6 +5,9 @@ var __hasProp = {}.hasOwnProperty,
 (function(root, factory) {
   if (typeof define === 'function' && define.amd) {
     return define(['jquery', 'rsvp', 'backbone'], function(jQuery, RSVP, Backbone) {
+      jQuery = jQuery || window.jQuery;
+      RSVP = RSVP || window.RSVP;
+      Backbone = Backbone || window.Backbone;
       return root.Backbone.ViewDSL = factory(jQuery, RSVP, Backbone);
     });
   } else {
