@@ -121,9 +121,13 @@
           if viewCls == undefined
             throw new Error("can't find view class by #{node.attributes.view.value}")
           viewParams = {}
+          viewId = undefined
           for attr in node.attributes when attr.name.slice(0, 5) == 'view-'
             attrName = hypensToCamelCase(attr.name.slice(5))
-            attrValue = context[attr.value]
+
+            if attrName == 'id'
+              viewId = attr.value
+
             [attrValue, attrCtx] = getByPath(context, attr.value)
             viewParams[attrName] = if jQuery.isFunction(attrValue)
               attrValue.call(attrCtx)
@@ -131,10 +135,13 @@
               attr.value
             else
               attrValue
+
           viewParams.el = node
           view = new viewCls(viewParams)
           view.render()
           context.addView(view) if context.addView
+          if viewId
+            context.updateContextWith(viewId, view)
           return {remove: false}
 
     else
@@ -157,6 +164,10 @@
     else
       nodes[0]
 
+  makeContext = (o, overlays...) ->
+    overlays.push(updateContextWith: (k, v) -> o[k] = v)
+    _.extend(Object.create(o), overlays...)
+
   class View extends Backbone.View
 
     template: undefined
@@ -165,7 +176,7 @@
     @from: (template, options) ->
       node = wrapTemplate(template, true)
       view = new this(el: node)
-      processNode(view, node).then ->
+      processNode(makeContext(view), node).then ->
         view.render()
         view
 
@@ -175,11 +186,7 @@
 
     processDOM: (template, localContext) ->
       node = wrapTemplate(template)
-      context = if localContext
-        _.extend(Object.create(this), localContext)
-      else
-        this
-      processNode(context, node)
+      processNode(makeContext(this, localContext), node)
 
     renderDOM: (template, localContext) ->
       this.processDOM(template, localContext).then (node) =>

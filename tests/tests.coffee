@@ -211,6 +211,7 @@ define (require) ->
               <div class="some-class">
                 <div
                   view="SomeView"
+                  view-id="someView"
                   view-some-param="methodParam"
                   view-another-param="propParam"
                   view-absent-param="some string"
@@ -224,6 +225,7 @@ define (require) ->
             expect(view.views.length).to.be.equal 1
             expect(view instanceof View).to.be.ok
             subview = view.views[0]
+            expect(view.someView).to.be.equal subview
             expect(subview.el.tagName).to.be.equal 'DIV'
             expect(subview.$el.text()).to.be.equal 'Some View'
             expect(subview instanceof SomeView).to.be.ok

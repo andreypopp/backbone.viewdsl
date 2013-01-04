@@ -260,7 +260,7 @@ define(function(require) {
           };
 
           MyView.prototype.render = function() {
-            return this.renderDOM("<div class=\"some-class\">\n  <div\n    view=\"SomeView\"\n    view-some-param=\"methodParam\"\n    view-another-param=\"propParam\"\n    view-absent-param=\"some string\"\n    >Some View</div>\n</div>");
+            return this.renderDOM("<div class=\"some-class\">\n  <div\n    view=\"SomeView\"\n    view-id=\"someView\"\n    view-some-param=\"methodParam\"\n    view-another-param=\"propParam\"\n    view-absent-param=\"some string\"\n    >Some View</div>\n</div>");
           };
 
           return MyView;
@@ -272,6 +272,7 @@ define(function(require) {
           expect(view.views.length).to.be.equal(1);
           expect(view instanceof View).to.be.ok;
           subview = view.views[0];
+          expect(view.someView).to.be.equal(subview);
           expect(subview.el.tagName).to.be.equal('DIV');
           expect(subview.$el.text()).to.be.equal('Some View');
           expect(subview instanceof SomeView).to.be.ok;

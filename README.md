@@ -154,6 +154,10 @@ Note that attributes those name contain more hyphens besides ones which are part
 of the prefix will be converted to camelCase so `view-some-param` becomes
 `someParam`.
 
+There's also special attribute `view-id` — it instructs template processor to
+store instantiated view in an attribute of the parent view. The `view-id` value
+becomes the name of the attribute.
+
 ## String and DOM node values interpolation
 
 You can insert arbitrary strings, DOM nodes or jQuery elements into template:
