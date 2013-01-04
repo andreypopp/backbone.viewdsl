@@ -55,8 +55,8 @@ by attaching `then` callback to the promise:
 
 Note that the `div.sidebar` will become the root element, the `el` of the view.
 
-Another way to use `Backbone.ViewDSL.View` is to subclass it and use `renderDOM`
-method for rendering DOM:
+Another way to use `Backbone.ViewDSL.View` is to subclass it and use
+`renderDOM(template, localContext)` method for rendering DOM:
 
     class SidebarView extends Backbone.ViewDSL.View
       tagName: "div"
@@ -70,7 +70,9 @@ method for rendering DOM:
           """
 
 This way `renderDOM` method will also return a promise but the one which
-resolves to DOM node which is rendered from template.
+resolves to DOM node which is rendered from template. As a second argument
+`renderDOM` accepts an object which provides "local" values to template context
+so actual context's prototype chain looks like `localContext -> this`.
 
 ## View instantiation
 

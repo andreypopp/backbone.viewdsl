@@ -4,19 +4,18 @@ var __hasProp = {}.hasOwnProperty,
 
 (function(root, factory) {
   if (typeof define === 'function' && define.amd) {
-    return define(['jquery', 'rsvp', 'backbone'], function(jQuery, RSVP, Backbone) {
-      jQuery = jQuery || window.jQuery;
-      RSVP = RSVP || window.RSVP;
-      Backbone = Backbone || window.Backbone;
-      return root.Backbone.ViewDSL = factory(jQuery, RSVP, Backbone);
+    return define(['jquery', 'rsvp', 'backbone', 'underscore'], function(jQuery, RSVP, Backbone, _) {
+      jQuery = jQuery || root.jQuery;
+      RSVP = RSVP || root.RSVP;
+      Backbone = Backbone || root.Backbone;
+      _ = _ || root._;
+      return root.Backbone.ViewDSL = factory(jQuery, RSVP, Backbone, _);
     });
   } else {
-    return root.Backbone.ViewDSL = factory(root.jQuery, root.RSVP, root.Backbone);
+    return root.Backbone.ViewDSL = factory(root.jQuery, root.RSVP, root.Backbone, root._);
   }
-})(this, function(jQuery, RSVP) {
+})(this, function(jQuery, RSVP, Backbone, _) {
   var View, getByPath, getBySpec, hypensToCamelCase, join, processAttributes, processNode, processTextNode, promise, promiseRequire, replaceChild, textNodeSplitRe, toArray, wrapTemplate;
-  jQuery = window.jQuery || require && require('jquery');
-  RSVP = window.RSVP || require && require('rsvp');
   RSVP.Promise.prototype.end = function() {
     return this.then(void 0, function(e) {
       throw e;
@@ -145,12 +144,12 @@ var __hasProp = {}.hasOwnProperty,
     });
   };
   processTextNode = function(context, node) {
-    var attr, attrCtx, data, part, parts, _i, _len, _ref, _results;
+    var attr, attrCtx, data, part, parts, value, _i, _len, _ref, _results;
     if (!textNodeSplitRe.test(node.data)) {
       return;
     }
     data = node.data;
-    data = data.replace('{{', '{{\uF001');
+    data = data.replace(/{{/g, '{{\uF001');
     parts = data.split(textNodeSplitRe);
     parts = parts.filter(function(e) {
       return e && e !== '{{' && e !== '}}';
@@ -160,11 +159,8 @@ var __hasProp = {}.hasOwnProperty,
       part = parts[_i];
       if (part[0] === '\uF001') {
         _ref = getByPath(context, part.slice(1).trim()), attr = _ref[0], attrCtx = _ref[1];
-        if (jQuery.isFunction(attr)) {
-          _results.push(attr.call(attrCtx));
-        } else {
-          _results.push(attr);
-        }
+        value = jQuery.isFunction(attr) ? attr.call(attrCtx) : attr;
+        _results.push(value || '');
       } else {
         _results.push(part);
       }
@@ -237,6 +233,8 @@ var __hasProp = {}.hasOwnProperty,
 
     __extends(View, _super);
 
+    View.prototype.template = void 0;
+
     View.from = function(template, options) {
       var node, view;
       node = wrapTemplate(template, true);
@@ -254,15 +252,16 @@ var __hasProp = {}.hasOwnProperty,
       this.views = [];
     }
 
-    View.prototype.processDOM = function(template) {
-      var node;
+    View.prototype.processDOM = function(template, localContext) {
+      var context, node;
       node = wrapTemplate(template);
-      return processNode(this, node);
+      context = localContext ? _.extend(Object.create(this), localContext) : this;
+      return processNode(context, node);
     };
 
-    View.prototype.renderDOM = function(template) {
+    View.prototype.renderDOM = function(template, localContext) {
       var _this = this;
-      return this.processDOM(template).then(function(node) {
+      return this.processDOM(template, localContext).then(function(node) {
         _this.$el.append(node);
         return _this;
       });

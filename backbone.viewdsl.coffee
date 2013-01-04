@@ -1,17 +1,15 @@
 ((root, factory) ->
   if typeof define == 'function' and define.amd
-    define ['jquery', 'rsvp', 'backbone'], (jQuery, RSVP, Backbone) ->
-      jQuery = jQuery or window.jQuery
-      RSVP = RSVP or window.RSVP
-      Backbone = Backbone or window.Backbone
-      root.Backbone.ViewDSL = factory(jQuery, RSVP, Backbone)
+    define ['jquery', 'rsvp', 'backbone', 'underscore'], (jQuery, RSVP, Backbone, _) ->
+      jQuery = jQuery or root.jQuery
+      RSVP = RSVP or root.RSVP
+      Backbone = Backbone or root.Backbone
+      _ = _ or root._
+      root.Backbone.ViewDSL = factory(jQuery, RSVP, Backbone, _)
   else
-    root.Backbone.ViewDSL = factory(root.jQuery, root.RSVP, root.Backbone)
+    root.Backbone.ViewDSL = factory(root.jQuery, root.RSVP, root.Backbone, root._)
 
-) this, (jQuery, RSVP) ->
-
-  jQuery = window.jQuery or require and require('jquery')
-  RSVP = window.RSVP or require and require('rsvp')
+) this, (jQuery, RSVP, Backbone, _) ->
 
   RSVP.Promise::end = ->
     this.then undefined, (e) -> throw e
@@ -100,13 +98,14 @@
   processTextNode = (context, node) ->
     return unless textNodeSplitRe.test node.data
     data = node.data
-    data = data.replace('{{', '{{\uF001')
+    data = data.replace(/{{/g, '{{\uF001')
     parts = data.split(textNodeSplitRe)
     parts = parts.filter (e) -> e and e != '{{' and e != '}}'
     for part in parts
       if part[0] == '\uF001'
         [attr, attrCtx] = getByPath(context, part.slice(1).trim())
-        if jQuery.isFunction(attr) then attr.call(attrCtx) else attr
+        value = if jQuery.isFunction(attr) then attr.call(attrCtx) else attr
+        value or ''
       else
         part
 
@@ -153,6 +152,8 @@
 
   class View extends Backbone.View
 
+    template: undefined
+
     @from: (template, options) ->
       node = wrapTemplate(template, true)
       view = new this(el: node)
@@ -164,12 +165,16 @@
       super
       this.views = []
 
-    processDOM: (template) ->
+    processDOM: (template, localContext) ->
       node = wrapTemplate(template)
-      processNode(this, node)
+      context = if localContext
+        _.extend(Object.create(this), localContext)
+      else
+        this
+      processNode(context, node)
 
-    renderDOM: (template) ->
-      this.processDOM(template).then (node) =>
+    renderDOM: (template, localContext) ->
+      this.processDOM(template, localContext).then (node) =>
         this.$el.append(node)
         this
 

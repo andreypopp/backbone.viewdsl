@@ -379,6 +379,62 @@ define(function(require) {
           return done();
         }).end();
       });
+      it('should interpolate missing values to empty string', function(done) {
+        var MyView, view;
+        MyView = (function(_super) {
+
+          __extends(MyView, _super);
+
+          function MyView() {
+            return MyView.__super__.constructor.apply(this, arguments);
+          }
+
+          MyView.prototype.render = function() {
+            return this.renderDOM("Hello, {{name}}!");
+          };
+
+          return MyView;
+
+        })(View);
+        view = new MyView({
+          name: 'World'
+        });
+        return view.render().then(function() {
+          expect(view.$el.text()).to.be.equal('Hello, !');
+          return done();
+        }).end();
+      });
+      it('should interpolate values from local context', function(done) {
+        var MyView, view;
+        MyView = (function(_super) {
+
+          __extends(MyView, _super);
+
+          function MyView() {
+            return MyView.__super__.constructor.apply(this, arguments);
+          }
+
+          MyView.prototype.initialize = function(options) {
+            return this.name = options.name;
+          };
+
+          MyView.prototype.render = function() {
+            return this.renderDOM("Hello, {{name}}{{greetingEnd}}", {
+              greetingEnd: '!!!'
+            });
+          };
+
+          return MyView;
+
+        })(View);
+        view = new MyView({
+          name: 'World'
+        });
+        return view.render().then(function() {
+          expect(view.$el.text()).to.be.equal('Hello, World!!!');
+          return done();
+        }).end();
+      });
       it('should interpolate strings in HTML template', function(done) {
         var MyView, view;
         MyView = (function(_super) {

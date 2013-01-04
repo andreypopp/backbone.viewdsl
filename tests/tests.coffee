@@ -293,6 +293,41 @@ define (require) ->
             done()
           .end()
 
+      it 'should interpolate missing values to empty string', (done) ->
+
+        class MyView extends View
+
+          render: ->
+            this.renderDOM """
+              Hello, {{name}}!
+              """
+
+        view = new MyView(name: 'World')
+        view.render()
+          .then ->
+            expect(view.$el.text()).to.be.equal 'Hello, !'
+            done()
+          .end()
+
+      it 'should interpolate values from local context', (done) ->
+
+        class MyView extends View
+
+          initialize: (options) ->
+            this.name = options.name
+
+          render: ->
+            this.renderDOM """
+              Hello, {{name}}{{greetingEnd}}
+              """, {greetingEnd: '!!!'}
+
+        view = new MyView(name: 'World')
+        view.render()
+          .then ->
+            expect(view.$el.text()).to.be.equal 'Hello, World!!!'
+            done()
+          .end()
+
       it 'should interpolate strings in HTML template', (done) ->
 
         class MyView extends View
