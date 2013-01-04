@@ -18,3 +18,7 @@
   ```
   <div view="@someView"></div>
   ```
+
+* allow custom element/attributes handlers
+
+* explore possible integration paths with mozilla's x-tags
