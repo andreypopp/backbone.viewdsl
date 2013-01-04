@@ -1,28 +1,59 @@
 Backbone.ViewDSL is a tiny library which provides a DSL for defining
 Backbone.View hierarchies. If you are tired of manually composing views in your
 Backbone application and want to get rid of all accompanying boilerplate then
-this library could help a bit.
+this library could help you a bit.
 
 Backbone.ViewDSL provides a DSL built on top of HTML with the following
 features:
 
   * view instantiation (optionally loaded from AMD modules)
-
   * conditional exclusion of DOM elements from a final result
-
   * string and DOM node values interpolation
+
+The basic example is to define a view which renders a chunk of HTML and instantiates
+some sub-views:
+
+    class App extends Backbone.ViewDSL.View
+      template: """
+        <h1>{{options.title}}</h1>
+        <div class="sidebar" view="app.views.Sidebar" view-id="sidebar"></div>
+        <div class="content" view="app.views.Content" view-id="content"></div>
+        <div class="footer">{{options.title}} by {{options.author}}</div>
+        """
+
+The code above is equivalent to the following piece of code written with "raw"
+Backbone abstractions:
+
+    class App extends Backbone.View
+      render: ->
+        this.$el.html """
+          <h1>#{@options.title}</h1>
+          <div class="sidebar"></div>
+          <div class="content"></div>
+          <div class="footer">#{@options.title} by #{@options.author}</div>
+          """
+        this.content = new app.views.ContentView
+          el: @$('.content')
+          collection: @contentItems
+        this.content.render()
+        this.sidebar = new app.views.SidebarView
+          el: @$('.sidebar')
+        this.sidebar.render()
+
+Which is, I think, more verbose and mostly consist of boilerplate. Also
+`Backbone.ViewDSL.View` keeps track of instantiated views and handles its
+disposal by removing all of them on a `remove()` call on parent view so you are
+safe from memory leaks.
 
 ## Installation
 
-You can simply get
-[`backbone.viewdsl.js`](https://raw.github.com/andreypopp/backbone.viewdsl/master/backbone.viewdsl.js)
-from the repository or use the repository as a submodule in your project. In
-that case you will need all the dependencies to be in place —
-[jQuery](http://jquery.com), [Backbone](http://http://backbonejs.org) and
-[RSVP.js](https://github.com/tildeio/rsvp.js).
+You can simply get [`backbone.viewdsl.js`][Backbone.ViewDSL] from the repository
+or use the repository as a submodule in your project. In that case you will need
+all the dependencies to be in place — [jQuery][jQuery], [Backbone][Backbone] and
+[RSVP.js][RSVP.js].
 
-Otherwise you can use awesome [bower](http://twitter.github.com/bower/) package
-manager and install Backbone.ViewDSL with:
+Otherwise you can use awesome [bower][bower] package manager and install
+Backbone.ViewDSL with:
 
     bower install backbone.viewdsl
 
@@ -208,3 +239,9 @@ object or to some object inside AMD module:
     `module1/module2` AMD module.
 
   * `obj1.obj2` points to `obj2` inside `obj1` inside `window` object
+
+[jQuery]: http://jquery.com
+[Backbone]: http://backbonejs.org
+[RSVP.js]: https://github.com/tildeio/rsvp.js
+[Backbone.ViewDSL]: https://raw.github.com/andreypopp/backbone.viewdsl/master/backbone.viewdsl.js
+[bower]: http://twitter.github.com/bower/
