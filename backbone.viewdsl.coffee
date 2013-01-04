@@ -118,6 +118,8 @@
     if node.attributes?.view
       getBySpec(node.attributes.view.value)
         .then (viewCls) ->
+          if viewCls == undefined
+            throw new Error("can't find view class by #{node.attributes.view.value}")
           viewParams = {}
           for attr in node.attributes when attr.name.slice(0, 5) == 'view-'
             attrName = hypensToCamelCase(attr.name.slice(5))
