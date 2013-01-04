@@ -214,7 +214,7 @@ var __hasProp = {}.hasOwnProperty,
     if (requireSingleNode == null) {
       requireSingleNode = false;
     }
-    nodes = template.jquery ? template.clone() : typeof template.cloneNode === 'function' ? [template.cloneNode()] : jQuery.parseHTML(template);
+    nodes = template.jquery ? template.clone() : typeof template.cloneNode === 'function' ? [template.cloneNode(true)] : jQuery.parseHTML(template);
     if (requireSingleNode && nodes.length !== 1) {
       throw new Error('templates only of single element are allowed');
     }
@@ -234,6 +234,8 @@ var __hasProp = {}.hasOwnProperty,
     __extends(View, _super);
 
     View.prototype.template = void 0;
+
+    View.prototype.templateCached = void 0;
 
     View.from = function(template, options) {
       var node, view;
@@ -281,6 +283,20 @@ var __hasProp = {}.hasOwnProperty,
         _results.push(view.remove());
       }
       return _results;
+    };
+
+    View.prototype.render = function(localContext) {
+      if (!this.template) {
+        return;
+      }
+      if (this.hasOwnProperty('template')) {
+        return this.renderDOM(this.template, localContext);
+      } else {
+        if (this.constructor.prototype.templateCached === void 0) {
+          this.constructor.prototype.templateCached = wrapTemplate(this.constructor.prototype.template);
+        }
+        return this.renderDOM(this.constructor.prototype.templateCached, localContext);
+      }
     };
 
     return View;

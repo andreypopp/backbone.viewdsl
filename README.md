@@ -78,6 +78,13 @@ can be a HTML string, DOM element or jQuery element. As a second argument
 `renderDOM` accepts an object which provides "local" values to template context
 so actual context's prototype chain looks like `localContext -> this`.
 
+`Backbone.ViewDSL.View` also provides default implementation of
+`render(localContext)` method which renders DOM from a template provided by
+instance or prototype-level `template` attribute. In the latter case of
+`template` attribute being attached to prototype — `render` method caches its
+DOM representation not to parse template more than once when rendering multiple
+view instances.
+
 ## View instantiation
 
 To instantiate a view you can use `view` DOM attribute:

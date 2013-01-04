@@ -139,6 +139,23 @@ define (require) ->
       it 'should throw an error if constructing view from multiple elements', ->
         expect(-> View.from('<div></div><div></div>')).to.throw(Error)
 
+      it 'should provide default render method', (done) ->
+
+        class MyView extends View
+          template: """
+            <div>Hello</div>
+            """
+
+        view = new MyView()
+        expect(view.templateCached).to.be.equal undefined
+        view.render()
+          .then ->
+            expect(view.$el.children().length).to.be.equal 1
+            expect(view.$el.text()).to.be.equal 'Hello'
+            expect(view.templateCached).to.not.be.equal undefined
+            done()
+          .end()
+
     describe 'view instantiation', ->
 
       it 'should instantiate views by global spec', (done) ->

@@ -142,7 +142,7 @@
     nodes = if template.jquery
       template.clone()
     else if typeof template.cloneNode == 'function'
-      [template.cloneNode()]
+      [template.cloneNode(true)]
     else
       jQuery.parseHTML(template)
     if requireSingleNode and nodes.length != 1
@@ -158,6 +158,7 @@
   class View extends Backbone.View
 
     template: undefined
+    templateCached: undefined
 
     @from: (template, options) ->
       node = wrapTemplate(template, true)
@@ -190,5 +191,14 @@
       super
       for view in this.views
         view.remove()
+
+    render: (localContext) ->
+      return unless this.template
+      if this.hasOwnProperty('template')
+        this.renderDOM(this.template, localContext)
+      else
+        if this.constructor::templateCached == undefined
+          this.constructor::templateCached = wrapTemplate(this.constructor::template)
+        this.renderDOM(this.constructor::templateCached, localContext)
 
   {View}

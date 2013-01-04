@@ -181,10 +181,34 @@ define(function(require) {
           return done();
         }).end();
       });
-      return it('should throw an error if constructing view from multiple elements', function() {
+      it('should throw an error if constructing view from multiple elements', function() {
         return expect(function() {
           return View.from('<div></div><div></div>');
         }).to["throw"](Error);
+      });
+      return it('should provide default render method', function(done) {
+        var MyView, view;
+        MyView = (function(_super) {
+
+          __extends(MyView, _super);
+
+          function MyView() {
+            return MyView.__super__.constructor.apply(this, arguments);
+          }
+
+          MyView.prototype.template = "<div>Hello</div>";
+
+          return MyView;
+
+        })(View);
+        view = new MyView();
+        expect(view.templateCached).to.be.equal(void 0);
+        return view.render().then(function() {
+          expect(view.$el.children().length).to.be.equal(1);
+          expect(view.$el.text()).to.be.equal('Hello');
+          expect(view.templateCached).to.not.be.equal(void 0);
+          return done();
+        }).end();
       });
     });
     describe('view instantiation', function() {
