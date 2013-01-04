@@ -83,7 +83,17 @@ so actual context's prototype chain looks like `localContext -> this`.
 instance or prototype-level `template` attribute. In the latter case of
 `template` attribute being attached to prototype — `render` method caches its
 DOM representation not to parse template more than once when rendering multiple
-view instances.
+view instances. So the easiest way to define view is:
+
+    class SidebarView extends Backbone.ViewDSL.View
+      tagName: "div"
+      className: "sidebar"
+      template: """
+        <ul class="sidebar-items">
+          <li class="sidebar-item">...</li>
+          ...
+        </ul>
+        """
 
 ## View instantiation
 
