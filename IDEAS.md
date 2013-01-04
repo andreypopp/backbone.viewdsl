@@ -21,4 +21,6 @@
 
 * allow custom element/attributes handlers
 
+* `{{mod2:mod1:val}}` syntax which is transformed into `mod2(mod1(val))`
+
 * explore possible integration paths with mozilla's x-tags
