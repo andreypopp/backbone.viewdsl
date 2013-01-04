@@ -214,7 +214,7 @@ var __hasProp = {}.hasOwnProperty,
     if (requireSingleNode == null) {
       requireSingleNode = false;
     }
-    nodes = jQuery.parseHTML(template);
+    nodes = template.jquery ? template.clone() : typeof template.cloneNode === 'function' ? [template.cloneNode()] : jQuery.parseHTML(template);
     if (requireSingleNode && nodes.length !== 1) {
       throw new Error('templates only of single element are allowed');
     }

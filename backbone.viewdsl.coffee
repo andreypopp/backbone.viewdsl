@@ -139,7 +139,12 @@
       promise {remove: false}
 
   wrapTemplate = (template, requireSingleNode = false) ->
-    nodes = jQuery.parseHTML(template)
+    nodes = if template.jquery
+      template.clone()
+    else if typeof template.cloneNode == 'function'
+      [template.cloneNode()]
+    else
+      jQuery.parseHTML(template)
     if requireSingleNode and nodes.length != 1
       throw new Error('templates only of single element are allowed')
     if nodes.length > 1 or nodes[0].nodeType == 3

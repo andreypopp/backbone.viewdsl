@@ -33,7 +33,7 @@ This way you will have Backbone.ViewDSL and all the dependencies installed under
 
 Backbone.ViewDSL provides a view base class with additional methods to use DSL
 for DOM rendering. There are two ways to use it — the first one is an ad-hoc
-view creation with a `from` static method:
+view creation with a `from(template)` static method:
 
     sidebarPromise = Backbone.ViewDSL.View.from """
       <div class="sidebar">
@@ -55,6 +55,9 @@ by attaching `then` callback to the promise:
 
 Note that the `div.sidebar` will become the root element, the `el` of the view.
 
+Static method `from(template)` accepts HTML strings, DOM elements or jQuery
+elements as a `template` argument.
+
 Another way to use `Backbone.ViewDSL.View` is to subclass it and use
 `renderDOM(template, localContext)` method for rendering DOM:
 
@@ -70,7 +73,8 @@ Another way to use `Backbone.ViewDSL.View` is to subclass it and use
           """
 
 This way `renderDOM` method will also return a promise but the one which
-resolves to DOM node which is rendered from template. As a second argument
+resolves to DOM node which is rendered from template. First argument `template`
+can be a HTML string, DOM element or jQuery element. As a second argument
 `renderDOM` accepts an object which provides "local" values to template context
 so actual context's prototype chain looks like `localContext -> this`.
 

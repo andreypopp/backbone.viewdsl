@@ -18,7 +18,7 @@ define (require) ->
             done()
           .end()
 
-      it 'should construct a view from DOM template', (done) ->
+      it 'should construct a view from a DOM template', (done) ->
 
         promise = View.from """
           <div class="some-class">Hello</div>
@@ -31,7 +31,27 @@ define (require) ->
             done()
           .end()
 
-      it 'should render text into view', (done) ->
+      it 'should construct a view from a DOM element', (done) ->
+
+        promise = View.from document.createElement('div')
+        promise
+          .then (view) ->
+            expect(view.el.tagName).to.be.equal 'DIV'
+            expect(view.$el.text()).to.be.equal ''
+            done()
+          .end()
+
+      it 'should construct a view from a jQuery element', (done) ->
+
+        promise = View.from $ '<div>Hello</div>'
+        promise
+          .then (view) ->
+            expect(view.el.tagName).to.be.equal 'DIV'
+            expect(view.$el.text()).to.be.equal 'Hello'
+            done()
+          .end()
+
+      it 'should render text into view from a template', (done) ->
 
         class MyView extends View
 
@@ -41,12 +61,11 @@ define (require) ->
         view = new MyView()
         view.render()
           .then ->
-            expect(view.$el.length).to.be.equal 1
             expect(view.$el.text()).to.be.equal 'Hello'
             done()
           .end()
 
-      it 'should render DOM into view', (done) ->
+      it 'should render DOM into view from a template', (done) ->
 
         class MyView extends View
 
@@ -58,7 +77,7 @@ define (require) ->
         view = new MyView()
         view.render()
           .then ->
-            expect(view.$el.length).to.be.equal 1
+            expect(view.$el.children().length).to.be.equal 1
             el = $(view.$el.children()[0])
             expect(el[0].tagName).to.be.equal 'DIV'
             expect(el.text()).to.be.equal 'Hello'
@@ -66,7 +85,7 @@ define (require) ->
             done()
           .end()
 
-      it 'should render multiple DOM elements into view', (done) ->
+      it 'should render multiple DOM elements into view from a template', (done) ->
 
         class MyView extends View
 
@@ -84,6 +103,36 @@ define (require) ->
             expect(view.$('.another-class').length).to.be.equal 1
             expect(view.$('.some-class').text()).to.be.equal 'Hello'
             expect(view.$('.another-class').text()).to.be.equal 'Hello2'
+            done()
+          .end()
+
+      it 'should render into view from a DOM element', (done) ->
+
+        class MyView extends View
+
+          render: ->
+            this.renderDOM document.createElement('div')
+
+        view = new MyView()
+        view.render()
+          .then ->
+            expect(view.$el.children().length).to.be.equal 1
+            expect(view.$el.text()).to.be.equal ''
+            done()
+          .end()
+
+      it 'should render into view from a jQuery element', (done) ->
+
+        class MyView extends View
+
+          render: ->
+            this.renderDOM $ '<div>Hello</div>'
+
+        view = new MyView()
+        view.render()
+          .then ->
+            expect(view.$el.children().length).to.be.equal 1
+            expect(view.$el.text()).to.be.equal 'Hello'
             done()
           .end()
 

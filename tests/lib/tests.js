@@ -27,7 +27,7 @@ define(function(require) {
           return done();
         }).end();
       });
-      it('should construct a view from DOM template', function(done) {
+      it('should construct a view from a DOM template', function(done) {
         var promise;
         promise = View.from("<div class=\"some-class\">Hello</div>");
         return promise.then(function(view) {
@@ -37,7 +37,25 @@ define(function(require) {
           return done();
         }).end();
       });
-      it('should render text into view', function(done) {
+      it('should construct a view from a DOM element', function(done) {
+        var promise;
+        promise = View.from(document.createElement('div'));
+        return promise.then(function(view) {
+          expect(view.el.tagName).to.be.equal('DIV');
+          expect(view.$el.text()).to.be.equal('');
+          return done();
+        }).end();
+      });
+      it('should construct a view from a jQuery element', function(done) {
+        var promise;
+        promise = View.from($('<div>Hello</div>'));
+        return promise.then(function(view) {
+          expect(view.el.tagName).to.be.equal('DIV');
+          expect(view.$el.text()).to.be.equal('Hello');
+          return done();
+        }).end();
+      });
+      it('should render text into view from a template', function(done) {
         var MyView, view;
         MyView = (function(_super) {
 
@@ -56,12 +74,11 @@ define(function(require) {
         })(View);
         view = new MyView();
         return view.render().then(function() {
-          expect(view.$el.length).to.be.equal(1);
           expect(view.$el.text()).to.be.equal('Hello');
           return done();
         }).end();
       });
-      it('should render DOM into view', function(done) {
+      it('should render DOM into view from a template', function(done) {
         var MyView, view;
         MyView = (function(_super) {
 
@@ -81,7 +98,7 @@ define(function(require) {
         view = new MyView();
         return view.render().then(function() {
           var el;
-          expect(view.$el.length).to.be.equal(1);
+          expect(view.$el.children().length).to.be.equal(1);
           el = $(view.$el.children()[0]);
           expect(el[0].tagName).to.be.equal('DIV');
           expect(el.text()).to.be.equal('Hello');
@@ -89,7 +106,7 @@ define(function(require) {
           return done();
         }).end();
       });
-      it('should render multiple DOM elements into view', function(done) {
+      it('should render multiple DOM elements into view from a template', function(done) {
         var MyView, view;
         MyView = (function(_super) {
 
@@ -113,6 +130,54 @@ define(function(require) {
           expect(view.$('.another-class').length).to.be.equal(1);
           expect(view.$('.some-class').text()).to.be.equal('Hello');
           expect(view.$('.another-class').text()).to.be.equal('Hello2');
+          return done();
+        }).end();
+      });
+      it('should render into view from a DOM element', function(done) {
+        var MyView, view;
+        MyView = (function(_super) {
+
+          __extends(MyView, _super);
+
+          function MyView() {
+            return MyView.__super__.constructor.apply(this, arguments);
+          }
+
+          MyView.prototype.render = function() {
+            return this.renderDOM(document.createElement('div'));
+          };
+
+          return MyView;
+
+        })(View);
+        view = new MyView();
+        return view.render().then(function() {
+          expect(view.$el.children().length).to.be.equal(1);
+          expect(view.$el.text()).to.be.equal('');
+          return done();
+        }).end();
+      });
+      it('should render into view from a jQuery element', function(done) {
+        var MyView, view;
+        MyView = (function(_super) {
+
+          __extends(MyView, _super);
+
+          function MyView() {
+            return MyView.__super__.constructor.apply(this, arguments);
+          }
+
+          MyView.prototype.render = function() {
+            return this.renderDOM($('<div>Hello</div>'));
+          };
+
+          return MyView;
+
+        })(View);
+        view = new MyView();
+        return view.render().then(function() {
+          expect(view.$el.children().length).to.be.equal(1);
+          expect(view.$el.text()).to.be.equal('Hello');
           return done();
         }).end();
       });
