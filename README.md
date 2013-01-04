@@ -34,7 +34,6 @@ Backbone abstractions:
           """
         this.content = new app.views.ContentView
           el: @$('.content')
-          collection: @contentItems
         this.content.render()
         this.sidebar = new app.views.SidebarView
           el: @$('.sidebar')
