@@ -96,23 +96,23 @@ var __slice = [].slice,
       return g[1].toUpperCase();
     });
   };
-  replaceChild = function(node, o, ns) {
+  replaceChild = function(p, o, ns) {
     var m, n, _i, _j, _len, _len1;
     for (_i = 0, _len = ns.length; _i < _len; _i++) {
       n = ns[_i];
       if (typeof n.cloneNode === 'function') {
-        node.insertBefore(n, o);
+        p.insertBefore(n, o);
       } else if (typeof n.item === 'function' && n.length || n.jquery) {
         for (_j = 0, _len1 = n.length; _j < _len1; _j++) {
           m = n[_j];
-          node.insertBefore(m, o);
+          p.insertBefore(m, o);
         }
       } else {
-        node.insertBefore(document.createTextNode(String(n)), o);
+        p.insertBefore(document.createTextNode(String(n)), o);
       }
     }
-    node.removeChild(o);
-    return node;
+    p.removeChild(o);
+    return p;
   };
   textNodeSplitRe = /({{)|(}})/;
   processNode = function(context, node) {
