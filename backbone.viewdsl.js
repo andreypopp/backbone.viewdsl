@@ -16,7 +16,7 @@ var __slice = [].slice,
     return root.Backbone.ViewDSL = factory(root.jQuery, root.RSVP, root.Backbone, root._);
   }
 })(this, function(jQuery, RSVP, Backbone, _) {
-  var View, getByPath, getBySpec, hypensToCamelCase, join, makeContext, process, processAttributes, processNode, processTextNode, promise, promiseRequire, replaceChild, textNodeSplitRe, toArray, wrapTemplate;
+  var View, consumeViewParams, getByPath, getBySpec, hypensToCamelCase, join, makeContext, process, processAttributes, processNode, processTextNode, promise, promiseRequire, render, replaceChild, textNodeSplitRe, toArray, wrapTemplate;
   RSVP.Promise.prototype.end = function() {
     return this.then(void 0, function(e) {
       throw e;
@@ -39,17 +39,20 @@ var __slice = [].slice,
         break;
       }
     }
-    return [o, ctx];
+    return {
+      attr: o,
+      attrCtx: ctx
+    };
   };
   getBySpec = function(spec) {
     var module, path, _ref;
     if (/:/.test(spec)) {
       _ref = spec.split(':', 2), module = _ref[0], path = _ref[1];
       return promiseRequire(module).then(function(module) {
-        return getByPath(module, path)[0];
+        return getByPath(module, path).attr;
       });
     } else {
-      return promise(getByPath(window, spec)[0]);
+      return promise(getByPath(window, spec).attr);
     }
   };
   promise = function(value) {
@@ -115,7 +118,20 @@ var __slice = [].slice,
     p.removeChild(o);
     return ns;
   };
-  textNodeSplitRe = /({{)|(}})/;
+  render = function() {
+    var context, node, overlays, synContext;
+    context = arguments[0], node = arguments[1], overlays = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
+    synContext = makeContext.apply(null, [context].concat(__slice.call(overlays)));
+    return process(synContext, node).then(function(result) {
+      var prop;
+      for (prop in synContext) {
+        if (synContext.hasOwnProperty(prop)) {
+          context[prop] = synContext[prop];
+        }
+      }
+      return result;
+    });
+  };
   process = function(context, node) {
     return processAttributes(context, node).then(function(pragmas) {
       if (pragmas.remove && node.parentNode) {
@@ -149,6 +165,7 @@ var __slice = [].slice,
       });
     }
   };
+  textNodeSplitRe = /({{)|(}})/;
   processTextNode = function(context, node) {
     var attr, attrCtx, data, part, parts, value, _i, _len, _ref, _results;
     if (!textNodeSplitRe.test(node.data)) {
@@ -164,7 +181,7 @@ var __slice = [].slice,
     for (_i = 0, _len = parts.length; _i < _len; _i++) {
       part = parts[_i];
       if (part[0] === '\uF001') {
-        _ref = getByPath(context, part.slice(1).trim()), attr = _ref[0], attrCtx = _ref[1];
+        _ref = getByPath(context, part.slice(1).trim()), attr = _ref.attr, attrCtx = _ref.attrCtx;
         value = jQuery.isFunction(attr) ? attr.call(attrCtx) : attr;
         _results.push(value || '');
       } else {
@@ -176,7 +193,7 @@ var __slice = [].slice,
   processAttributes = function(context, node) {
     var attr, attrCtx, show, _ref, _ref1, _ref2;
     if ((_ref = node.attributes) != null ? _ref["if"] : void 0) {
-      _ref1 = getByPath(context, node.attributes["if"].value), attr = _ref1[0], attrCtx = _ref1[1];
+      _ref1 = getByPath(context, node.attributes["if"].value), attr = _ref1.attr, attrCtx = _ref1.attrCtx;
       show = jQuery.isFunction(attr) ? attr.call(attrCtx) : attr;
       if (!show) {
         return promise({
@@ -186,33 +203,15 @@ var __slice = [].slice,
     }
     if ((_ref2 = node.attributes) != null ? _ref2.view : void 0) {
       return getBySpec(node.attributes.view.value).then(function(viewCls) {
-        var attrName, attrValue, view, viewId, viewParams, _i, _len, _ref3, _ref4;
+        var view, viewId, viewParams, _ref3;
         if (viewCls === void 0) {
           throw new Error("can't find view class by " + node.attributes.view.value);
         }
-        viewParams = {};
-        viewId = void 0;
-        _ref3 = node.attributes;
-        for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
-          attr = _ref3[_i];
-          if (!(attr.name.slice(0, 5) === 'view-')) {
-            continue;
-          }
-          attrName = hypensToCamelCase(attr.name.slice(5));
-          if (attrName === 'id') {
-            viewId = attr.value;
-          }
-          _ref4 = getByPath(context, attr.value), attrValue = _ref4[0], attrCtx = _ref4[1];
-          viewParams[attrName] = jQuery.isFunction(attrValue) ? attrValue.call(attrCtx) : attrValue === void 0 ? attr.value : attrValue;
-        }
-        viewParams.el = node;
+        _ref3 = consumeViewParams(context, node), viewParams = _ref3.viewParams, viewId = _ref3.viewId;
         view = new viewCls(viewParams);
         view.render();
         if (context.addView) {
-          context.addView(view);
-        }
-        if (viewId) {
-          context.updateContextWith(viewId, view);
+          context.addView(view, viewId);
         }
         return {
           remove: false
@@ -223,6 +222,29 @@ var __slice = [].slice,
         remove: false
       });
     }
+  };
+  consumeViewParams = function(context, node) {
+    var a, attr, attrCtx, attrName, viewId, viewParams, _i, _len, _ref, _ref1;
+    viewParams = {};
+    viewId = void 0;
+    _ref = node.attributes;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      a = _ref[_i];
+      if (!(a.name.slice(0, 5) === 'view-')) {
+        continue;
+      }
+      attrName = hypensToCamelCase(a.name.slice(5));
+      if (attrName === 'id') {
+        viewId = a.value;
+      }
+      _ref1 = getByPath(context, a.value), attr = _ref1.attr, attrCtx = _ref1.attrCtx;
+      viewParams[attrName] = jQuery.isFunction(attr) ? attr.call(attrCtx) : attr === void 0 ? a.value : attr;
+    }
+    viewParams.el = node;
+    return {
+      viewParams: viewParams,
+      viewId: viewId
+    };
   };
   wrapTemplate = function(template, requireSingleNode) {
     var fragment, node, nodes, _i, _len;
@@ -247,12 +269,7 @@ var __slice = [].slice,
   makeContext = function() {
     var o, overlays;
     o = arguments[0], overlays = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-    overlays.push({
-      updateContextWith: function(k, v) {
-        return o[k] = v;
-      }
-    });
-    return _.extend.apply(_, [Object.create(o)].concat(__slice.call(overlays)));
+    return Object.create(_.extend.apply(_, [Object.create(o)].concat(__slice.call(overlays))));
   };
   View = (function(_super) {
 
@@ -268,7 +285,7 @@ var __slice = [].slice,
       view = new this({
         el: node
       });
-      return process(makeContext(view), node).then(function() {
+      return render(view, node).then(function() {
         view.render();
         return view;
       });
@@ -282,7 +299,7 @@ var __slice = [].slice,
     View.prototype.processDOM = function(template, localContext) {
       var node;
       node = wrapTemplate(template);
-      return process(makeContext(this, localContext), node);
+      return render(this, node, localContext);
     };
 
     View.prototype.renderDOM = function(template, localContext) {
@@ -293,8 +310,11 @@ var __slice = [].slice,
       });
     };
 
-    View.prototype.addView = function(view) {
-      return this.views.push(view);
+    View.prototype.addView = function(view, viewId) {
+      this.views.push(view);
+      if (viewId) {
+        return this[viewId] = view;
+      }
     };
 
     View.prototype.remove = function() {

@@ -24,15 +24,15 @@
       ctx = o
       o = ctx[n]
       break if o == undefined
-    [o, ctx]
+    {attr: o, attrCtx: ctx}
 
   getBySpec = (spec) ->
     if /:/.test spec
       [module, path] = spec.split(':', 2)
       promiseRequire(module)
-        .then (module) -> getByPath(module, path)[0]
+        .then (module) -> getByPath(module, path).attr
     else
-      promise getByPath(window, spec)[0]
+      promise getByPath(window, spec).attr
 
   promise = (value) ->
     p = new RSVP.Promise()
@@ -75,7 +75,12 @@
     p.removeChild(o)
     ns
 
-  textNodeSplitRe = /({{)|(}})/
+  render = (context, node, overlays...) ->
+    synContext = makeContext(context, overlays...)
+    process(synContext, node).then (result) ->
+      for prop of synContext when synContext.hasOwnProperty(prop)
+        context[prop] = synContext[prop]
+      result
 
   process = (context, node) ->
     processAttributes(context, node)
@@ -94,6 +99,8 @@
     else
       join(process(context, n) for n in toArray(node.childNodes)).then -> node
 
+  textNodeSplitRe = /({{)|(}})/
+
   processTextNode = (context, node) ->
     return unless textNodeSplitRe.test node.data
     data = node.data
@@ -102,7 +109,7 @@
     parts = parts.filter (e) -> e and e != '{{' and e != '}}'
     for part in parts
       if part[0] == '\uF001'
-        [attr, attrCtx] = getByPath(context, part.slice(1).trim())
+        {attr, attrCtx} = getByPath(context, part.slice(1).trim())
         value = if jQuery.isFunction(attr) then attr.call(attrCtx) else attr
         value or ''
       else
@@ -110,7 +117,7 @@
 
   processAttributes = (context, node) ->
     if node.attributes?.if
-      [attr, attrCtx] = getByPath(context, node.attributes.if.value)
+      {attr, attrCtx} = getByPath(context, node.attributes.if.value)
       show = if jQuery.isFunction(attr) then attr.call(attrCtx) else attr
       return promise {remove: true} unless show
 
@@ -119,32 +126,33 @@
         .then (viewCls) ->
           if viewCls == undefined
             throw new Error("can't find view class by #{node.attributes.view.value}")
-          viewParams = {}
-          viewId = undefined
-          for attr in node.attributes when attr.name.slice(0, 5) == 'view-'
-            attrName = hypensToCamelCase(attr.name.slice(5))
-
-            if attrName == 'id'
-              viewId = attr.value
-
-            [attrValue, attrCtx] = getByPath(context, attr.value)
-            viewParams[attrName] = if jQuery.isFunction(attrValue)
-              attrValue.call(attrCtx)
-            else if attrValue == undefined
-              attr.value
-            else
-              attrValue
-
-          viewParams.el = node
+          {viewParams, viewId} = consumeViewParams(context, node)
           view = new viewCls(viewParams)
           view.render()
-          context.addView(view) if context.addView
-          if viewId
-            context.updateContextWith(viewId, view)
+          context.addView(view, viewId) if context.addView
           return {remove: false}
 
     else
       promise {remove: false}
+
+  consumeViewParams = (context, node) ->
+    viewParams = {}
+    viewId = undefined
+    for a in node.attributes when a.name.slice(0, 5) == 'view-'
+      attrName = hypensToCamelCase(a.name.slice(5))
+
+      if attrName == 'id'
+        viewId = a.value
+
+      {attr, attrCtx} = getByPath(context, a.value)
+      viewParams[attrName] = if jQuery.isFunction(attr)
+        attr.call(attrCtx)
+      else if attr == undefined
+        a.value
+      else
+        attr
+    viewParams.el = node
+    {viewParams, viewId}
 
   wrapTemplate = (template, requireSingleNode = false) ->
     nodes = if template.jquery
@@ -164,8 +172,7 @@
       nodes[0]
 
   makeContext = (o, overlays...) ->
-    overlays.push(updateContextWith: (k, v) -> o[k] = v)
-    _.extend(Object.create(o), overlays...)
+    Object.create(_.extend(Object.create(o), overlays...))
 
   class View extends Backbone.View
 
@@ -175,7 +182,7 @@
     @from: (template, options) ->
       node = wrapTemplate(template, true)
       view = new this(el: node)
-      process(makeContext(view), node).then ->
+      render(view, node).then ->
         view.render()
         view
 
@@ -185,15 +192,16 @@
 
     processDOM: (template, localContext) ->
       node = wrapTemplate(template)
-      process(makeContext(this, localContext), node)
+      render(this, node, localContext)
 
     renderDOM: (template, localContext) ->
       this.processDOM(template, localContext).then (node) =>
         this.$el.append(node)
         this
 
-    addView: (view) ->
+    addView: (view, viewId) ->
       this.views.push(view)
+      this[viewId] = view if viewId
 
     remove: ->
       super
