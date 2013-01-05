@@ -63,17 +63,15 @@
   hypensToCamelCase = (o) ->
     o.replace /-([a-z])/g, (g) -> g[1].toUpperCase()
 
-  replaceChild = (node, old, news) ->
-    for n in news
+  replaceChild = (node, o, ns) ->
+    for n in ns
       if typeof n.cloneNode == 'function'
-        node.insertBefore(n, old)
+        node.insertBefore(n, o)
       else if typeof n.item == 'function' and n.length or n.jquery
-        for nn in n
-          node.insertBefore(nn, old)
+        node.insertBefore(m, o) for m in n
       else
-        n = document.createTextNode(String(n))
-        node.insertBefore(n, old)
-    node.removeChild(old)
+        node.insertBefore(document.createTextNode(String(n)), o)
+    node.removeChild(o)
     node
 
   textNodeSplitRe = /({{)|(}})/

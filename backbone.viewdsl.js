@@ -96,23 +96,22 @@ var __slice = [].slice,
       return g[1].toUpperCase();
     });
   };
-  replaceChild = function(node, old, news) {
-    var n, nn, _i, _j, _len, _len1;
-    for (_i = 0, _len = news.length; _i < _len; _i++) {
-      n = news[_i];
+  replaceChild = function(node, o, ns) {
+    var m, n, _i, _j, _len, _len1;
+    for (_i = 0, _len = ns.length; _i < _len; _i++) {
+      n = ns[_i];
       if (typeof n.cloneNode === 'function') {
-        node.insertBefore(n, old);
+        node.insertBefore(n, o);
       } else if (typeof n.item === 'function' && n.length || n.jquery) {
         for (_j = 0, _len1 = n.length; _j < _len1; _j++) {
-          nn = n[_j];
-          node.insertBefore(nn, old);
+          m = n[_j];
+          node.insertBefore(m, o);
         }
       } else {
-        n = document.createTextNode(String(n));
-        node.insertBefore(n, old);
+        node.insertBefore(document.createTextNode(String(n)), o);
       }
     }
-    node.removeChild(old);
+    node.removeChild(o);
     return node;
   };
   textNodeSplitRe = /({{)|(}})/;
