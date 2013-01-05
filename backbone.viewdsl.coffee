@@ -63,7 +63,8 @@
   hypensToCamelCase = (o) ->
     o.replace /-([a-z])/g, (g) -> g[1].toUpperCase()
 
-  replaceChild = (p, o, ns) ->
+  replaceChild = (o, ns) ->
+    p = o.parentNode
     for n in ns
       if typeof n.cloneNode == 'function'
         p.insertBefore(n, o)
@@ -72,26 +73,26 @@
       else
         p.insertBefore(document.createTextNode(String(n)), o)
     p.removeChild(o)
-    p
+    ns
 
   textNodeSplitRe = /({{)|(}})/
 
-  processNode = (context, node) ->
+  process = (context, node) ->
     processAttributes(context, node)
       .then (pragmas) ->
-
         if pragmas.remove and node.parentNode
           node.parentNode.removeChild(node)
-          return
+          promise
+        else
+          processNode(context, node)
 
-        if node.nodeType == 3
-          replacements = processTextNode(context, node)
-          if replacements
-            node = replaceChild(node.parentNode, node, replacements)
-          return node
-
-        join(processNode(context, n) for n in toArray(node.childNodes))
-          .then -> node
+  processNode = (context, node) ->
+    if node.nodeType == 3
+      nodes = processTextNode(context, node)
+      node = replaceChild(node, nodes) if nodes
+      promise node
+    else
+      join(process(context, n) for n in toArray(node.childNodes)).then -> node
 
   processTextNode = (context, node) ->
     return unless textNodeSplitRe.test node.data
@@ -174,7 +175,7 @@
     @from: (template, options) ->
       node = wrapTemplate(template, true)
       view = new this(el: node)
-      processNode(makeContext(view), node).then ->
+      process(makeContext(view), node).then ->
         view.render()
         view
 
@@ -184,7 +185,7 @@
 
     processDOM: (template, localContext) ->
       node = wrapTemplate(template)
-      processNode(makeContext(this, localContext), node)
+      process(makeContext(this, localContext), node)
 
     renderDOM: (template, localContext) ->
       this.processDOM(template, localContext).then (node) =>

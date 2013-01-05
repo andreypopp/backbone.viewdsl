@@ -16,7 +16,7 @@ var __slice = [].slice,
     return root.Backbone.ViewDSL = factory(root.jQuery, root.RSVP, root.Backbone, root._);
   }
 })(this, function(jQuery, RSVP, Backbone, _) {
-  var View, getByPath, getBySpec, hypensToCamelCase, join, makeContext, processAttributes, processNode, processTextNode, promise, promiseRequire, replaceChild, textNodeSplitRe, toArray, wrapTemplate;
+  var View, getByPath, getBySpec, hypensToCamelCase, join, makeContext, process, processAttributes, processNode, processTextNode, promise, promiseRequire, replaceChild, textNodeSplitRe, toArray, wrapTemplate;
   RSVP.Promise.prototype.end = function() {
     return this.then(void 0, function(e) {
       throw e;
@@ -96,8 +96,9 @@ var __slice = [].slice,
       return g[1].toUpperCase();
     });
   };
-  replaceChild = function(p, o, ns) {
-    var m, n, _i, _j, _len, _len1;
+  replaceChild = function(o, ns) {
+    var m, n, p, _i, _j, _len, _len1;
+    p = o.parentNode;
     for (_i = 0, _len = ns.length; _i < _len; _i++) {
       n = ns[_i];
       if (typeof n.cloneNode === 'function') {
@@ -112,36 +113,41 @@ var __slice = [].slice,
       }
     }
     p.removeChild(o);
-    return p;
+    return ns;
   };
   textNodeSplitRe = /({{)|(}})/;
-  processNode = function(context, node) {
+  process = function(context, node) {
     return processAttributes(context, node).then(function(pragmas) {
-      var n, replacements;
       if (pragmas.remove && node.parentNode) {
         node.parentNode.removeChild(node);
-        return;
+        return promise;
+      } else {
+        return processNode(context, node);
       }
-      if (node.nodeType === 3) {
-        replacements = processTextNode(context, node);
-        if (replacements) {
-          node = replaceChild(node.parentNode, node, replacements);
-        }
-        return node;
+    });
+  };
+  processNode = function(context, node) {
+    var n, nodes;
+    if (node.nodeType === 3) {
+      nodes = processTextNode(context, node);
+      if (nodes) {
+        node = replaceChild(node, nodes);
       }
+      return promise(node);
+    } else {
       return join((function() {
         var _i, _len, _ref, _results;
         _ref = toArray(node.childNodes);
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           n = _ref[_i];
-          _results.push(processNode(context, n));
+          _results.push(process(context, n));
         }
         return _results;
       })()).then(function() {
         return node;
       });
-    });
+    }
   };
   processTextNode = function(context, node) {
     var attr, attrCtx, data, part, parts, value, _i, _len, _ref, _results;
@@ -262,7 +268,7 @@ var __slice = [].slice,
       view = new this({
         el: node
       });
-      return processNode(makeContext(view), node).then(function() {
+      return process(makeContext(view), node).then(function() {
         view.render();
         return view;
       });
@@ -276,7 +282,7 @@ var __slice = [].slice,
     View.prototype.processDOM = function(template, localContext) {
       var node;
       node = wrapTemplate(template);
-      return processNode(makeContext(this, localContext), node);
+      return process(makeContext(this, localContext), node);
     };
 
     View.prototype.renderDOM = function(template, localContext) {
