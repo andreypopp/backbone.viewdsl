@@ -23,4 +23,12 @@
 
 * `{{mod2:mod1:val}}` syntax which is transformed into `mod2(mod1(val))`
 
+* data-binding for interpolated values
+
+* event binding
+  ```
+  <div view="MyView" onsomeevent="someMethod"></div>
+  ```
+  would do `this.listenTo view, "someevent", this.someMethod`
+
 * explore possible integration paths with mozilla's x-tags
