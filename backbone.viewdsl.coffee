@@ -66,7 +66,7 @@
   hypensToCamelCase = (o) ->
     o.replace /-([a-z])/g, (g) -> g[1].toUpperCase()
 
-  replaceChild = (o, ns) ->
+  replaceChild = (o, ns...) ->
     p = o.parentNode
     for n in ns
       if typeof n.cloneNode == 'function'
@@ -96,7 +96,7 @@
   processNode = (context, node) ->
     if node.nodeType == 3
       nodes = processTextNode(context, node)
-      node = replaceChild(node, nodes) if nodes
+      node = replaceChild(node, nodes...) if nodes
       promise node
     else if node.tagName == 'VIEW'
       if not node.attributes.name

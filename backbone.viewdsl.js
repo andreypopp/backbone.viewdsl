@@ -110,8 +110,9 @@ var __slice = [].slice,
       return g[1].toUpperCase();
     });
   };
-  replaceChild = function(o, ns) {
-    var m, n, p, _i, _j, _len, _len1;
+  replaceChild = function() {
+    var m, n, ns, o, p, _i, _j, _len, _len1;
+    o = arguments[0], ns = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
     p = o.parentNode;
     for (_i = 0, _len = ns.length; _i < _len; _i++) {
       n = ns[_i];
@@ -158,7 +159,7 @@ var __slice = [].slice,
     if (node.nodeType === 3) {
       nodes = processTextNode(context, node);
       if (nodes) {
-        node = replaceChild(node, nodes);
+        node = replaceChild.apply(null, [node].concat(__slice.call(nodes)));
       }
       return promise(node);
     } else if (node.tagName === 'VIEW') {

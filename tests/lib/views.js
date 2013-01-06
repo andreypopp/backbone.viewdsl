@@ -13,6 +13,8 @@ define(function(require) {
       return LoadedView.__super__.constructor.apply(this, arguments);
     }
 
+    LoadedView.prototype.className = 'loaded-view';
+
     LoadedView.prototype.render = function() {
       return this.$el.html('HI');
     };

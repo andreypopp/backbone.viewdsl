@@ -13,6 +13,8 @@ define(function(require) {
       return SomeView.__super__.constructor.apply(this, arguments);
     }
 
+    SomeView.prototype.className = 'some-view';
+
     return SomeView;
 
   })(View);
@@ -355,6 +357,7 @@ define(function(require) {
         promise = View.from("<div class=\"some-class\">\n  <view name=\"SomeView\">Some View</view>\n</div>");
         return promise.then(function(view) {
           var subview;
+          expect(view.$('.some-view').length).to.be.equal(1);
           expect(view.views.length).to.be.equal(1);
           expect(view instanceof View).to.be.ok;
           subview = view.views[0];
@@ -369,6 +372,7 @@ define(function(require) {
         promise = View.from("<div class=\"some-class\">\n  <view name=\"views:LoadedView\" />\n</div>");
         return promise.then(function(view) {
           var subview;
+          expect(view.$('.loaded-view').length).to.be.equal(1);
           expect(view.views.length).to.be.equal(1);
           expect(view instanceof View).to.be.ok;
           subview = view.views[0];
@@ -405,6 +409,7 @@ define(function(require) {
         view = new MyView();
         return view.render().then(function() {
           var subview;
+          expect(view.$('.some-view').length).to.be.equal(1);
           expect(view.views.length).to.be.equal(1);
           expect(view instanceof View).to.be.ok;
           subview = view.views[0];
@@ -441,6 +446,7 @@ define(function(require) {
         view = new MyView();
         return view.render().then(function() {
           var subview;
+          expect(view.$('.some-view').length).to.be.equal(1);
           expect(view.views.length).to.be.equal(1);
           expect(view instanceof View).to.be.ok;
           subview = view.views[0];

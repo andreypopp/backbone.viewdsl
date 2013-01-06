@@ -3,6 +3,7 @@ define (require) ->
   {View} = require 'backbone.viewdsl'
 
   class window.SomeView extends View
+    className: 'some-view'
 
   describe 'View', ->
 
@@ -302,6 +303,7 @@ define (require) ->
           """
         promise
           .then (view) ->
+            expect(view.$('.some-view').length).to.be.equal 1
             expect(view.views.length).to.be.equal 1
             expect(view instanceof View).to.be.ok
             subview = view.views[0]
@@ -321,6 +323,7 @@ define (require) ->
           """
         promise
           .then (view) ->
+            expect(view.$('.loaded-view').length).to.be.equal 1
             expect(view.views.length).to.be.equal 1
             expect(view instanceof View).to.be.ok
             subview = view.views[0]
@@ -355,6 +358,7 @@ define (require) ->
         view = new MyView()
         view.render()
           .then ->
+            expect(view.$('.some-view').length).to.be.equal 1
             expect(view.views.length).to.be.equal 1
             expect(view instanceof View).to.be.ok
             subview = view.views[0]
@@ -384,6 +388,7 @@ define (require) ->
         view = new MyView()
         view.render()
           .then ->
+            expect(view.$('.some-view').length).to.be.equal 1
             expect(view.views.length).to.be.equal 1
             expect(view instanceof View).to.be.ok
             subview = view.views[0]
