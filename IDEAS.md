@@ -11,11 +11,6 @@
   some view to DOM if spec refers on already instantiated view. In that case we
   should just call render() method before inserting view's element into DOM
 
-* allow spec to refer to object inside context, like
-  ```
-  <div view="@someView"></div>
-  ```
-
 * allow custom element/attributes handlers
 
 * `{{mod2:mod1:val}}` syntax which is transformed into `mod2(mod1(val))`
