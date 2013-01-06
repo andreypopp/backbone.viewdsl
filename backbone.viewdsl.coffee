@@ -222,9 +222,9 @@
     if node.attributes?.view
       {viewParams, viewId} = consumeViewParams(context, node, 'view-')
       instantiateView(context, node.attributes.view.value, viewParams, viewId, node)
-        .then -> {remove: false}
+        .then -> {}
     else
-      promise {remove: false}
+      promise {}
 
   instantiateView = (context, spec, params, id, node) ->
     getBySpec(spec, context).then (viewCls) ->

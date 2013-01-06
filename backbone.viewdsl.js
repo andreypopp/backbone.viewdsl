@@ -347,14 +347,10 @@ var __slice = [].slice,
     if ((_ref1 = node.attributes) != null ? _ref1.view : void 0) {
       _ref2 = consumeViewParams(context, node, 'view-'), viewParams = _ref2.viewParams, viewId = _ref2.viewId;
       return instantiateView(context, node.attributes.view.value, viewParams, viewId, node).then(function() {
-        return {
-          remove: false
-        };
+        return {};
       });
     } else {
-      return promise({
-        remove: false
-      });
+      return promise({});
     }
   };
   instantiateView = function(context, spec, params, id, node) {
