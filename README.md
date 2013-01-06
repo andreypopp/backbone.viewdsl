@@ -143,7 +143,7 @@ replace the `<view />` element in the resulting DOM, so the following code:
       </div>
       """
 
-will render DOM like this:
+will render a DOM like this:
 
     <div>
       <div class="sidebar"></div>
@@ -153,8 +153,8 @@ Note that `div.sidebar` element is created by `SidebarView` view. So usually it
 is a good idea to use `<view />` tag to instantiate views which can only
 function correctly with predefined `tagName` or `className` attributes.
 
-See *Specs* section below to learn how to specify view constructor in `name`
-attribute.
+See *Specs* section below to learn how to specify a view constructor in the
+`name` attribute.
 
 ### Using `view` attribute
 
@@ -181,8 +181,8 @@ Using `view` attribute for instantiating views is useful with those views which
 can work with different configurations of `tagName` and/or `className`
 arguments.
 
-See *Specs* section below to learn how to specify view constructor in `view`
-attribute.
+See *Specs* section below to learn how to specify a view constructor in the
+`view` attribute.
 
 ### Accessing instantiated views
 
@@ -201,12 +201,13 @@ view. You can do that with `view-id` attribute when you instantiate views using
 Also all instantiated views are stored inside `views` attribute of a parent
 view.  This is useful because on a call to `remove()` method of a parent view we
 can also call `remove()` method of every instantiated view — this way we can
-prevent memory "zombie" views. That's exactly the way how
-`Backbone.ViewDSL.View.remove()` is implemented.
+prevent "zombie" views to stay after we dispose a parent view. That's exactly
+the way how `Backbone.ViewDSL.View.remove()` is implemented.
 
 ### Passing arguments into view constructor
 
-You can pass additional parameters into view constructor. Consider the example:
+You can pass additional parameters into a view constructor. Consider the
+example:
 
     class MyView extends Backbone.ViewDSL.View
       template: """
@@ -233,28 +234,28 @@ As you can see, you use `view-` prefixed attributes if you instantiate views
 with `view` attribute on a DOM element, otherwise, with `<view />` tag you just
 use attributes without any prefix.
 
-Argument names are obtained by removing the `view-` prefix (only in case it was
+Parameter names are obtained by removing the `view-` prefix (only in case it was
 exist) from attribute names and then converting them to camelCase so
-`view-some-param` and `some-param` attribute names become `someParam` argument
+`view-some-param` and `some-param` attribute names become `someParam` parameter
 name.
 
-Argument value are looked up on a parent view object using attribute values:
+Parameters values are looked up on a parent view object using attribute values:
 
-  * If value is found — it is used for an argument value (see `toolbarItems`
-    in the example above).
-  * If method is found — it is called and returned value is used for an
-    argument value (see `sidebarItems` in the example above).
+  * If value is found — it is used for a parameter value (see `toolbarItems` in
+    the example above).
+  * If method is found — it is called and returned value is used for a parameter
+    value (see `sidebarItems` in the example above).
   * If no method and no value is found — then just string attribute value is
     used (see `view-width` attribute in the example above)
 
 Note, that `view-id` and `id` attributes are treated specially and are not
-passed to view constructor (see *Accessing instantiated views* section above).
+passed to a view constructor (see *Accessing instantiated views* section above).
 
 ### Inserting already instantiated views into DOM
 
 Sometimes you don't need to instantiate view but instead want just to render and
-insert a DOM element of an already created view — the following example shows
-how to do that:
+insert a DOM element of an already instantiated view — the following example
+shows how to do that:
 
     class MyView extends Backbone.ViewDSL.View
       template: """
@@ -269,7 +270,7 @@ how to do that:
 
 When using `<view />` tag it is replaced with view's element `el` but when using
 `view` attribute on a DOM element a view's `setElement` method is called with
-corresponding DOM element.
+the corresponding DOM element.
 
 Note the special form of specs in `name` and `view` attributes which refers to
 objects inside the context, e.g. inside the `MyView` instance.
