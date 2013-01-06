@@ -18,6 +18,25 @@ define(function(require) {
     return SomeView;
 
   })(View);
+  window.ParametrizedView = (function(_super) {
+
+    __extends(ParametrizedView, _super);
+
+    function ParametrizedView() {
+      return ParametrizedView.__super__.constructor.apply(this, arguments);
+    }
+
+    ParametrizedView.prototype.acceptsPartial = true;
+
+    ParametrizedView.prototype.render = function(localContext, parentContext, partialTemplate) {
+      return this.renderDOM("<div class=\"decor\">{{node}}</div>\n<span class=\"author\">by {{options.localName}}</span>", {
+        node: this.renderTemplate(partialTemplate, localContext, parentContext)
+      });
+    };
+
+    return ParametrizedView;
+
+  })(View);
   return describe('View', function() {
     describe('basic DOM rendering', function() {
       it('should construct a view from a text only template', function(done) {
@@ -213,248 +232,308 @@ define(function(require) {
         }).done();
       });
     });
-    describe('view instantiation via view attribute', function() {
-      it('should instantiate views by a global spec', function(done) {
-        var promise;
-        promise = View.from("<div class=\"some-class\">\n  <div view=\"SomeView\">Some View</div>\n</div>");
-        return promise.then(function(view) {
-          var subview;
-          expect(view.views.length).to.be.equal(1);
-          expect(view instanceof View).to.be.ok;
-          subview = view.views[0];
-          expect(subview.el.tagName).to.be.equal('DIV');
-          expect(subview.$el.text()).to.be.equal('Some View');
-          expect(subview instanceof SomeView).to.be.ok;
-          return done();
-        }).done();
+    describe('view instantiation', function() {
+      describe('via view attribute', function() {
+        it('should instantiate views by a global spec', function(done) {
+          var promise;
+          promise = View.from("<div class=\"some-class\">\n  <div view=\"SomeView\">Some View</div>\n</div>");
+          return promise.then(function(view) {
+            var subview;
+            expect(view.views.length).to.be.equal(1);
+            expect(view instanceof View).to.be.ok;
+            subview = view.views[0];
+            expect(subview.el.tagName).to.be.equal('DIV');
+            expect(subview.$el.text()).to.be.equal('Some View');
+            expect(subview instanceof SomeView).to.be.ok;
+            return done();
+          }).done();
+        });
+        it('should instantiate views by AMD spec', function(done) {
+          var LoadedView, promise;
+          LoadedView = require('views').LoadedView;
+          promise = View.from("<div class=\"some-class\">\n  <div view=\"views:LoadedView\"></div>\n</div>");
+          return promise.then(function(view) {
+            var subview;
+            expect(view.views.length).to.be.equal(1);
+            expect(view instanceof View).to.be.ok;
+            subview = view.views[0];
+            expect(subview.el.tagName).to.be.equal('DIV');
+            expect(subview.$el.text()).to.be.equal('HI');
+            expect(subview instanceof LoadedView).to.be.ok;
+            return done();
+          }).done();
+        });
+        it('should instantiate view by global spec inside other view', function(done) {
+          var MyView, view;
+          MyView = (function(_super) {
+
+            __extends(MyView, _super);
+
+            function MyView() {
+              return MyView.__super__.constructor.apply(this, arguments);
+            }
+
+            MyView.prototype.initialize = function() {
+              return this.propParam = 'prop!';
+            };
+
+            MyView.prototype.methodParam = function() {
+              return this.constructor.name;
+            };
+
+            MyView.prototype.render = function() {
+              return this.renderDOM("<div class=\"some-class\">\n  <div\n    view=\"SomeView\"\n    view-id=\"someView\"\n    view-some-param=\"methodParam\"\n    view-another-param=\"propParam\"\n    view-absent-param=\"some string\"\n    >Some View</div>\n</div>");
+            };
+
+            return MyView;
+
+          })(View);
+          view = new MyView();
+          return view.render().then(function() {
+            var subview;
+            expect(view.views.length).to.be.equal(1);
+            expect(view instanceof View).to.be.ok;
+            subview = view.views[0];
+            expect(view.someView).to.be.equal(subview);
+            expect(subview.el.tagName).to.be.equal('DIV');
+            expect(subview.$el.text()).to.be.equal('Some View');
+            expect(subview instanceof SomeView).to.be.ok;
+            expect(subview.options.someParam).to.be.equal('MyView');
+            expect(subview.options.anotherParam).to.be.equal('prop!');
+            expect(subview.options.absentParam).to.be.equal('some string');
+            return done();
+          }).done();
+        });
+        it('should instantiate views by a context-bound spec', function(done) {
+          var MyView, view;
+          MyView = (function(_super) {
+
+            __extends(MyView, _super);
+
+            function MyView() {
+              return MyView.__super__.constructor.apply(this, arguments);
+            }
+
+            MyView.prototype.viewClass = window.SomeView;
+
+            MyView.prototype.render = function() {
+              return this.renderDOM("<div class=\"some-class\">\n  <div\n    view=\"@viewClass\"\n    view-id=\"someView\"\n    >Some View</div>\n</div>");
+            };
+
+            return MyView;
+
+          })(View);
+          view = new MyView();
+          return view.render().then(function() {
+            var subview;
+            expect(view.views.length).to.be.equal(1);
+            expect(view instanceof View).to.be.ok;
+            subview = view.views[0];
+            expect(view.someView).to.be.equal(subview);
+            expect(subview.el.tagName).to.be.equal('DIV');
+            expect(subview.$el.text()).to.be.equal('Some View');
+            expect(subview instanceof SomeView).to.be.ok;
+            return done();
+          }).done();
+        });
+        it('should handle already instantiated views', function(done) {
+          var MyView, view;
+          MyView = (function(_super) {
+
+            __extends(MyView, _super);
+
+            function MyView() {
+              return MyView.__super__.constructor.apply(this, arguments);
+            }
+
+            MyView.prototype.initialize = function() {
+              return this.someView = new SomeView();
+            };
+
+            MyView.prototype.render = function() {
+              return this.renderDOM("<div class=\"some-class\">\n  <div view=\"@someView\">Some View</div>\n</div>");
+            };
+
+            return MyView;
+
+          })(View);
+          view = new MyView();
+          return view.render().then(function() {
+            var subview;
+            expect(view.views.length).to.be.equal(1);
+            expect(view instanceof View).to.be.ok;
+            subview = view.views[0];
+            expect(view.someView).to.be.equal(subview);
+            expect(subview.el.tagName).to.be.equal('DIV');
+            expect(subview.$el.text()).to.be.equal('Some View');
+            expect(subview instanceof SomeView).to.be.ok;
+            return done();
+          }).done();
+        });
+        return it('should handle views with partialTemplate', function(done) {
+          var MyView, view;
+          MyView = (function(_super) {
+
+            __extends(MyView, _super);
+
+            function MyView() {
+              return MyView.__super__.constructor.apply(this, arguments);
+            }
+
+            MyView.prototype.template = "<div class=\"header\"></div>\n<div view=\"ParametrizedView\" view-id=\"subview\" view-local-name=\"Darkness\">\n  <span>Hello, {{name}}</span>\n</view>";
+
+            return MyView;
+
+          })(View);
+          view = new MyView();
+          return view.render({
+            name: 'World'
+          }).then(function() {
+            expect(view.$('.header').length).to.be.equal(1);
+            expect(view.$('.decor').length).to.be.equal(1);
+            expect(view.$('.decor span').text()).to.be.equal('Hello, World');
+            expect(view.$('.author').text()).to.be.equal('by Darkness');
+            expect(view.subview instanceof ParametrizedView).to.be.ok;
+            expect(view.subview.$('.decor').length).to.be.equal(1);
+            expect(view.subview.$('.decor span').text()).to.be.equal('Hello, World');
+            return done();
+          }).done();
+        });
       });
-      it('should instantiate views by AMD spec', function(done) {
-        var LoadedView, promise;
-        LoadedView = require('views').LoadedView;
-        promise = View.from("<div class=\"some-class\">\n  <div view=\"views:LoadedView\"></div>\n</div>");
-        return promise.then(function(view) {
-          var subview;
-          expect(view.views.length).to.be.equal(1);
-          expect(view instanceof View).to.be.ok;
-          subview = view.views[0];
-          expect(subview.el.tagName).to.be.equal('DIV');
-          expect(subview.$el.text()).to.be.equal('HI');
-          expect(subview instanceof LoadedView).to.be.ok;
-          return done();
-        }).done();
-      });
-      it('should instantiate view by global spec inside other view', function(done) {
-        var MyView, view;
-        MyView = (function(_super) {
+      return describe('via <view> element', function() {
+        it('should instantiate views by global spec', function(done) {
+          var promise;
+          promise = View.from("<div class=\"some-class\">\n  <view name=\"SomeView\">Some View</view>\n</div>");
+          return promise.then(function(view) {
+            var subview;
+            expect(view.$('.some-view').length).to.be.equal(1);
+            expect(view.views.length).to.be.equal(1);
+            expect(view instanceof View).to.be.ok;
+            subview = view.views[0];
+            expect(subview.el.tagName).to.be.equal('DIV');
+            expect(subview instanceof SomeView).to.be.ok;
+            return done();
+          }).done();
+        });
+        it('should instantiate views by AMD spec', function(done) {
+          var LoadedView, promise;
+          LoadedView = require('views').LoadedView;
+          promise = View.from("<div class=\"some-class\">\n  <view name=\"views:LoadedView\" />\n</div>");
+          return promise.then(function(view) {
+            var subview;
+            expect(view.$('.loaded-view').length).to.be.equal(1);
+            expect(view.views.length).to.be.equal(1);
+            expect(view instanceof View).to.be.ok;
+            subview = view.views[0];
+            expect(subview.el.tagName).to.be.equal('DIV');
+            expect(subview instanceof LoadedView).to.be.ok;
+            return done();
+          }).done();
+        });
+        it('should instantiate view by global spec inside other view', function(done) {
+          var MyView, view;
+          MyView = (function(_super) {
 
-          __extends(MyView, _super);
+            __extends(MyView, _super);
 
-          function MyView() {
-            return MyView.__super__.constructor.apply(this, arguments);
-          }
+            function MyView() {
+              return MyView.__super__.constructor.apply(this, arguments);
+            }
 
-          MyView.prototype.initialize = function() {
-            return this.propParam = 'prop!';
-          };
+            MyView.prototype.initialize = function() {
+              return this.propParam = 'prop!';
+            };
 
-          MyView.prototype.methodParam = function() {
-            return this.constructor.name;
-          };
+            MyView.prototype.methodParam = function() {
+              return this.constructor.name;
+            };
 
-          MyView.prototype.render = function() {
-            return this.renderDOM("<div class=\"some-class\">\n  <div\n    view=\"SomeView\"\n    view-id=\"someView\"\n    view-some-param=\"methodParam\"\n    view-another-param=\"propParam\"\n    view-absent-param=\"some string\"\n    >Some View</div>\n</div>");
-          };
+            MyView.prototype.render = function() {
+              return this.renderDOM("<div class=\"some-class\">\n  <view\n    name=\"SomeView\"\n    id=\"someView\"\n    some-param=\"methodParam\"\n    another-param=\"propParam\"\n    absent-param=\"some string\"\n    />\n</div>");
+            };
 
-          return MyView;
+            return MyView;
 
-        })(View);
-        view = new MyView();
-        return view.render().then(function() {
-          var subview;
-          expect(view.views.length).to.be.equal(1);
-          expect(view instanceof View).to.be.ok;
-          subview = view.views[0];
-          expect(view.someView).to.be.equal(subview);
-          expect(subview.el.tagName).to.be.equal('DIV');
-          expect(subview.$el.text()).to.be.equal('Some View');
-          expect(subview instanceof SomeView).to.be.ok;
-          expect(subview.options.someParam).to.be.equal('MyView');
-          expect(subview.options.anotherParam).to.be.equal('prop!');
-          expect(subview.options.absentParam).to.be.equal('some string');
-          return done();
-        }).done();
-      });
-      it('should instantiate views by a context-bound spec', function(done) {
-        var MyView, view;
-        MyView = (function(_super) {
+          })(View);
+          view = new MyView();
+          return view.render().then(function() {
+            var subview;
+            expect(view.$('.some-view').length).to.be.equal(1);
+            expect(view.views.length).to.be.equal(1);
+            expect(view instanceof View).to.be.ok;
+            subview = view.views[0];
+            expect(view.someView).to.be.equal(subview);
+            expect(subview.el.tagName).to.be.equal('DIV');
+            expect(subview instanceof SomeView).to.be.ok;
+            expect(subview.options.someParam).to.be.equal('MyView');
+            expect(subview.options.anotherParam).to.be.equal('prop!');
+            expect(subview.options.absentParam).to.be.equal('some string');
+            return done();
+          }).done();
+        });
+        it('should handle already instantiated views', function(done) {
+          var MyView, view;
+          MyView = (function(_super) {
 
-          __extends(MyView, _super);
+            __extends(MyView, _super);
 
-          function MyView() {
-            return MyView.__super__.constructor.apply(this, arguments);
-          }
+            function MyView() {
+              return MyView.__super__.constructor.apply(this, arguments);
+            }
 
-          MyView.prototype.viewClass = window.SomeView;
+            MyView.prototype.initialize = function() {
+              return this.someView = new SomeView();
+            };
 
-          MyView.prototype.render = function() {
-            return this.renderDOM("<div class=\"some-class\">\n  <div\n    view=\"@viewClass\"\n    view-id=\"someView\"\n    >Some View</div>\n</div>");
-          };
+            MyView.prototype.render = function() {
+              return this.renderDOM("<div class=\"some-class\">\n  <view name=\"@someView\" />\n</div>");
+            };
 
-          return MyView;
+            return MyView;
 
-        })(View);
-        view = new MyView();
-        return view.render().then(function() {
-          var subview;
-          expect(view.views.length).to.be.equal(1);
-          expect(view instanceof View).to.be.ok;
-          subview = view.views[0];
-          expect(view.someView).to.be.equal(subview);
-          expect(subview.el.tagName).to.be.equal('DIV');
-          expect(subview.$el.text()).to.be.equal('Some View');
-          expect(subview instanceof SomeView).to.be.ok;
-          return done();
-        }).done();
-      });
-      return it('should handle already instantiated views', function(done) {
-        var MyView, view;
-        MyView = (function(_super) {
+          })(View);
+          view = new MyView();
+          return view.render().then(function() {
+            var subview;
+            expect(view.$('.some-view').length).to.be.equal(1);
+            expect(view.views.length).to.be.equal(1);
+            expect(view instanceof View).to.be.ok;
+            subview = view.views[0];
+            expect(view.someView).to.be.equal(subview);
+            expect(subview.el.tagName).to.be.equal('DIV');
+            expect(subview instanceof SomeView).to.be.ok;
+            return done();
+          }).done();
+        });
+        return it('should handle views with partialTemplate', function(done) {
+          var MyView, view;
+          MyView = (function(_super) {
 
-          __extends(MyView, _super);
+            __extends(MyView, _super);
 
-          function MyView() {
-            return MyView.__super__.constructor.apply(this, arguments);
-          }
+            function MyView() {
+              return MyView.__super__.constructor.apply(this, arguments);
+            }
 
-          MyView.prototype.initialize = function() {
-            return this.someView = new SomeView();
-          };
+            MyView.prototype.template = "<div class=\"header\"></div>\n<view name=\"ParametrizedView\" id=\"subview\" local-name=\"Darkness\">\n  <span>Hello, {{name}}</span>\n</view>";
 
-          MyView.prototype.render = function() {
-            return this.renderDOM("<div class=\"some-class\">\n  <div view=\"@someView\">Some View</div>\n</div>");
-          };
+            return MyView;
 
-          return MyView;
-
-        })(View);
-        view = new MyView();
-        return view.render().then(function() {
-          var subview;
-          expect(view.views.length).to.be.equal(1);
-          expect(view instanceof View).to.be.ok;
-          subview = view.views[0];
-          expect(view.someView).to.be.equal(subview);
-          expect(subview.el.tagName).to.be.equal('DIV');
-          expect(subview.$el.text()).to.be.equal('Some View');
-          expect(subview instanceof SomeView).to.be.ok;
-          return done();
-        }).done();
-      });
-    });
-    describe('view instantiation via <view> element', function() {
-      it('should instantiate views by global spec', function(done) {
-        var promise;
-        promise = View.from("<div class=\"some-class\">\n  <view name=\"SomeView\">Some View</view>\n</div>");
-        return promise.then(function(view) {
-          var subview;
-          expect(view.$('.some-view').length).to.be.equal(1);
-          expect(view.views.length).to.be.equal(1);
-          expect(view instanceof View).to.be.ok;
-          subview = view.views[0];
-          expect(subview.el.tagName).to.be.equal('DIV');
-          expect(subview instanceof SomeView).to.be.ok;
-          return done();
-        }).done();
-      });
-      it('should instantiate views by AMD spec', function(done) {
-        var LoadedView, promise;
-        LoadedView = require('views').LoadedView;
-        promise = View.from("<div class=\"some-class\">\n  <view name=\"views:LoadedView\" />\n</div>");
-        return promise.then(function(view) {
-          var subview;
-          expect(view.$('.loaded-view').length).to.be.equal(1);
-          expect(view.views.length).to.be.equal(1);
-          expect(view instanceof View).to.be.ok;
-          subview = view.views[0];
-          expect(subview.el.tagName).to.be.equal('DIV');
-          expect(subview instanceof LoadedView).to.be.ok;
-          return done();
-        }).done();
-      });
-      it('should instantiate view by global spec inside other view', function(done) {
-        var MyView, view;
-        MyView = (function(_super) {
-
-          __extends(MyView, _super);
-
-          function MyView() {
-            return MyView.__super__.constructor.apply(this, arguments);
-          }
-
-          MyView.prototype.initialize = function() {
-            return this.propParam = 'prop!';
-          };
-
-          MyView.prototype.methodParam = function() {
-            return this.constructor.name;
-          };
-
-          MyView.prototype.render = function() {
-            return this.renderDOM("<div class=\"some-class\">\n  <view\n    name=\"SomeView\"\n    id=\"someView\"\n    some-param=\"methodParam\"\n    another-param=\"propParam\"\n    absent-param=\"some string\"\n    />\n</div>");
-          };
-
-          return MyView;
-
-        })(View);
-        view = new MyView();
-        return view.render().then(function() {
-          var subview;
-          expect(view.$('.some-view').length).to.be.equal(1);
-          expect(view.views.length).to.be.equal(1);
-          expect(view instanceof View).to.be.ok;
-          subview = view.views[0];
-          expect(view.someView).to.be.equal(subview);
-          expect(subview.el.tagName).to.be.equal('DIV');
-          expect(subview instanceof SomeView).to.be.ok;
-          expect(subview.options.someParam).to.be.equal('MyView');
-          expect(subview.options.anotherParam).to.be.equal('prop!');
-          expect(subview.options.absentParam).to.be.equal('some string');
-          return done();
-        }).done();
-      });
-      return it('should handle already instantiated views', function(done) {
-        var MyView, view;
-        MyView = (function(_super) {
-
-          __extends(MyView, _super);
-
-          function MyView() {
-            return MyView.__super__.constructor.apply(this, arguments);
-          }
-
-          MyView.prototype.initialize = function() {
-            return this.someView = new SomeView();
-          };
-
-          MyView.prototype.render = function() {
-            return this.renderDOM("<div class=\"some-class\">\n  <view name=\"@someView\" />\n</div>");
-          };
-
-          return MyView;
-
-        })(View);
-        view = new MyView();
-        return view.render().then(function() {
-          var subview;
-          expect(view.$('.some-view').length).to.be.equal(1);
-          expect(view.views.length).to.be.equal(1);
-          expect(view instanceof View).to.be.ok;
-          subview = view.views[0];
-          expect(view.someView).to.be.equal(subview);
-          expect(subview.el.tagName).to.be.equal('DIV');
-          expect(subview instanceof SomeView).to.be.ok;
-          return done();
-        }).done();
+          })(View);
+          view = new MyView();
+          return view.render({
+            name: 'World'
+          }).then(function() {
+            expect(view.$('.header').length).to.be.equal(1);
+            expect(view.$('.decor').length).to.be.equal(1);
+            expect(view.$('.decor span').text()).to.be.equal('Hello, World');
+            expect(view.$('.author').text()).to.be.equal('by Darkness');
+            expect(view.subview instanceof ParametrizedView).to.be.ok;
+            expect(view.subview.$('.decor').length).to.be.equal(1);
+            expect(view.subview.$('.decor span').text()).to.be.equal('Hello, World');
+            return done();
+          }).done();
+        });
       });
     });
     describe('conditional blocks', function() {

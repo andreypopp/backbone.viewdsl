@@ -80,6 +80,8 @@
 
   _.extend(Promise.prototype, Backbone.Events)
 
+  isPromise = (o) ->
+    typeof o.then == 'function'
 
   toArray = (o) ->
     Array::slice.call(o)
@@ -116,11 +118,15 @@
       resultsToGo = promises.length
       for pr, idx in promises
         do (pr, idx) =>
-          pr.then (result) ->
+          pr = promise(pr) if not isPromise(pr)
+          success = (result) ->
             results[idx] = result
             resultsToGo = resultsToGo - 1
             if resultsToGo == 0
               p.resolve(results)
+          fail = (reason) ->
+            p.reject(reason)
+          pr.then success, fail
     else
       p.resolve(results)
     p
@@ -186,33 +192,40 @@
 
   processNode = (context, node) ->
     if node.nodeType == 3
-      nodes = processTextNode(context, node)
-      node = replaceChild(node, nodes...) if nodes
-      promise node
+      processTextNode(context, node).then (nodes) ->
+        node = replaceChild(node, nodes...) if nodes
+        node
     else if node.tagName == 'VIEW'
       if not node.attributes.name
         throw new Error('<view> element should have a name attribute')
       spec = node.attributes.name.value
       node.removeAttribute('name')
       {viewParams, viewId} = consumeViewParams(context, node)
-      instantiateView(context, spec, viewParams, viewId).then (view) ->
-        replaceChild(node, view.el)
+      p = instantiateView
+        context: context
+        spec: spec
+        params: viewParams
+        id: viewId
+        node: node
+        useNode: false
+      p.then (view) -> replaceChild(node, view.el)
     else
       join(process(context, n) for n in toArray(node.childNodes)).then -> node
 
   textNodeSplitRe = /({{)|(}})/
 
   processTextNode = (context, node) ->
-    return unless textNodeSplitRe.test node.data
+    return promise() unless textNodeSplitRe.test node.data
     data = node.data
     data = data.replace(/{{/g, '{{\uF001')
     parts = data.split(textNodeSplitRe)
     parts = parts.filter (e) -> e and e != '{{' and e != '}}'
-    for part in parts
+    nodes = for part in parts
       if part[0] == '\uF001'
         getByPath(context, part.slice(1).trim(), true).attr or ''
       else
         part
+    join(nodes)
 
   processAttributes = (context, node) ->
     if node.attributes?.if
@@ -221,30 +234,41 @@
 
     if node.attributes?.view
       {viewParams, viewId} = consumeViewParams(context, node, 'view-')
-      instantiateView(context, node.attributes.view.value, viewParams, viewId, node)
-        .then -> {}
+      p = instantiateView
+        context: context
+        spec: node.attributes.view.value
+        params: viewParams
+        id: viewId
+        node: node
+        useNode: true
+      p.then -> {}
     else
       promise {}
 
-  instantiateView = (context, spec, params, id, node) ->
-    getBySpec(spec, context).then (viewCls) ->
+  instantiateView = (options) ->
+    getBySpec(options.spec, options.context).then (viewCls) ->
       if viewCls == undefined
-        throw new Error("can't find a view by '#{spec}' spec")
+        throw new Error("can't find a view by '#{options.spec}' spec")
       view = if jQuery.isFunction(viewCls)
-        params.el = node if node
-        new viewCls(params)
+        options.params.el = options.node if options.useNode
+        new viewCls(options.params)
       else
-        viewCls.setElement(node) if node
+        viewCls.setElement(options.node) if options.useNode
         viewCls
-      view.render()
-      context.addView(view, id) if context.addView
+      if view.acceptsPartial
+        partialTemplate = $(options.node.removeChild(c) for c in toArray(options.node.childNodes))
+        partialTemplate = wrapTemplate(partialTemplate)
+        view.render(undefined, options.context, partialTemplate)
+      else
+        view.render(undefined, options.context)
+      options.context.addView(view, options.id) if options.context.addView
       view
 
   consumeViewParams = (context, node, prefix) ->
     viewParams = {}
     viewId = undefined
 
-    for a in node.attributes
+    for a in toArray(node.attributes)
       if not (prefix and a.name.slice(0, prefix.length) == prefix or not prefix)
         continue
 
@@ -253,6 +277,8 @@
 
       if attrName == 'id'
         viewId = a.value
+        node.removeAttribute(a.name)
+        continue
 
       viewParams[attrName] = getByPath(context, a.value, true).attr or a.value
 
@@ -262,7 +288,9 @@
 
     template: undefined
     templateCached: undefined
+    acceptsPartial: false
 
+    # from([localContext, ]template)
     @from: ->
       if arguments.length == 2
         localContext = arguments[0]
@@ -283,8 +311,11 @@
       super
       this.views = []
 
-    renderDOM: (template, localContext) ->
-      render(template, localContext, this).then (node) =>
+    renderTemplate: (template, localContext, parentContext) ->
+      render(template, localContext, this, parentContext)
+
+    renderDOM: (template, localContext, parentContext) ->
+      this.renderTemplate(template, localContext, parentContext).then (node) =>
         this.$el.append(node)
         this
 
@@ -297,10 +328,10 @@
       for view in this.views
         view.remove()
 
-    render: (localContext) ->
+    render: (localContext, parentContext, partialTemplate) ->
       return unless this.template
       if this.hasOwnProperty('template')
-        this.renderDOM(this.template, localContext)
+        this.renderDOM(this.template, localContext, parentContext, partialTemplate)
       else
         if this.constructor::templateCached == undefined
           this.constructor::templateCached = wrapTemplate(this.constructor::template)
