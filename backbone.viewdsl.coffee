@@ -7,9 +7,16 @@
       root.Backbone.ViewDSL = factory(jQuery, Backbone, _)
   else
     root.Backbone.ViewDSL = factory(root.jQuery, root.Backbone, root._)
-
 ) this, (jQuery, Backbone, _) ->
 
+  # Minimal promise implementation
+  #
+  # Promise.resolve() and Promise.reject() methods execute callbacks
+  # immediatelly if a result is already available. This is done mostly because
+  # of performance reasons and to minimize possible UI flicks.
+  #
+  # To prevent uncatched and unlogged exception it is always useful to call
+  # Promise.done() method at the end of the chain.
   class Promise
     noop = ->
 
@@ -83,35 +90,14 @@
   isPromise = (o) ->
     typeof o.then == 'function'
 
-  toArray = (o) ->
-    Array::slice.call(o)
-
-  getByPath = (o, p, callIfMethod = false) ->
-    if p.trim().length == 0
-      return [o, window]
-    for n in p.split('.')
-      ctx = o
-      o = ctx[n]
-      break if o == undefined
-    if callIfMethod and jQuery.isFunction(o)
-      o = o.call(ctx)
-    {attr: o, attrCtx: ctx}
-
-  getBySpec = (spec, context = window) ->
-    if /:/.test spec
-      [module, path] = spec.split(':', 2)
-      promiseRequire(module).then (module) -> getByPath(module, path).attr
-    else if spec and spec[0] == '@'
-      promise getByPath(context, spec.slice(1)).attr
-    else
-      promise getByPath(window, spec).attr
-
   promise = (value) ->
     return value if typeof value?.then == 'function'
     p = new Promise()
     p.resolve(value)
     p
 
+  # Join several `promises` into one which resolves only when all `promises` are
+  # resolved or fail fast.
   join = (promises) ->
     p = new Promise()
     results = []
@@ -132,14 +118,49 @@
       p.resolve(results)
     p
 
+  # Promise-based version of AMD require() call.
   promiseRequire = (moduleName) ->
     p = new Promise()
     require [moduleName], (module) -> p.resolve(module)
     p
 
+  toArray = (o) ->
+    Array::slice.call(o)
+
+  # Get attribute from `o` object by dotted path `p`
+  #
+  # If `callIfMethod` argument is true and path points to a function then call
+  # it preserving right context and use returned value as a result
+  getByPath = (o, p, callIfMethod = false) ->
+    if p.trim().length == 0
+      return [o, window]
+    for n in p.split('.')
+      ctx = o
+      o = ctx[n]
+      break if o == undefined
+    if callIfMethod and jQuery.isFunction(o)
+      o = o.call(ctx)
+    {attr: o, attrCtx: ctx}
+
+  # Resolve spec
+  #
+  # Specs can be:
+  # * `some/module:some.obj` resolves `some.obj` against `some/module` module
+  # * `some.obj` resolves `some.obj` against `window`
+  # * `@some.obj` resolves `some.obj` against `context` argument
+  getBySpec = (spec, context = window) ->
+    if /:/.test spec
+      [module, path] = spec.split(':', 2)
+      promiseRequire(module).then (module) -> getByPath(module, path).attr
+    else if spec and spec[0] == '@'
+      promise getByPath(context, spec.slice(1)).attr
+    else
+      promise getByPath(window, spec).attr
+
   hypensToCamelCase = (o) ->
     o.replace /-([a-z])/g, (g) -> g[1].toUpperCase()
 
+  # Replace `o` DOM node with a list `ns` of DOM nodes
   replaceChild = (o, ns...) ->
     p = o.parentNode
     for n in ns
@@ -152,6 +173,11 @@
     p.removeChild(o)
     ns
 
+  # Prepare `template` to be processed
+  #
+  # Argument `template` can be a DOM node, a jQuery element or just a string
+  # with HTML markup. If `requireSingleNode` is true then it's required from
+  # `template` to represent just a single DOM node.
   wrapTemplate = (template, requireSingleNode = false) ->
     nodes = if template.jquery
       template.clone()
@@ -169,6 +195,16 @@
     else
       nodes[0]
 
+  # Render `node` in some context.
+  #
+  # Rendering context builds up from a `localContext`, `context` and a
+  # `parentContext`. `context` is the "main" context here, it provides data for
+  # rendering `node` and all writes ends-up there. `localContext` works like an
+  # overlay for `context` — you can submit additional and temporal values there.
+  # `parentContext` is a kind of a fallback for lookups which are missed from
+  # `context`.
+  #
+  # If `forceClone` is false then `node` isn't cloned.
   render = (node, localContext, context, parentContext, forceClone = true) ->
     if not (typeof node.cloneNode == 'function')
       node = wrapTemplate(node)
@@ -185,9 +221,13 @@
         context[prop] = currentContext[prop]
       result
 
+  # The same as render, but only for those nodes are already in DOM.
+  #
+  # This can be useful if you want to define your app in original HTML.
   renderInPlace = (node, localContext, context, parentContext) ->
     render(node, localContext, context, parentContext, false)
 
+  # Process single `node`.
   process = (context, node) ->
     return promise(node) if node.seen
     node.seen = true
@@ -201,6 +241,7 @@
       else
         processNode(context, node)
 
+  # Process `node` content.
   processNode = (context, node) ->
     if node.nodeType == 3
       processTextNode(context, node).then (nodes) ->
@@ -221,6 +262,7 @@
 
   textNodeSplitRe = /({{)|(}})/
 
+  # Process `TextNode`'s content to interpolate values.
   processTextNode = (context, node) ->
     return promise() unless textNodeSplitRe.test node.data
     data = node.data
@@ -234,6 +276,7 @@
         part
     join(nodes)
 
+  # Process `node`'s attributes.
   processAttributes = (context, node) ->
     if node.attributes?.if
       show = getByPath(context, node.attributes.if.value, true).attr
@@ -249,28 +292,41 @@
     else
       promise {}
 
+  # Instantiate view from `options`
   instantiateView = (options) ->
     getBySpec(options.spec, options.context).then (viewCls) ->
-      prefix = if options.node.tagName == 'VIEW' then undefined else 'view-'
-      {viewParams, viewId} = consumeViewParams(options.context, options.node, prefix)
       if viewCls == undefined
         throw new Error("can't find a view by '#{options.spec}' spec")
+
+      # read view params from node's attributes
+      prefix = if options.node.tagName == 'VIEW' then undefined else 'view-'
+      {viewParams, viewId} = consumeViewParams(options.context, options.node, prefix)
+
+      # create or init view
       view = if jQuery.isFunction(viewCls)
         viewParams.el = options.node if options.useNode
         new viewCls(viewParams)
       else
         viewCls.setElement(options.node) if options.useNode
         viewCls
+
+      # notify view about being a part of a view hierarchy
       view.setParentContext(options.context) if view.setParentContext
       options.context.addView(view, viewId) if options.context.addView
+
       p = if view.parameterizable
+        # if view is parameterizable we need to pass all DOM element inside
+        # `node` to view's `render()` method so view can decide by its own what
+        # to do next
         partial = $(options.node.removeChild(c) for c in toArray(options.node.childNodes))
         partial = wrapTemplate(partial)
         promise view.render(partial)
       else
         promise view.render()
+
       p.then -> view
 
+  # Read view params from `node` in `context` using `prefix`
   consumeViewParams = (context, node, prefix) ->
     viewParams = {}
     viewId = undefined
@@ -291,6 +347,7 @@
 
     {viewParams, viewId}
 
+  # View class adapter to be used with `render()` method.
   class View extends Backbone.View
 
     template: undefined
@@ -308,9 +365,12 @@
       super
       this.views = []
 
+    # Render `template` in a context of a view, optionally with `localContext`.
     renderTemplate: (template, localContext) ->
       render(template, localContext, this, this.parentContext)
 
+
+    # Render `template` in a context of a view and append result to view's `el`.
     renderDOM: (template, localContext) ->
       this.renderTemplate(template, localContext).then (node) =>
         this.$el.append(node)
@@ -323,6 +383,9 @@
       this.views.push(view)
       this[viewId] = view if viewId
 
+    # Default implementation of `render()` method which tries to render template
+    # stored in `template` attribute of a view. If `template` is stored into
+    # prototype then it caches it.
     render: (localContext) ->
       return unless this.template
       if this.hasOwnProperty('template')

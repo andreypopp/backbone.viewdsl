@@ -122,50 +122,6 @@ var __slice = [].slice,
   isPromise = function(o) {
     return typeof o.then === 'function';
   };
-  toArray = function(o) {
-    return Array.prototype.slice.call(o);
-  };
-  getByPath = function(o, p, callIfMethod) {
-    var ctx, n, _i, _len, _ref;
-    if (callIfMethod == null) {
-      callIfMethod = false;
-    }
-    if (p.trim().length === 0) {
-      return [o, window];
-    }
-    _ref = p.split('.');
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      n = _ref[_i];
-      ctx = o;
-      o = ctx[n];
-      if (o === void 0) {
-        break;
-      }
-    }
-    if (callIfMethod && jQuery.isFunction(o)) {
-      o = o.call(ctx);
-    }
-    return {
-      attr: o,
-      attrCtx: ctx
-    };
-  };
-  getBySpec = function(spec, context) {
-    var module, path, _ref;
-    if (context == null) {
-      context = window;
-    }
-    if (/:/.test(spec)) {
-      _ref = spec.split(':', 2), module = _ref[0], path = _ref[1];
-      return promiseRequire(module).then(function(module) {
-        return getByPath(module, path).attr;
-      });
-    } else if (spec && spec[0] === '@') {
-      return promise(getByPath(context, spec.slice(1)).attr);
-    } else {
-      return promise(getByPath(window, spec).attr);
-    }
-  };
   promise = function(value) {
     var p;
     if (typeof (value != null ? value.then : void 0) === 'function') {
@@ -215,6 +171,50 @@ var __slice = [].slice,
       return p.resolve(module);
     });
     return p;
+  };
+  toArray = function(o) {
+    return Array.prototype.slice.call(o);
+  };
+  getByPath = function(o, p, callIfMethod) {
+    var ctx, n, _i, _len, _ref;
+    if (callIfMethod == null) {
+      callIfMethod = false;
+    }
+    if (p.trim().length === 0) {
+      return [o, window];
+    }
+    _ref = p.split('.');
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      n = _ref[_i];
+      ctx = o;
+      o = ctx[n];
+      if (o === void 0) {
+        break;
+      }
+    }
+    if (callIfMethod && jQuery.isFunction(o)) {
+      o = o.call(ctx);
+    }
+    return {
+      attr: o,
+      attrCtx: ctx
+    };
+  };
+  getBySpec = function(spec, context) {
+    var module, path, _ref;
+    if (context == null) {
+      context = window;
+    }
+    if (/:/.test(spec)) {
+      _ref = spec.split(':', 2), module = _ref[0], path = _ref[1];
+      return promiseRequire(module).then(function(module) {
+        return getByPath(module, path).attr;
+      });
+    } else if (spec && spec[0] === '@') {
+      return promise(getByPath(context, spec.slice(1)).attr);
+    } else {
+      return promise(getByPath(window, spec).attr);
+    }
   };
   hypensToCamelCase = function(o) {
     return o.replace(/-([a-z])/g, function(g) {
@@ -411,11 +411,11 @@ var __slice = [].slice,
   instantiateView = function(options) {
     return getBySpec(options.spec, options.context).then(function(viewCls) {
       var c, p, partial, prefix, view, viewId, viewParams, _ref;
-      prefix = options.node.tagName === 'VIEW' ? void 0 : 'view-';
-      _ref = consumeViewParams(options.context, options.node, prefix), viewParams = _ref.viewParams, viewId = _ref.viewId;
       if (viewCls === void 0) {
         throw new Error("can't find a view by '" + options.spec + "' spec");
       }
+      prefix = options.node.tagName === 'VIEW' ? void 0 : 'view-';
+      _ref = consumeViewParams(options.context, options.node, prefix), viewParams = _ref.viewParams, viewId = _ref.viewId;
       view = jQuery.isFunction(viewCls) ? (options.useNode ? viewParams.el = options.node : void 0, new viewCls(viewParams)) : (options.useNode ? viewCls.setElement(options.node) : void 0, viewCls);
       if (view.setParentContext) {
         view.setParentContext(options.context);
