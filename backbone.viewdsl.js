@@ -237,9 +237,9 @@ var __slice = [].slice,
     return getBySpec(spec, context).then(function(viewCls) {
       var view;
       if (viewCls === void 0) {
-        throw new Error("can't find view class by '" + spec + "' spec");
+        throw new Error("can't find a view by '" + spec + "' spec");
       }
-      view = new viewCls(params);
+      view = jQuery.isFunction(viewCls) ? new viewCls(params) : viewCls;
       view.render();
       if (context.addView) {
         context.addView(view, id);

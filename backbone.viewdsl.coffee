@@ -142,8 +142,8 @@
     getBySpec(spec, context)
       .then (viewCls) ->
         if viewCls == undefined
-          throw new Error("can't find view class by '#{spec}' spec")
-        view = new viewCls(params)
+          throw new Error("can't find a view by '#{spec}' spec")
+        view = if jQuery.isFunction(viewCls) then new viewCls(params) else viewCls
         view.render()
         context.addView(view, id) if context.addView
         view

@@ -7,10 +7,6 @@
   would pass rendered children of div to MyView.render() method as an argument.
   There could be also an option to pass not yet rendered DOM template to view
 
-* allow view instantiations to be not instantiations but just to append node of
-  some view to DOM if spec refers on already instantiated view. In that case we
-  should just call render() method before inserting view's element into DOM
-
 * allow custom element/attributes handlers
 
 * `{{mod2:mod1:val}}` syntax which is transformed into `mod2(mod1(val))`
