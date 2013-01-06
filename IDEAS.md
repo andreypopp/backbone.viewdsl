@@ -1,6 +1,3 @@
-* `<view name="spec" />` construct for instantiating views with its own element
-  configuration (preserving view's tagName, className and attributes)
-
 * allow views to be parametrized by a chunk of markup, like
   ```
   <div view="MyView">
