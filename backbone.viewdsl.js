@@ -6,9 +6,6 @@ var __slice = [].slice,
 (function(root, factory) {
   if (typeof define === 'function' && define.amd) {
     return define(['jquery', 'backbone', 'underscore'], function(jQuery, Backbone, _) {
-      jQuery = jQuery || root.jQuery;
-      Backbone = Backbone || root.Backbone;
-      _ = _ || root._;
       return root.Backbone.ViewDSL = factory(jQuery, Backbone, _);
     });
   } else {
@@ -250,7 +247,7 @@ var __slice = [].slice,
     if (requireSingleNode && nodes.length !== 1) {
       throw new Error('templates only of single element are allowed');
     }
-    if (nodes.length > 1 || nodes[0].nodeType === 3) {
+    if (nodes.length > 1 || nodes[0].nodeType === Node.TEXT_NODE) {
       fragment = document.createDocumentFragment();
       for (_i = 0, _len = nodes.length; _i < _len; _i++) {
         node = nodes[_i];
@@ -311,7 +308,7 @@ var __slice = [].slice,
   };
   processNode = function(context, node) {
     var n, spec;
-    if (node.nodeType === 3) {
+    if (node.nodeType === Node.TEXT_NODE) {
       return processTextNode(context, node).then(function(nodes) {
         if (nodes) {
           node = replaceChild.apply(null, [node].concat(__slice.call(nodes)));
@@ -379,6 +376,9 @@ var __slice = [].slice,
   };
   processAttributes = function(context, node) {
     var show, spec, _ref, _ref1, _ref2, _ref3;
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return promise({});
+    }
     if ((_ref = node.attributes) != null ? _ref["if"] : void 0) {
       show = getByPath(context, node.attributes["if"].value, true).attr;
       node.removeAttribute('if');

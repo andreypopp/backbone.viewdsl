@@ -184,7 +184,7 @@
       jQuery.parseHTML(template)
     if requireSingleNode and nodes.length != 1
       throw new Error('templates only of single element are allowed')
-    if nodes.length > 1 or nodes[0].nodeType == 3
+    if nodes.length > 1 or nodes[0].nodeType == Node.TEXT_NODE
       fragment = document.createDocumentFragment()
       for node in nodes
         fragment.appendChild(node)
@@ -248,7 +248,7 @@
   processNode = (context, node) ->
 
     # text node interpolation
-    if node.nodeType == 3
+    if node.nodeType == Node.TEXT_NODE
       processTextNode(context, node).then (nodes) ->
         node = replaceChild(node, nodes...) if nodes
         node
@@ -291,6 +291,8 @@
 
   # Process `node`'s attributes.
   processAttributes = (context, node) ->
+    if node.nodeType != Node.ELEMENT_NODE
+      return promise {}
 
     # conditional exclusion
     if node.attributes?.if
