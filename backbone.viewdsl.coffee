@@ -200,15 +200,8 @@
         throw new Error('<view> element should have a name attribute')
       spec = node.attributes.name.value
       node.removeAttribute('name')
-      {viewParams, viewId} = consumeViewParams(context, node)
-      p = instantiateView
-        context: context
-        spec: spec
-        params: viewParams
-        id: viewId
-        node: node
-        useNode: false
-      p.then (view) -> replaceChild(node, view.el)
+      instantiateView(context: context, spec: spec, node: node, useNode: false)
+        .then (view) -> replaceChild(node, view.el)
     else
       join(process(context, n) for n in toArray(node.childNodes)).then -> node
 
@@ -233,25 +226,20 @@
       return promise {remove: true} unless show
 
     if node.attributes?.view
-      {viewParams, viewId} = consumeViewParams(context, node, 'view-')
-      p = instantiateView
-        context: context
-        spec: node.attributes.view.value
-        params: viewParams
-        id: viewId
-        node: node
-        useNode: true
-      p.then -> {}
+      instantiateView(context: context, spec: node.attributes.view.value, node: node, useNode: true)
+        .then -> {}
     else
       promise {}
 
   instantiateView = (options) ->
     getBySpec(options.spec, options.context).then (viewCls) ->
+      prefix = if options.node.tagName == 'VIEW' then undefined else 'view-'
+      {viewParams, viewId} = consumeViewParams(options.context, options.node, prefix)
       if viewCls == undefined
         throw new Error("can't find a view by '#{options.spec}' spec")
       view = if jQuery.isFunction(viewCls)
-        options.params.el = options.node if options.useNode
-        new viewCls(options.params)
+        viewParams.el = options.node if options.useNode
+        new viewCls(viewParams)
       else
         viewCls.setElement(options.node) if options.useNode
         viewCls
@@ -261,7 +249,7 @@
         view.render(undefined, options.context, partialTemplate)
       else
         view.render(undefined, options.context)
-      options.context.addView(view, options.id) if options.context.addView
+      options.context.addView(view, viewId) if options.context.addView
       view
 
   consumeViewParams = (context, node, prefix) ->

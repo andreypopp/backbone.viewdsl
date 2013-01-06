@@ -290,7 +290,7 @@ var __slice = [].slice,
     });
   };
   processNode = function(context, node) {
-    var n, p, spec, viewId, viewParams, _ref;
+    var n, spec;
     if (node.nodeType === 3) {
       return processTextNode(context, node).then(function(nodes) {
         if (nodes) {
@@ -304,25 +304,21 @@ var __slice = [].slice,
       }
       spec = node.attributes.name.value;
       node.removeAttribute('name');
-      _ref = consumeViewParams(context, node), viewParams = _ref.viewParams, viewId = _ref.viewId;
-      p = instantiateView({
+      return instantiateView({
         context: context,
         spec: spec,
-        params: viewParams,
-        id: viewId,
         node: node,
         useNode: false
-      });
-      return p.then(function(view) {
+      }).then(function(view) {
         return replaceChild(node, view.el);
       });
     } else {
       return join((function() {
-        var _i, _len, _ref1, _results;
-        _ref1 = toArray(node.childNodes);
+        var _i, _len, _ref, _results;
+        _ref = toArray(node.childNodes);
         _results = [];
-        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-          n = _ref1[_i];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          n = _ref[_i];
           _results.push(process(context, n));
         }
         return _results;
@@ -359,7 +355,7 @@ var __slice = [].slice,
     return join(nodes);
   };
   processAttributes = function(context, node) {
-    var p, show, viewId, viewParams, _ref, _ref1, _ref2;
+    var show, _ref, _ref1;
     if ((_ref = node.attributes) != null ? _ref["if"] : void 0) {
       show = getByPath(context, node.attributes["if"].value, true).attr;
       if (!show) {
@@ -369,16 +365,12 @@ var __slice = [].slice,
       }
     }
     if ((_ref1 = node.attributes) != null ? _ref1.view : void 0) {
-      _ref2 = consumeViewParams(context, node, 'view-'), viewParams = _ref2.viewParams, viewId = _ref2.viewId;
-      p = instantiateView({
+      return instantiateView({
         context: context,
         spec: node.attributes.view.value,
-        params: viewParams,
-        id: viewId,
         node: node,
         useNode: true
-      });
-      return p.then(function() {
+      }).then(function() {
         return {};
       });
     } else {
@@ -387,18 +379,20 @@ var __slice = [].slice,
   };
   instantiateView = function(options) {
     return getBySpec(options.spec, options.context).then(function(viewCls) {
-      var c, partialTemplate, view;
+      var c, partialTemplate, prefix, view, viewId, viewParams, _ref;
+      prefix = options.node.tagName === 'VIEW' ? void 0 : 'view-';
+      _ref = consumeViewParams(options.context, options.node, prefix), viewParams = _ref.viewParams, viewId = _ref.viewId;
       if (viewCls === void 0) {
         throw new Error("can't find a view by '" + options.spec + "' spec");
       }
-      view = jQuery.isFunction(viewCls) ? (options.useNode ? options.params.el = options.node : void 0, new viewCls(options.params)) : (options.useNode ? viewCls.setElement(options.node) : void 0, viewCls);
+      view = jQuery.isFunction(viewCls) ? (options.useNode ? viewParams.el = options.node : void 0, new viewCls(viewParams)) : (options.useNode ? viewCls.setElement(options.node) : void 0, viewCls);
       if (view.acceptsPartial) {
         partialTemplate = $((function() {
-          var _i, _len, _ref, _results;
-          _ref = toArray(options.node.childNodes);
+          var _i, _len, _ref1, _results;
+          _ref1 = toArray(options.node.childNodes);
           _results = [];
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            c = _ref[_i];
+          for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+            c = _ref1[_i];
             _results.push(options.node.removeChild(c));
           }
           return _results;
@@ -409,7 +403,7 @@ var __slice = [].slice,
         view.render(void 0, options.context);
       }
       if (options.context.addView) {
-        options.context.addView(view, options.id);
+        options.context.addView(view, viewId);
       }
       return view;
     });
