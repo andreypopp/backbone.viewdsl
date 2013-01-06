@@ -45,7 +45,9 @@ var __slice = [].slice,
           value = callback(event.detail);
           succeeded = true;
         } catch (e) {
-          throw e;
+          if (promise.isDone) {
+            throw e;
+          }
           failed = true;
           error = e;
         }
