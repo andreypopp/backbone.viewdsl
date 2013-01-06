@@ -31,8 +31,7 @@
   getBySpec = (spec, context = window) ->
     if /:/.test spec
       [module, path] = spec.split(':', 2)
-      promiseRequire(module)
-        .then (module) -> getByPath(module, path).attr
+      promiseRequire(module).then (module) -> getByPath(module, path).attr
     else if spec and spec[0] == '@'
       promise getByPath(context, spec.slice(1), true).attr
     else
@@ -87,8 +86,7 @@
       result
 
   process = (context, node) ->
-    processAttributes(context, node)
-      .then (pragmas) ->
+    processAttributes(context, node).then (pragmas) ->
         if pragmas.remove and node.parentNode
           node.parentNode.removeChild(node)
           promise
@@ -106,8 +104,8 @@
       spec = node.attributes.name.value
       node.removeAttribute('name')
       {viewParams, viewId} = consumeViewParams(context, node)
-      instantiateView(context, spec, viewParams, viewId)
-        .then (view) -> replaceChild(node, view.el)
+      instantiateView(context, spec, viewParams, viewId).then (view) ->
+        replaceChild(node, view.el)
     else
       join(process(context, n) for n in toArray(node.childNodes)).then -> node
 
@@ -139,8 +137,7 @@
       promise {remove: false}
 
   instantiateView = (context, spec, params, id) ->
-    getBySpec(spec, context)
-      .then (viewCls) ->
+    getBySpec(spec, context).then (viewCls) ->
         if viewCls == undefined
           throw new Error("can't find a view by '#{spec}' spec")
         view = if jQuery.isFunction(viewCls) then new viewCls(params) else viewCls
