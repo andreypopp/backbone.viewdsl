@@ -130,17 +130,21 @@
 
     if node.attributes?.view
       {viewParams, viewId} = consumeViewParams(context, node, 'view-')
-      viewParams.el = node
-      instantiateView(context, node.attributes.view.value, viewParams, viewId)
+      instantiateView(context, node.attributes.view.value, viewParams, viewId, node)
         .then -> {remove: false}
     else
       promise {remove: false}
 
-  instantiateView = (context, spec, params, id) ->
+  instantiateView = (context, spec, params, id, node) ->
     getBySpec(spec, context).then (viewCls) ->
         if viewCls == undefined
           throw new Error("can't find a view by '#{spec}' spec")
-        view = if jQuery.isFunction(viewCls) then new viewCls(params) else viewCls
+        view = if jQuery.isFunction(viewCls)
+          params.el = node if node
+          new viewCls(params)
+        else
+          viewCls.setElement(node) if node
+          viewCls
         view.render()
         context.addView(view, id) if context.addView
         view

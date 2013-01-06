@@ -264,6 +264,33 @@ define (require) ->
             done()
           .end()
 
+      it 'should handle already instantiated views', (done) ->
+
+        class MyView extends View
+
+          initialize: ->
+            this.someView = new SomeView()
+
+          render: ->
+            this.renderDOM """
+              <div class="some-class">
+                <div view="@someView">Some View</div>
+              </div>
+              """
+
+        view = new MyView()
+        view.render()
+          .then ->
+            expect(view.views.length).to.be.equal 1
+            expect(view instanceof View).to.be.ok
+            subview = view.views[0]
+            expect(view.someView).to.be.equal subview
+            expect(subview.el.tagName).to.be.equal 'DIV'
+            expect(subview.$el.text()).to.be.equal 'Some View'
+            expect(subview instanceof SomeView).to.be.ok
+            done()
+          .end()
+
     describe 'view instantiation via <view> element', ->
 
       it 'should instantiate views by global spec', (done) ->
@@ -337,6 +364,32 @@ define (require) ->
             expect(subview.options.someParam).to.be.equal 'MyView'
             expect(subview.options.anotherParam).to.be.equal 'prop!'
             expect(subview.options.absentParam).to.be.equal 'some string'
+            done()
+          .end()
+
+      it 'should handle already instantiated views', (done) ->
+
+        class MyView extends View
+
+          initialize: ->
+            this.someView = new SomeView()
+
+          render: ->
+            this.renderDOM """
+              <div class="some-class">
+                <view name="@someView" />
+              </div>
+              """
+
+        view = new MyView()
+        view.render()
+          .then ->
+            expect(view.views.length).to.be.equal 1
+            expect(view instanceof View).to.be.ok
+            subview = view.views[0]
+            expect(view.someView).to.be.equal subview
+            expect(subview.el.tagName).to.be.equal 'DIV'
+            expect(subview instanceof SomeView).to.be.ok
             done()
           .end()
 

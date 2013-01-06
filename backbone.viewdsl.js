@@ -221,8 +221,7 @@ var __slice = [].slice,
     }
     if ((_ref1 = node.attributes) != null ? _ref1.view : void 0) {
       _ref2 = consumeViewParams(context, node, 'view-'), viewParams = _ref2.viewParams, viewId = _ref2.viewId;
-      viewParams.el = node;
-      return instantiateView(context, node.attributes.view.value, viewParams, viewId).then(function() {
+      return instantiateView(context, node.attributes.view.value, viewParams, viewId, node).then(function() {
         return {
           remove: false
         };
@@ -233,13 +232,13 @@ var __slice = [].slice,
       });
     }
   };
-  instantiateView = function(context, spec, params, id) {
+  instantiateView = function(context, spec, params, id, node) {
     return getBySpec(spec, context).then(function(viewCls) {
       var view;
       if (viewCls === void 0) {
         throw new Error("can't find a view by '" + spec + "' spec");
       }
-      view = jQuery.isFunction(viewCls) ? new viewCls(params) : viewCls;
+      view = jQuery.isFunction(viewCls) ? (node ? params.el = node : void 0, new viewCls(params)) : (node ? viewCls.setElement(node) : void 0, viewCls);
       view.render();
       if (context.addView) {
         context.addView(view, id);
