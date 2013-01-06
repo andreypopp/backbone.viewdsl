@@ -365,7 +365,7 @@ var __slice = [].slice,
     return join(nodes);
   };
   processAttributes = function(context, node) {
-    var show, _ref, _ref1;
+    var show, _ref, _ref1, _ref2, _ref3;
     if ((_ref = node.attributes) != null ? _ref["if"] : void 0) {
       show = getByPath(context, node.attributes["if"].value, true).attr;
       if (!show) {
@@ -374,7 +374,10 @@ var __slice = [].slice,
         });
       }
     }
-    if ((_ref1 = node.attributes) != null ? _ref1.view : void 0) {
+    if ((_ref1 = node.attributes) != null ? _ref1['element-id'] : void 0) {
+      context[(_ref2 = node.attributes) != null ? _ref2['element-id'].value : void 0] = $(node);
+    }
+    if ((_ref3 = node.attributes) != null ? _ref3.view : void 0) {
       return instantiateView({
         context: context,
         spec: node.attributes.view.value,

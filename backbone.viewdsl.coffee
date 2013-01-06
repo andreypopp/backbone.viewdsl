@@ -232,6 +232,9 @@
       show = getByPath(context, node.attributes.if.value, true).attr
       return promise {remove: true} unless show
 
+    if node.attributes?['element-id']
+      context[node.attributes?['element-id'].value] = $(node)
+
     if node.attributes?.view
       instantiateView(context: context, spec: node.attributes.view.value, node: node, useNode: true)
         .then (view) ->
