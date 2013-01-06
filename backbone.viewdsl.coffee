@@ -1,9 +1,6 @@
 ((root, factory) ->
   if typeof define == 'function' and define.amd
     define ['jquery', 'backbone', 'underscore'], (jQuery, Backbone, _) ->
-      jQuery = jQuery or root.jQuery
-      Backbone = Backbone or root.Backbone
-      _ = _ or root._
       root.Backbone.ViewDSL = factory(jQuery, Backbone, _)
   else
     root.Backbone.ViewDSL = factory(root.jQuery, root.Backbone, root._)
