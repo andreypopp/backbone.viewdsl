@@ -319,15 +319,11 @@ var __slice = [].slice,
       this.views = [];
     }
 
-    View.prototype.processDOM = function(template, localContext) {
-      var node;
-      node = wrapTemplate(template);
-      return render(this, node, localContext);
-    };
-
     View.prototype.renderDOM = function(template, localContext) {
-      var _this = this;
-      return this.processDOM(template, localContext).then(function(node) {
+      var node,
+        _this = this;
+      node = wrapTemplate(template);
+      return render(this, node, localContext).then(function(node) {
         _this.$el.append(node);
         return _this;
       });

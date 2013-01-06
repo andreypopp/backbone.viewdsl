@@ -203,12 +203,9 @@
       super
       this.views = []
 
-    processDOM: (template, localContext) ->
-      node = wrapTemplate(template)
-      render(this, node, localContext)
-
     renderDOM: (template, localContext) ->
-      this.processDOM(template, localContext).then (node) =>
+      node = wrapTemplate(template)
+      render(this, node, localContext).then (node) =>
         this.$el.append(node)
         this
 
