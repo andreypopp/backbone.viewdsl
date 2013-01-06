@@ -26,7 +26,7 @@ define(function(require) {
       return ParametrizedView.__super__.constructor.apply(this, arguments);
     }
 
-    ParametrizedView.prototype.acceptsPartial = true;
+    ParametrizedView.prototype.parameterizable = true;
 
     ParametrizedView.prototype.render = function(localContext, parentContext, partialTemplate) {
       return this.renderDOM("<div class=\"decor\">{{node}}</div>\n<span class=\"author\">by {{options.localName}}</span>", {

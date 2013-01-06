@@ -230,7 +230,7 @@
     if node.attributes?.view
       instantiateView(context: context, spec: node.attributes.view.value, node: node, useNode: true)
         .then (view) ->
-          if view.acceptsPartial then {skip: true} else {}
+          if view.parameterizable then {skip: true} else {}
     else
       promise {}
 
@@ -246,7 +246,7 @@
       else
         viewCls.setElement(options.node) if options.useNode
         viewCls
-      if view.acceptsPartial
+      if view.parameterizable
         partialTemplate = $(options.node.removeChild(c) for c in toArray(options.node.childNodes))
         partialTemplate = wrapTemplate(partialTemplate)
         view.render(undefined, options.context, partialTemplate)
@@ -279,7 +279,7 @@
 
     template: undefined
     templateCached: undefined
-    acceptsPartial: false
+    parameterizable: false
 
     # from([localContext, ]template)
     @from: ->

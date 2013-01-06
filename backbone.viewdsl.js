@@ -373,7 +373,7 @@ var __slice = [].slice,
         node: node,
         useNode: true
       }).then(function(view) {
-        if (view.acceptsPartial) {
+        if (view.parameterizable) {
           return {
             skip: true
           };
@@ -394,7 +394,7 @@ var __slice = [].slice,
         throw new Error("can't find a view by '" + options.spec + "' spec");
       }
       view = jQuery.isFunction(viewCls) ? (options.useNode ? viewParams.el = options.node : void 0, new viewCls(viewParams)) : (options.useNode ? viewCls.setElement(options.node) : void 0, viewCls);
-      if (view.acceptsPartial) {
+      if (view.parameterizable) {
         partialTemplate = $((function() {
           var _i, _len, _ref1, _results;
           _ref1 = toArray(options.node.childNodes);
@@ -448,7 +448,7 @@ var __slice = [].slice,
 
     View.prototype.templateCached = void 0;
 
-    View.prototype.acceptsPartial = false;
+    View.prototype.parameterizable = false;
 
     View.from = function() {
       var localContext, node, template, view;
@@ -517,7 +517,7 @@ var __slice = [].slice,
         if (this.constructor.prototype.templateCached === void 0) {
           this.constructor.prototype.templateCached = wrapTemplate(this.constructor.prototype.template);
         }
-        return this.renderDOM(this.constructor.prototype.templateCached, localContext);
+        return this.renderDOM(this.constructor.prototype.templateCached.cloneNode(true), localContext);
       }
     };
 

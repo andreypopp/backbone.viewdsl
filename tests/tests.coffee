@@ -6,7 +6,7 @@ define (require) ->
     className: 'some-view'
 
   class window.ParametrizedView extends View
-    acceptsPartial: true
+    parameterizable: true
     render: (localContext, parentContext, partialTemplate) ->
       this.renderDOM("""
         <div class="decor">{{node}}</div>
