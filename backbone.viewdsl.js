@@ -109,7 +109,10 @@ var __slice = [].slice,
     };
 
     Promise.prototype.done = function() {
-      return this.isDone = true;
+      this.isDone = true;
+      if (this.rejectedValue) {
+        throw this.rejectedValue;
+      }
     };
 
     return Promise;

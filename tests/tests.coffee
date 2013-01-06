@@ -17,7 +17,6 @@ define (require) ->
             expect(view.el.tagName).to.be.equal undefined
             expect(view.$el.text()).to.be.equal 'Hello'
             done()
-            throw new Error('a')
           .done()
 
       it 'should construct a view from a DOM template', (done) ->

@@ -26,8 +26,7 @@ define(function(require) {
         return promise.then(function(view) {
           expect(view.el.tagName).to.be.equal(void 0);
           expect(view.$el.text()).to.be.equal('Hello');
-          done();
-          throw new Error('a');
+          return done();
         }).done();
       });
       it('should construct a view from a DOM template', function(done) {

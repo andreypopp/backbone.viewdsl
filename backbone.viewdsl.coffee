@@ -76,6 +76,7 @@
 
     done: ->
       this.isDone = true
+      throw this.rejectedValue if this.rejectedValue
 
   _.extend(Promise.prototype, Backbone.Events)
 
