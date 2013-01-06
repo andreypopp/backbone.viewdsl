@@ -168,9 +168,11 @@
     else
       nodes[0]
 
-  render = (node, localContext, context, parentContext) ->
+  render = (node, localContext, context, parentContext, forceClone = true) ->
     if not (typeof node.cloneNode == 'function')
       node = wrapTemplate(node)
+    else if forceClone
+      node = node.cloneNode(true)
 
     currentContext = if parentContext then Object.create(parentContext) else {}
     currentContext = _.extend(currentContext, context)
@@ -203,7 +205,10 @@
       spec = node.attributes.name.value
       node.removeAttribute('name')
       instantiateView(context: context, spec: spec, node: node, useNode: false)
-        .then (view) -> replaceChild(node, view.el)
+        .then (view) -> 
+          p = node.parentNode
+          nodes = replaceChild(node, view.el)
+          nodes
     else
       join(process(context, n) for n in toArray(node.childNodes)).then -> node
 
@@ -246,12 +251,13 @@
       else
         viewCls.setElement(options.node) if options.useNode
         viewCls
+      view.setParentContext(options.context) if view.setParentContext
       if view.parameterizable
-        partialTemplate = $(options.node.removeChild(c) for c in toArray(options.node.childNodes))
-        partialTemplate = wrapTemplate(partialTemplate)
-        view.render(undefined, options.context, partialTemplate)
+        partial = $(options.node.removeChild(c) for c in toArray(options.node.childNodes))
+        partial = wrapTemplate(partial)
+        view.render(partial)
       else
-        view.render(undefined, options.context)
+        view.render()
       options.context.addView(view, viewId) if options.context.addView
       view
 
@@ -281,20 +287,10 @@
     templateCached: undefined
     parameterizable: false
 
-    # from([localContext, ]template)
-    @from: ->
-      if arguments.length == 2
-        localContext = arguments[0]
-        template = arguments[1]
-      else if arguments.length == 1
-        localContext = undefined
-        template = arguments[0]
-      else
-        throw new Error("""invalid number of arguments, call should have
-                        a form of View.from([localContext,] template)""")
+    @from: (template, localContext) ->
       node = wrapTemplate(template, true)
       view = new this(el: node)
-      render(node, localContext, view).then ->
+      render(node, localContext, view, undefined, false).then ->
         view.render()
         view
 
@@ -302,30 +298,33 @@
       super
       this.views = []
 
-    renderTemplate: (template, localContext, parentContext) ->
-      render(template, localContext, this, parentContext)
+    renderTemplate: (template, localContext) ->
+      render(template, localContext, this, this.parentContext)
 
-    renderDOM: (template, localContext, parentContext) ->
-      this.renderTemplate(template, localContext, parentContext).then (node) =>
+    renderDOM: (template, localContext) ->
+      this.renderTemplate(template, localContext).then (node) =>
         this.$el.append(node)
         this
+
+    setParentContext: (parentContext) ->
+      this.parentContext = parentContext
 
     addView: (view, viewId) ->
       this.views.push(view)
       this[viewId] = view if viewId
 
+    render: (localContext) ->
+      return unless this.template
+      if this.hasOwnProperty('template')
+        this.renderDOM(this.template, localContext)
+      else
+        if this.constructor::templateCached == undefined
+          this.constructor::templateCached = wrapTemplate(this.constructor::template)
+        this.renderDOM(this.constructor::templateCached, localContext)
+
     remove: ->
       super
       for view in this.views
         view.remove()
-
-    render: (localContext, parentContext, partialTemplate) ->
-      return unless this.template
-      if this.hasOwnProperty('template')
-        this.renderDOM(this.template, localContext, parentContext, partialTemplate)
-      else
-        if this.constructor::templateCached == undefined
-          this.constructor::templateCached = wrapTemplate(this.constructor::template)
-        this.renderDOM(this.constructor::templateCached.cloneNode(true), localContext)
 
   {View}

@@ -7,12 +7,12 @@ define (require) ->
 
   class window.ParametrizedView extends View
     parameterizable: true
-    render: (localContext, parentContext, partialTemplate) ->
-      this.renderDOM("""
-        <div class="decor">{{node}}</div>
-        <span class="author">by {{options.localName}}</span>
-        """,
-        node: this.renderTemplate(partialTemplate, localContext, parentContext))
+    template: """
+      <div class="decor">{{node}}</div>
+      <span class="author">by {{options.localName}}</span>
+      """
+    render: (partial) ->
+      this.renderDOM this.template, {node: this.renderTemplate(partial)}
 
   describe 'View', ->
 
@@ -246,7 +246,7 @@ define (require) ->
               expect(subview.options.absentParam).to.be.equal 'some string'
               done()
             .done()
-            
+
         it 'should instantiate views by a context-bound spec', (done) ->
 
           class MyView extends View

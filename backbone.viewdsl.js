@@ -258,10 +258,15 @@ var __slice = [].slice,
       return nodes[0];
     }
   };
-  render = function(node, localContext, context, parentContext) {
+  render = function(node, localContext, context, parentContext, forceClone) {
     var currentContext;
+    if (forceClone == null) {
+      forceClone = true;
+    }
     if (!(typeof node.cloneNode === 'function')) {
       node = wrapTemplate(node);
+    } else if (forceClone) {
+      node = node.cloneNode(true);
     }
     currentContext = parentContext ? Object.create(parentContext) : {};
     currentContext = _.extend(currentContext, context);
@@ -312,7 +317,10 @@ var __slice = [].slice,
         node: node,
         useNode: false
       }).then(function(view) {
-        return replaceChild(node, view.el);
+        var nodes, p;
+        p = node.parentNode;
+        nodes = replaceChild(node, view.el);
+        return nodes;
       });
     } else {
       return join((function() {
@@ -387,15 +395,18 @@ var __slice = [].slice,
   };
   instantiateView = function(options) {
     return getBySpec(options.spec, options.context).then(function(viewCls) {
-      var c, partialTemplate, prefix, view, viewId, viewParams, _ref;
+      var c, partial, prefix, view, viewId, viewParams, _ref;
       prefix = options.node.tagName === 'VIEW' ? void 0 : 'view-';
       _ref = consumeViewParams(options.context, options.node, prefix), viewParams = _ref.viewParams, viewId = _ref.viewId;
       if (viewCls === void 0) {
         throw new Error("can't find a view by '" + options.spec + "' spec");
       }
       view = jQuery.isFunction(viewCls) ? (options.useNode ? viewParams.el = options.node : void 0, new viewCls(viewParams)) : (options.useNode ? viewCls.setElement(options.node) : void 0, viewCls);
+      if (view.setParentContext) {
+        view.setParentContext(options.context);
+      }
       if (view.parameterizable) {
-        partialTemplate = $((function() {
+        partial = $((function() {
           var _i, _len, _ref1, _results;
           _ref1 = toArray(options.node.childNodes);
           _results = [];
@@ -405,10 +416,10 @@ var __slice = [].slice,
           }
           return _results;
         })());
-        partialTemplate = wrapTemplate(partialTemplate);
-        view.render(void 0, options.context, partialTemplate);
+        partial = wrapTemplate(partial);
+        view.render(partial);
       } else {
-        view.render(void 0, options.context);
+        view.render();
       }
       if (options.context.addView) {
         options.context.addView(view, viewId);
@@ -450,22 +461,13 @@ var __slice = [].slice,
 
     View.prototype.parameterizable = false;
 
-    View.from = function() {
-      var localContext, node, template, view;
-      if (arguments.length === 2) {
-        localContext = arguments[0];
-        template = arguments[1];
-      } else if (arguments.length === 1) {
-        localContext = void 0;
-        template = arguments[0];
-      } else {
-        throw new Error("invalid number of arguments, call should have\na form of View.from([localContext,] template)");
-      }
+    View.from = function(template, localContext) {
+      var node, view;
       node = wrapTemplate(template, true);
       view = new this({
         el: node
       });
-      return render(node, localContext, view).then(function() {
+      return render(node, localContext, view, void 0, false).then(function() {
         view.render();
         return view;
       });
@@ -476,22 +478,40 @@ var __slice = [].slice,
       this.views = [];
     }
 
-    View.prototype.renderTemplate = function(template, localContext, parentContext) {
-      return render(template, localContext, this, parentContext);
+    View.prototype.renderTemplate = function(template, localContext) {
+      return render(template, localContext, this, this.parentContext);
     };
 
-    View.prototype.renderDOM = function(template, localContext, parentContext) {
+    View.prototype.renderDOM = function(template, localContext) {
       var _this = this;
-      return this.renderTemplate(template, localContext, parentContext).then(function(node) {
+      return this.renderTemplate(template, localContext).then(function(node) {
         _this.$el.append(node);
         return _this;
       });
+    };
+
+    View.prototype.setParentContext = function(parentContext) {
+      return this.parentContext = parentContext;
     };
 
     View.prototype.addView = function(view, viewId) {
       this.views.push(view);
       if (viewId) {
         return this[viewId] = view;
+      }
+    };
+
+    View.prototype.render = function(localContext) {
+      if (!this.template) {
+        return;
+      }
+      if (this.hasOwnProperty('template')) {
+        return this.renderDOM(this.template, localContext);
+      } else {
+        if (this.constructor.prototype.templateCached === void 0) {
+          this.constructor.prototype.templateCached = wrapTemplate(this.constructor.prototype.template);
+        }
+        return this.renderDOM(this.constructor.prototype.templateCached, localContext);
       }
     };
 
@@ -505,20 +525,6 @@ var __slice = [].slice,
         _results.push(view.remove());
       }
       return _results;
-    };
-
-    View.prototype.render = function(localContext, parentContext, partialTemplate) {
-      if (!this.template) {
-        return;
-      }
-      if (this.hasOwnProperty('template')) {
-        return this.renderDOM(this.template, localContext, parentContext, partialTemplate);
-      } else {
-        if (this.constructor.prototype.templateCached === void 0) {
-          this.constructor.prototype.templateCached = wrapTemplate(this.constructor.prototype.template);
-        }
-        return this.renderDOM(this.constructor.prototype.templateCached.cloneNode(true), localContext);
-      }
     };
 
     return View;

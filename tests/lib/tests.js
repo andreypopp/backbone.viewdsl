@@ -28,9 +28,11 @@ define(function(require) {
 
     ParametrizedView.prototype.parameterizable = true;
 
-    ParametrizedView.prototype.render = function(localContext, parentContext, partialTemplate) {
-      return this.renderDOM("<div class=\"decor\">{{node}}</div>\n<span class=\"author\">by {{options.localName}}</span>", {
-        node: this.renderTemplate(partialTemplate, localContext, parentContext)
+    ParametrizedView.prototype.template = "<div class=\"decor\">{{node}}</div>\n<span class=\"author\">by {{options.localName}}</span>";
+
+    ParametrizedView.prototype.render = function(partial) {
+      return this.renderDOM(this.template, {
+        node: this.renderTemplate(partial)
       });
     };
 
