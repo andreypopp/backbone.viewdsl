@@ -162,13 +162,13 @@
     else
       nodes[0]
 
-  render = (node, context, parentContext, overlay) ->
+  render = (node, localContext, context, parentContext) ->
     if not (typeof node.cloneNode == 'function')
       node = wrapTemplate(node)
 
     currentContext = if parentContext then Object.create(parentContext) else {}
     currentContext = _.extend(currentContext, context)
-    currentContext = _.extend(Object.create(currentContext), overlay) if overlay
+    currentContext = _.extend(Object.create(currentContext), localContext) if localContext
     currentContext = Object.create(currentContext)
 
     process(currentContext, node).then (result) ->
@@ -263,10 +263,19 @@
     template: undefined
     templateCached: undefined
 
-    @from: (template, options) ->
+    @from: ->
+      if arguments.length == 2
+        localContext = arguments[0]
+        template = arguments[1]
+      else if arguments.length == 1
+        localContext = undefined
+        template = arguments[0]
+      else
+        throw new Error("""invalid number of arguments, call should have
+                        a form of View.from([localContext,] template)""")
       node = wrapTemplate(template, true)
       view = new this(el: node)
-      render(node, view).then ->
+      render(node, localContext, view).then ->
         view.render()
         view
 
@@ -275,7 +284,7 @@
       this.views = []
 
     renderDOM: (template, localContext) ->
-      render(template, this, undefined, localContext).then (node) =>
+      render(template, localContext, this).then (node) =>
         this.$el.append(node)
         this
 

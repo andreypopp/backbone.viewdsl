@@ -247,15 +247,15 @@ var __slice = [].slice,
       return nodes[0];
     }
   };
-  render = function(node, context, parentContext, overlay) {
+  render = function(node, localContext, context, parentContext) {
     var currentContext;
     if (!(typeof node.cloneNode === 'function')) {
       node = wrapTemplate(node);
     }
     currentContext = parentContext ? Object.create(parentContext) : {};
     currentContext = _.extend(currentContext, context);
-    if (overlay) {
-      currentContext = _.extend(Object.create(currentContext), overlay);
+    if (localContext) {
+      currentContext = _.extend(Object.create(currentContext), localContext);
     }
     currentContext = Object.create(currentContext);
     return process(currentContext, node).then(function(result) {
@@ -397,13 +397,22 @@ var __slice = [].slice,
 
     View.prototype.templateCached = void 0;
 
-    View.from = function(template, options) {
-      var node, view;
+    View.from = function() {
+      var localContext, node, template, view;
+      if (arguments.length === 2) {
+        localContext = arguments[0];
+        template = arguments[1];
+      } else if (arguments.length === 1) {
+        localContext = void 0;
+        template = arguments[0];
+      } else {
+        throw new Error("invalid number of arguments, call should have\na form of View.from([localContext,] template)");
+      }
       node = wrapTemplate(template, true);
       view = new this({
         el: node
       });
-      return render(node, view).then(function() {
+      return render(node, localContext, view).then(function() {
         view.render();
         return view;
       });
@@ -416,7 +425,7 @@ var __slice = [].slice,
 
     View.prototype.renderDOM = function(template, localContext) {
       var _this = this;
-      return render(template, this, void 0, localContext).then(function(node) {
+      return render(template, localContext, this).then(function(node) {
         _this.$el.append(node);
         return _this;
       });
