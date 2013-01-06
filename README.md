@@ -16,8 +16,8 @@ some sub-views:
     class App extends Backbone.ViewDSL.View
       template: """
         <h1>{{options.title}}</h1>
-        <div class="sidebar" view="app.views.Sidebar" view-id="sidebar"></div>
-        <div class="content" view="app.views.Content" view-id="content"></div>
+        <view name="app.views.Sidebar" id="sidebar" />
+        <view name="app.views.Content" id="content" />
         <div class="footer">{{options.title}} by {{options.author}}</div>
         """
 
@@ -28,16 +28,15 @@ Backbone abstractions:
       render: ->
         this.$el.html """
           <h1>#{@options.title}</h1>
-          <div class="sidebar"></div>
-          <div class="content"></div>
           <div class="footer">#{@options.title} by #{@options.author}</div>
           """
+        $title = this.$('h1')
         this.content = new app.views.ContentView
-          el: @$('.content')
         this.content.render()
+        this.content.$el.after($title)
         this.sidebar = new app.views.SidebarView
-          el: @$('.sidebar')
         this.sidebar.render()
+        this.sidebar.$el.after($title)
 
 Which is, I think, more verbose and mostly consist of boilerplate. Also
 `Backbone.ViewDSL.View` keeps track of instantiated views and handles its
@@ -127,66 +126,153 @@ view instances. So the easiest way to define view is:
 
 ## View instantiation
 
-To instantiate a view you can use `view` DOM attribute:
+There are two ways you can instantiate views — using `<view />` tag or
+using `view` DOM attribute on any DOM element.
+
+### Using `<view />` tag
+
+If you use `<view />` tag then DOM element created by view will be used to
+replace the `<view />` element in the resulting DOM, so the following code:
+
+    class myapp.views.SidebarView extends Backbone.View
+      className: 'sidebar'
+
+    Backbone.ViewDSL.View.from """
+      <div>
+        <view name="myapp.views.SidebarView" />
+      </div>
+      """
+
+will render DOM like this:
+
+    <div>
+      <div class="sidebar"></div>
+    </div>
+
+Note that `div.sidebar` element is created by `SidebarView` view. So usually it
+is a good idea to use `<view />` tag to instantiate views which can only
+function correctly with predefined `tagName` or `className` attributes.
+
+See *Specs* section below to learn how to specify view constructor in `name`
+attribute.
+
+### Using `view` attribute
+
+If you use `view` attribute on a DOM element then the DOM element will be passed
+as an `el` argument to a view constructor so all attributes on the DOM element
+such as `id` and `class` will be preserved. This example:
+
+    class myapp.views.ClickableLabel extends Backbone.View
+      className: 'sidebar'
+
+    Backbone.ViewDSL.View.from """
+      <div>
+        <span view="myapp.views.ClickableLabel" class="some-class"></span>
+      </div>
+      """
+
+will result in the following DOM:
+
+    <div>
+      <span class="some-class"></span>
+    </div>
+
+Using `view` attribute for instantiating views is useful with those views which
+can work with different configurations of `tagName` and/or `className`
+arguments.
+
+See *Specs* section below to learn how to specify view constructor in `view`
+attribute.
+
+### Accessing instantiated views
+
+Sometimes you need to assign a specific view to an attribute of a parent
+view. You can do that with `view-id` attribute when you instantiate views using
+`view` attribute on a DOM element or with just an `id` attribute if you use
+`<view />` tag:
+
+    view = Backbone.ViewDSL.View.from """
+      <view name="SomeView" id="someView" />
+      <div view="AnotherView" id="anotherView></div>
+      """
+    view.someView instanceof SomeView # true
+    view.anotherView instanceof AnotherView # true
+
+Also all instantiated views are stored inside `views` attribute of a parent
+view.  This is useful because on a call to `remove()` method of a parent view we
+can also call `remove()` method of every instantiated view — this way we can
+prevent memory "zombie" views. That's exactly the way how
+`Backbone.ViewDSL.View.remove()` is implemented.
+
+### Passing arguments into view constructor
+
+You can pass additional parameters into view constructor. Consider the example:
 
     class MyView extends Backbone.ViewDSL.View
+      template: """
+        <view name="Sidebar" model="sidebarItems" id="sidebar" />
+        <ul view="Toolbar"
+          view-id="toolbar"
+          view-width="100"
+          view-items="toolbarItems"></ul>
+        """
 
-      render: ->
-        @renderDOM """
-          <div view="myapp.views.SidebarView" class="sidebar"></div>
-          """
+      initialize: ->
+        this.toolbarItems = ["create", "edit", "remove"]
 
-This way `myapp.views.SidebarView` will be instantiated and rendered with `div.sidebar`
-element as the view's root element. All instantiated views become the "child
-views" of a parent view and stored inside a `views` attribute — that means on
-parent's `remove()` call they are also being freed by calling `remove()`.
+      sidebarItems: ->
+        ["links", "comments"]
 
-You can also pass parameters to view constructor by using attributes which start
-with `view-` prefix:
+    view = new MyView
+    view.render()
+    view.sidebar.options.model # ["links", "comments"]
+    view.toolbar.options.items # ["create", "edit", "remove"]
+    view.toolbar.options.width # "100"
+
+As you can see, you use `view-` prefixed attributes if you instantiate views
+with `view` attribute on a DOM element, otherwise, with `<view />` tag you just
+use attributes without any prefix.
+
+Argument names are obtained by removing the `view-` prefix (only in case it was
+exist) from attribute names and then converting them to camelCase so
+`view-some-param` and `some-param` attribute names become `someParam` argument
+name.
+
+Argument value are looked up on a parent view object using attribute values:
+
+  * If value is found — it is used for an argument value (see `toolbarItems`
+    in the example above).
+  * If method is found — it is called and returned value is used for an
+    argument value (see `sidebarItems` in the example above).
+  * If no method and no value is found — then just string attribute value is
+    used (see `view-width` attribute in the example above)
+
+Note, that `view-id` and `id` attributes are treated specially and are not
+passed to view constructor (see *Accessing instantiated views* section above).
+
+### Inserting already instantiated views into DOM
+
+Sometimes you don't need to instantiate view but instead want just to render and
+insert a DOM element of an already created view — the following example shows
+how to do that:
 
     class MyView extends Backbone.ViewDSL.View
+      template: """
+        <h1>Sidebar</h1>
+        <view name="@sidebarView" />
+        <div view="@footerView"></div>
+        """
 
       initialize: ->
-        this.sidebar = new SidebarItems()
+        this.sidebarView = new SidebarView
+        this.footerView = new FooterView
 
-      render: ->
-        @renderDOM """
-          <div
-            view="myapp.views.SidebarView"
-            view-collection="sidebar"
-            view-style="vertical"
-            class="sidebar"></div>
-          """
+When using `<view />` tag it is replaced with view's element `el` but when using
+`view` attribute on a DOM element a view's `setElement` method is called with
+corresponding DOM element.
 
-This will call a `myapp.views.SidebarView` constructor with `collection` and
-`style` arguments — the first one will be equal to `sidebar` attribute of the
-`MyView` instance, the second one — just a `"vertical"` string value. So this
-will be equivalent to the following code:
-
-    class MyView extends Backbone.View
-
-      initialize: ->
-        this.sidebar = new SidebarItems()
-
-      render: ->
-        this.sidebarView = new myapp.views.SidebarView
-          className: 'sidebar'
-          collection: this.sidebar
-          style: 'vertical'
-        this.sidebarView.render()
-        this.$el.append(this.sidebarView.$el)
-
-      remove: ->
-        super
-        this.sidebarView.remove()
-
-Note that attributes those name contain more hyphens besides ones which are part
-of the prefix will be converted to camelCase so `view-some-param` becomes
-`someParam`.
-
-There's also special attribute `view-id` — it instructs template processor to
-store instantiated view in an attribute of the parent view. The `view-id` value
-becomes the name of the attribute.
+Note the special form of specs in `name` and `view` attributes which refers to
+objects inside the context, e.g. inside the `MyView` instance.
 
 ## String and DOM node values interpolation
 
@@ -231,13 +317,16 @@ inside `if` attributes.
 
 ## Specs
 
-Specs are strings which point to JS objects, specs can point to some global
-object or to some object inside AMD module:
+Specs are strings which point to JS objects. They can point to some global
+object, to some object inside a context (a view which renders a DOM) or
+to some object inside AMD module:
 
   * `module1/module2:obj1.obj2` points to `obj2` inside `obj1` in
     `module1/module2` AMD module.
 
   * `obj1.obj2` points to `obj2` inside `obj1` inside `window` object
+
+  * `@obj` points to `obj` of a context (a view which renders a DOM)
 
 [jQuery]: http://jquery.com
 [Backbone]: http://backbonejs.org
