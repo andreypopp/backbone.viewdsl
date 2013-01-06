@@ -1,17 +1,86 @@
 ((root, factory) ->
   if typeof define == 'function' and define.amd
-    define ['jquery', 'rsvp', 'backbone', 'underscore'], (jQuery, RSVP, Backbone, _) ->
+    define ['jquery', 'backbone', 'underscore'], (jQuery, Backbone, _) ->
       jQuery = jQuery or root.jQuery
-      RSVP = RSVP or root.RSVP
       Backbone = Backbone or root.Backbone
       _ = _ or root._
-      root.Backbone.ViewDSL = factory(jQuery, RSVP, Backbone, _)
+      root.Backbone.ViewDSL = factory(jQuery, Backbone, _)
   else
-    root.Backbone.ViewDSL = factory(root.jQuery, root.RSVP, root.Backbone, root._)
+    root.Backbone.ViewDSL = factory(root.jQuery, root.Backbone, root._)
 
-) this, (jQuery, RSVP, Backbone, _) ->
+) this, (jQuery, Backbone, _) ->
 
-  RSVP.Promise::end = ->
+  class Promise
+    noop = ->
+
+    resolve = (promise, value) ->
+      promise.trigger('promise:resolved', detail: value)
+      promise.isResolved = true
+      promise.resolvedValue = value
+
+    reject = (promise, value) ->
+      promise.trigger('promise:failed', detail: value)
+      promise.isRejected = true
+      promise.rejectedValue = value
+
+    invokeCallback = (type, promise, callback, event) ->
+      hasCallback = typeof callback == 'function'
+
+      if  hasCallback
+        try
+          value = callback(event.detail)
+          succeeded = true
+        catch e
+          throw e
+          failed = true
+          error = e
+      else
+        value = event.detail
+        succeeded = true
+
+      if value and typeof value.then == 'function'
+        value.then(
+          ((value) -> promise.resolve(value)),
+          ((value) -> promise.reject(value)))
+      else if hasCallback and succeeded
+        promise.resolve(value)
+      else if failed
+        promise.reject(error)
+      else
+        promise[type](value)
+
+    constructor: ->
+      this.on 'promise:resolved', (e) =>
+        this.trigger 'success', detail: e.detail
+      this.on 'promise:failed', (e) =>
+        this.trigger 'error', detail: event.detail
+
+
+    then: (done, fail) ->
+      thenPromise = new Promise()
+      if this.isResolved
+        invokeCallback('resolve', thenPromise, done, detail: this.resolvedValue)
+      if this.isRejected
+        invokeCallback('reject', thenPromise, fail, detail: this.rejectedValue)
+      this.on 'promise:resolved', (event) ->
+        invokeCallback('resolve', thenPromise, done, event)
+      this.on 'promise:failed', (event) ->
+        invokeCallback('reject', thenPromise, fail, event)
+      thenPromise;
+
+    resolve: (value) ->
+      resolve(this, value)
+      this.resolve = noop
+      this.reject = noop
+
+    reject: (value) ->
+      reject(this, value)
+      this.resolve = noop
+      this.reject = noop
+
+  _.extend(Promise.prototype, Backbone.Events)
+
+  Promise::end = ->
     this.then undefined, (e) -> throw e
 
   toArray = (o) ->
@@ -38,12 +107,12 @@
       promise getByPath(window, spec).attr
 
   promise = (value) ->
-    p = new RSVP.Promise()
+    p = new Promise()
     p.resolve(value)
     p
 
   join = (promises) ->
-    p = new RSVP.Promise()
+    p = new Promise()
     results = []
     if promises.length > 0
       resultsToGo = promises.length
@@ -59,7 +128,7 @@
     p
 
   promiseRequire = (moduleName) ->
-    p = new RSVP.Promise()
+    p = new Promise()
     require [moduleName], (module) -> p.resolve(module)
     p
 

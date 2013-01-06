@@ -5,19 +5,122 @@ var __slice = [].slice,
 
 (function(root, factory) {
   if (typeof define === 'function' && define.amd) {
-    return define(['jquery', 'rsvp', 'backbone', 'underscore'], function(jQuery, RSVP, Backbone, _) {
+    return define(['jquery', 'backbone', 'underscore'], function(jQuery, Backbone, _) {
       jQuery = jQuery || root.jQuery;
-      RSVP = RSVP || root.RSVP;
       Backbone = Backbone || root.Backbone;
       _ = _ || root._;
-      return root.Backbone.ViewDSL = factory(jQuery, RSVP, Backbone, _);
+      return root.Backbone.ViewDSL = factory(jQuery, Backbone, _);
     });
   } else {
-    return root.Backbone.ViewDSL = factory(root.jQuery, root.RSVP, root.Backbone, root._);
+    return root.Backbone.ViewDSL = factory(root.jQuery, root.Backbone, root._);
   }
-})(this, function(jQuery, RSVP, Backbone, _) {
-  var View, consumeViewParams, getByPath, getBySpec, hypensToCamelCase, instantiateView, join, makeContext, process, processAttributes, processNode, processTextNode, promise, promiseRequire, render, replaceChild, textNodeSplitRe, toArray, wrapTemplate;
-  RSVP.Promise.prototype.end = function() {
+})(this, function(jQuery, Backbone, _) {
+  var Promise, View, consumeViewParams, getByPath, getBySpec, hypensToCamelCase, instantiateView, join, makeContext, process, processAttributes, processNode, processTextNode, promise, promiseRequire, render, replaceChild, textNodeSplitRe, toArray, wrapTemplate;
+  Promise = (function() {
+    var invokeCallback, noop, reject, resolve;
+
+    noop = function() {};
+
+    resolve = function(promise, value) {
+      promise.trigger('promise:resolved', {
+        detail: value
+      });
+      promise.isResolved = true;
+      return promise.resolvedValue = value;
+    };
+
+    reject = function(promise, value) {
+      promise.trigger('promise:failed', {
+        detail: value
+      });
+      promise.isRejected = true;
+      return promise.rejectedValue = value;
+    };
+
+    invokeCallback = function(type, promise, callback, event) {
+      var error, failed, hasCallback, succeeded, value;
+      hasCallback = typeof callback === 'function';
+      if (hasCallback) {
+        try {
+          value = callback(event.detail);
+          succeeded = true;
+        } catch (e) {
+          throw e;
+          failed = true;
+          error = e;
+        }
+      } else {
+        value = event.detail;
+        succeeded = true;
+      }
+      if (value && typeof value.then === 'function') {
+        return value.then((function(value) {
+          return promise.resolve(value);
+        }), (function(value) {
+          return promise.reject(value);
+        }));
+      } else if (hasCallback && succeeded) {
+        return promise.resolve(value);
+      } else if (failed) {
+        return promise.reject(error);
+      } else {
+        return promise[type](value);
+      }
+    };
+
+    function Promise() {
+      var _this = this;
+      this.on('promise:resolved', function(e) {
+        return _this.trigger('success', {
+          detail: e.detail
+        });
+      });
+      this.on('promise:failed', function(e) {
+        return _this.trigger('error', {
+          detail: event.detail
+        });
+      });
+    }
+
+    Promise.prototype.then = function(done, fail) {
+      var thenPromise;
+      thenPromise = new Promise();
+      if (this.isResolved) {
+        invokeCallback('resolve', thenPromise, done, {
+          detail: this.resolvedValue
+        });
+      }
+      if (this.isRejected) {
+        invokeCallback('reject', thenPromise, fail, {
+          detail: this.rejectedValue
+        });
+      }
+      this.on('promise:resolved', function(event) {
+        return invokeCallback('resolve', thenPromise, done, event);
+      });
+      this.on('promise:failed', function(event) {
+        return invokeCallback('reject', thenPromise, fail, event);
+      });
+      return thenPromise;
+    };
+
+    Promise.prototype.resolve = function(value) {
+      resolve(this, value);
+      this.resolve = noop;
+      return this.reject = noop;
+    };
+
+    Promise.prototype.reject = function(value) {
+      reject(this, value);
+      this.resolve = noop;
+      return this.reject = noop;
+    };
+
+    return Promise;
+
+  })();
+  _.extend(Promise.prototype, Backbone.Events);
+  Promise.prototype.end = function() {
     return this.then(void 0, function(e) {
       throw e;
     });
@@ -68,14 +171,14 @@ var __slice = [].slice,
   };
   promise = function(value) {
     var p;
-    p = new RSVP.Promise();
+    p = new Promise();
     p.resolve(value);
     return p;
   };
   join = function(promises) {
     var idx, p, pr, results, resultsToGo, _fn, _i, _len,
       _this = this;
-    p = new RSVP.Promise();
+    p = new Promise();
     results = [];
     if (promises.length > 0) {
       resultsToGo = promises.length;
@@ -99,7 +202,7 @@ var __slice = [].slice,
   };
   promiseRequire = function(moduleName) {
     var p;
-    p = new RSVP.Promise();
+    p = new Promise();
     require([moduleName], function(module) {
       return p.resolve(module);
     });
