@@ -7,6 +7,8 @@
   would pass rendered children of div to MyView.render() method as an argument.
   There could be also an option to pass not yet rendered DOM template to view
 
+  what about context for that? should we chain context with the parent ones?
+
 * allow custom element/attributes handlers
 
 * `{{mod2:mod1:val}}` syntax which is transformed into `mod2(mod1(val))`
