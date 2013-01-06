@@ -184,9 +184,11 @@
 
   process = (context, node) ->
     processAttributes(context, node).then (pragmas) ->
-      if pragmas.remove and node.parentNode
+      if pragmas.skip
+        promise()
+      else if pragmas.remove and node.parentNode
         node.parentNode.removeChild(node)
-        promise
+        promise()
       else
         processNode(context, node)
 
@@ -227,7 +229,8 @@
 
     if node.attributes?.view
       instantiateView(context: context, spec: node.attributes.view.value, node: node, useNode: true)
-        .then -> {}
+        .then (view) ->
+          if view.acceptsPartial then {skip: true} else {}
     else
       promise {}
 

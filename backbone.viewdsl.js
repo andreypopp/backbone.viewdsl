@@ -281,9 +281,11 @@ var __slice = [].slice,
   };
   process = function(context, node) {
     return processAttributes(context, node).then(function(pragmas) {
-      if (pragmas.remove && node.parentNode) {
+      if (pragmas.skip) {
+        return promise();
+      } else if (pragmas.remove && node.parentNode) {
         node.parentNode.removeChild(node);
-        return promise;
+        return promise();
       } else {
         return processNode(context, node);
       }
@@ -370,8 +372,14 @@ var __slice = [].slice,
         spec: node.attributes.view.value,
         node: node,
         useNode: true
-      }).then(function() {
-        return {};
+      }).then(function(view) {
+        if (view.acceptsPartial) {
+          return {
+            skip: true
+          };
+        } else {
+          return {};
+        }
       });
     } else {
       return promise({});
