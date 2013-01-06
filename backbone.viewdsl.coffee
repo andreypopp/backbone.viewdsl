@@ -326,6 +326,6 @@
       else
         if this.constructor::templateCached == undefined
           this.constructor::templateCached = wrapTemplate(this.constructor::template)
-        this.renderDOM(this.constructor::templateCached, localContext)
+        this.renderDOM(this.constructor::templateCached.cloneNode(true), localContext)
 
   {View}
