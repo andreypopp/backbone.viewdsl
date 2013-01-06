@@ -26,8 +26,9 @@ define(function(require) {
         return promise.then(function(view) {
           expect(view.el.tagName).to.be.equal(void 0);
           expect(view.$el.text()).to.be.equal('Hello');
-          return done();
-        }).end();
+          done();
+          throw new Error('a');
+        }).done();
       });
       it('should construct a view from a DOM template', function(done) {
         var promise;
@@ -37,7 +38,7 @@ define(function(require) {
           expect(view.$el.text()).to.be.equal('Hello');
           expect(view.$el.hasClass('some-class')).to.be.ok;
           return done();
-        }).end();
+        }).done();
       });
       it('should construct a view from a DOM element', function(done) {
         var promise;
@@ -46,7 +47,7 @@ define(function(require) {
           expect(view.el.tagName).to.be.equal('DIV');
           expect(view.$el.text()).to.be.equal('');
           return done();
-        }).end();
+        }).done();
       });
       it('should construct a view from a jQuery element', function(done) {
         var promise;
@@ -55,7 +56,7 @@ define(function(require) {
           expect(view.el.tagName).to.be.equal('DIV');
           expect(view.$el.text()).to.be.equal('Hello');
           return done();
-        }).end();
+        }).done();
       });
       it('should render text into view from a template', function(done) {
         var MyView, view;
@@ -78,7 +79,7 @@ define(function(require) {
         return view.render().then(function() {
           expect(view.$el.text()).to.be.equal('Hello');
           return done();
-        }).end();
+        }).done();
       });
       it('should render DOM into view from a template', function(done) {
         var MyView, view;
@@ -106,7 +107,7 @@ define(function(require) {
           expect(el.text()).to.be.equal('Hello');
           expect(el.hasClass('some-class')).to.be.ok;
           return done();
-        }).end();
+        }).done();
       });
       it('should render multiple DOM elements into view from a template', function(done) {
         var MyView, view;
@@ -133,7 +134,7 @@ define(function(require) {
           expect(view.$('.some-class').text()).to.be.equal('Hello');
           expect(view.$('.another-class').text()).to.be.equal('Hello2');
           return done();
-        }).end();
+        }).done();
       });
       it('should render into view from a DOM element', function(done) {
         var MyView, view;
@@ -157,7 +158,7 @@ define(function(require) {
           expect(view.$el.children().length).to.be.equal(1);
           expect(view.$el.text()).to.be.equal('');
           return done();
-        }).end();
+        }).done();
       });
       it('should render into view from a jQuery element', function(done) {
         var MyView, view;
@@ -181,7 +182,7 @@ define(function(require) {
           expect(view.$el.children().length).to.be.equal(1);
           expect(view.$el.text()).to.be.equal('Hello');
           return done();
-        }).end();
+        }).done();
       });
       it('should throw an error if constructing view from multiple elements', function() {
         return expect(function() {
@@ -210,7 +211,7 @@ define(function(require) {
           expect(view.$el.text()).to.be.equal('Hello');
           expect(view.templateCached).to.not.be.equal(void 0);
           return done();
-        }).end();
+        }).done();
       });
     });
     describe('view instantiation via view attribute', function() {
@@ -226,7 +227,7 @@ define(function(require) {
           expect(subview.$el.text()).to.be.equal('Some View');
           expect(subview instanceof SomeView).to.be.ok;
           return done();
-        }).end();
+        }).done();
       });
       it('should instantiate views by AMD spec', function(done) {
         var LoadedView, promise;
@@ -241,7 +242,7 @@ define(function(require) {
           expect(subview.$el.text()).to.be.equal('HI');
           expect(subview instanceof LoadedView).to.be.ok;
           return done();
-        }).end();
+        }).done();
       });
       it('should instantiate view by global spec inside other view', function(done) {
         var MyView, view;
@@ -282,7 +283,7 @@ define(function(require) {
           expect(subview.options.anotherParam).to.be.equal('prop!');
           expect(subview.options.absentParam).to.be.equal('some string');
           return done();
-        }).end();
+        }).done();
       });
       it('should instantiate views by a context-bound spec', function(done) {
         var MyView, view;
@@ -314,7 +315,7 @@ define(function(require) {
           expect(subview.$el.text()).to.be.equal('Some View');
           expect(subview instanceof SomeView).to.be.ok;
           return done();
-        }).end();
+        }).done();
       });
       return it('should handle already instantiated views', function(done) {
         var MyView, view;
@@ -348,7 +349,7 @@ define(function(require) {
           expect(subview.$el.text()).to.be.equal('Some View');
           expect(subview instanceof SomeView).to.be.ok;
           return done();
-        }).end();
+        }).done();
       });
     });
     describe('view instantiation via <view> element', function() {
@@ -364,7 +365,7 @@ define(function(require) {
           expect(subview.el.tagName).to.be.equal('DIV');
           expect(subview instanceof SomeView).to.be.ok;
           return done();
-        }).end();
+        }).done();
       });
       it('should instantiate views by AMD spec', function(done) {
         var LoadedView, promise;
@@ -379,7 +380,7 @@ define(function(require) {
           expect(subview.el.tagName).to.be.equal('DIV');
           expect(subview instanceof LoadedView).to.be.ok;
           return done();
-        }).end();
+        }).done();
       });
       it('should instantiate view by global spec inside other view', function(done) {
         var MyView, view;
@@ -420,7 +421,7 @@ define(function(require) {
           expect(subview.options.anotherParam).to.be.equal('prop!');
           expect(subview.options.absentParam).to.be.equal('some string');
           return done();
-        }).end();
+        }).done();
       });
       return it('should handle already instantiated views', function(done) {
         var MyView, view;
@@ -454,7 +455,7 @@ define(function(require) {
           expect(subview.el.tagName).to.be.equal('DIV');
           expect(subview instanceof SomeView).to.be.ok;
           return done();
-        }).end();
+        }).done();
       });
     });
     describe('conditional blocks', function() {
@@ -488,7 +489,7 @@ define(function(require) {
           expect(view.$('.show1').length).to.be.equal(1);
           expect(view.$('.show2').length).to.be.equal(0);
           return done();
-        }).end();
+        }).done();
       });
       it('should conditionally render by view property by path', function(done) {
         var MyView, view;
@@ -522,7 +523,7 @@ define(function(require) {
           expect(view.$('.show1').length).to.be.equal(1);
           expect(view.$('.show2').length).to.be.equal(0);
           return done();
-        }).end();
+        }).done();
       });
       it('should conditionally render by view function', function(done) {
         var MyView, view;
@@ -562,7 +563,7 @@ define(function(require) {
           expect(view.$('.show1').length).to.be.equal(1);
           expect(view.$('.show2').length).to.be.equal(0);
           return done();
-        }).end();
+        }).done();
       });
       return it('should conditionally render by view function by path', function(done) {
         var MyClass, MyView, view;
@@ -610,7 +611,7 @@ define(function(require) {
           expect(view.$('.show1').length).to.be.equal(1);
           expect(view.$('.show2').length).to.be.equal(0);
           return done();
-        }).end();
+        }).done();
       });
     });
     return describe('text node interpolation', function() {
@@ -641,7 +642,7 @@ define(function(require) {
         return view.render().then(function() {
           expect(view.$el.text()).to.be.equal('Hello, World!');
           return done();
-        }).end();
+        }).done();
       });
       it('should interpolate missing values to empty string', function(done) {
         var MyView, view;
@@ -666,7 +667,7 @@ define(function(require) {
         return view.render().then(function() {
           expect(view.$el.text()).to.be.equal('Hello, !');
           return done();
-        }).end();
+        }).done();
       });
       it('should interpolate values from local context', function(done) {
         var MyView, view;
@@ -697,7 +698,7 @@ define(function(require) {
         return view.render().then(function() {
           expect(view.$el.text()).to.be.equal('Hello, World!!!');
           return done();
-        }).end();
+        }).done();
       });
       it('should interpolate strings in HTML template', function(done) {
         var MyView, view;
@@ -726,7 +727,7 @@ define(function(require) {
         return view.render().then(function() {
           expect(view.$('span.name').text()).to.be.equal('World');
           return done();
-        }).end();
+        }).done();
       });
       it('should interpolate strings using a function call', function(done) {
         var MyView, view;
@@ -753,7 +754,7 @@ define(function(require) {
         return view.render().then(function() {
           expect(view.$('span.name').text()).to.be.equal('MyView');
           return done();
-        }).end();
+        }).done();
       });
       it('should interpolate jQuery objects', function(done) {
         var MyView, view;
@@ -780,7 +781,7 @@ define(function(require) {
         return view.render().then(function() {
           expect(view.$('span.inner-name').text()).to.be.equal('World');
           return done();
-        }).end();
+        }).done();
       });
       it('should interpolate DOM nodes', function(done) {
         var MyView, view;
@@ -807,7 +808,7 @@ define(function(require) {
         return view.render().then(function() {
           expect(view.$('span.inner-name').text()).to.be.equal('World');
           return done();
-        }).end();
+        }).done();
       });
       it('should interpolate strings by path', function(done) {
         var MyView, view;
@@ -838,7 +839,7 @@ define(function(require) {
         return view.render().then(function() {
           expect(view.$el.text()).to.be.equal('Hello, World!');
           return done();
-        }).end();
+        }).done();
       });
       return it('should interpolate strings using a function call by path', function(done) {
         var MyClass, MyView, view;
@@ -876,7 +877,7 @@ define(function(require) {
         return view.render().then(function() {
           expect(view.$('span.name').text()).to.be.equal('MyClass');
           return done();
-        }).end();
+        }).done();
       });
     });
   });

@@ -31,7 +31,7 @@
           value = callback(event.detail)
           succeeded = true
         catch e
-          throw e
+          throw e if promise.isDone
           failed = true
           error = e
       else
@@ -54,6 +54,7 @@
         this.trigger 'success', detail: e.detail
       this.on 'promise:failed', (e) =>
         this.trigger 'error', detail: event.detail
+      this.isDone = false
 
     then: (done, fail) ->
       thenPromise = new Promise()
@@ -77,10 +78,11 @@
       this.resolve = noop
       this.reject = noop
 
+    done: ->
+      this.isDone = true
+
   _.extend(Promise.prototype, Backbone.Events)
 
-  Promise::end = ->
-    this.then undefined, (e) -> throw e
 
   toArray = (o) ->
     Array::slice.call(o)

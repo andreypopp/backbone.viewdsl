@@ -80,6 +80,7 @@ var __slice = [].slice,
           detail: event.detail
         });
       });
+      this.isDone = false;
     }
 
     Promise.prototype.then = function(done, fail) {
@@ -116,15 +117,14 @@ var __slice = [].slice,
       return this.reject = noop;
     };
 
+    Promise.prototype.done = function() {
+      return this.isDone = true;
+    };
+
     return Promise;
 
   })();
   _.extend(Promise.prototype, Backbone.Events);
-  Promise.prototype.end = function() {
-    return this.then(void 0, function(e) {
-      throw e;
-    });
-  };
   toArray = function(o) {
     return Array.prototype.slice.call(o);
   };

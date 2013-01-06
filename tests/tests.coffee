@@ -17,7 +17,8 @@ define (require) ->
             expect(view.el.tagName).to.be.equal undefined
             expect(view.$el.text()).to.be.equal 'Hello'
             done()
-          .end()
+            throw new Error('a')
+          .done()
 
       it 'should construct a view from a DOM template', (done) ->
 
@@ -30,7 +31,7 @@ define (require) ->
             expect(view.$el.text()).to.be.equal 'Hello'
             expect(view.$el.hasClass('some-class')).to.be.ok
             done()
-          .end()
+          .done()
 
       it 'should construct a view from a DOM element', (done) ->
 
@@ -40,7 +41,7 @@ define (require) ->
             expect(view.el.tagName).to.be.equal 'DIV'
             expect(view.$el.text()).to.be.equal ''
             done()
-          .end()
+          .done()
 
       it 'should construct a view from a jQuery element', (done) ->
 
@@ -50,7 +51,7 @@ define (require) ->
             expect(view.el.tagName).to.be.equal 'DIV'
             expect(view.$el.text()).to.be.equal 'Hello'
             done()
-          .end()
+          .done()
 
       it 'should render text into view from a template', (done) ->
 
@@ -64,7 +65,7 @@ define (require) ->
           .then ->
             expect(view.$el.text()).to.be.equal 'Hello'
             done()
-          .end()
+          .done()
 
       it 'should render DOM into view from a template', (done) ->
 
@@ -84,7 +85,7 @@ define (require) ->
             expect(el.text()).to.be.equal 'Hello'
             expect(el.hasClass('some-class')).to.be.ok
             done()
-          .end()
+          .done()
 
       it 'should render multiple DOM elements into view from a template', (done) ->
 
@@ -105,7 +106,7 @@ define (require) ->
             expect(view.$('.some-class').text()).to.be.equal 'Hello'
             expect(view.$('.another-class').text()).to.be.equal 'Hello2'
             done()
-          .end()
+          .done()
 
       it 'should render into view from a DOM element', (done) ->
 
@@ -120,7 +121,7 @@ define (require) ->
             expect(view.$el.children().length).to.be.equal 1
             expect(view.$el.text()).to.be.equal ''
             done()
-          .end()
+          .done()
 
       it 'should render into view from a jQuery element', (done) ->
 
@@ -135,7 +136,7 @@ define (require) ->
             expect(view.$el.children().length).to.be.equal 1
             expect(view.$el.text()).to.be.equal 'Hello'
             done()
-          .end()
+          .done()
 
       it 'should throw an error if constructing view from multiple elements', ->
         expect(-> View.from('<div></div><div></div>')).to.throw(Error)
@@ -155,7 +156,7 @@ define (require) ->
             expect(view.$el.text()).to.be.equal 'Hello'
             expect(view.templateCached).to.not.be.equal undefined
             done()
-          .end()
+          .done()
 
     describe 'view instantiation via view attribute', ->
 
@@ -175,7 +176,7 @@ define (require) ->
             expect(subview.$el.text()).to.be.equal 'Some View'
             expect(subview instanceof SomeView).to.be.ok
             done()
-          .end()
+          .done()
 
       it 'should instantiate views by AMD spec', (done) ->
 
@@ -195,7 +196,7 @@ define (require) ->
             expect(subview.$el.text()).to.be.equal 'HI'
             expect(subview instanceof LoadedView).to.be.ok
             done()
-          .end()
+          .done()
 
       it 'should instantiate view by global spec inside other view', (done) ->
 
@@ -234,7 +235,7 @@ define (require) ->
             expect(subview.options.anotherParam).to.be.equal 'prop!'
             expect(subview.options.absentParam).to.be.equal 'some string'
             done()
-          .end()
+          .done()
           
       it 'should instantiate views by a context-bound spec', (done) ->
 
@@ -263,7 +264,7 @@ define (require) ->
             expect(subview.$el.text()).to.be.equal 'Some View'
             expect(subview instanceof SomeView).to.be.ok
             done()
-          .end()
+          .done()
 
       it 'should handle already instantiated views', (done) ->
 
@@ -290,7 +291,7 @@ define (require) ->
             expect(subview.$el.text()).to.be.equal 'Some View'
             expect(subview instanceof SomeView).to.be.ok
             done()
-          .end()
+          .done()
 
     describe 'view instantiation via <view> element', ->
 
@@ -310,7 +311,7 @@ define (require) ->
             expect(subview.el.tagName).to.be.equal 'DIV'
             expect(subview instanceof SomeView).to.be.ok
             done()
-          .end()
+          .done()
 
       it 'should instantiate views by AMD spec', (done) ->
 
@@ -330,7 +331,7 @@ define (require) ->
             expect(subview.el.tagName).to.be.equal 'DIV'
             expect(subview instanceof LoadedView).to.be.ok
             done()
-          .end()
+          .done()
 
       it 'should instantiate view by global spec inside other view', (done) ->
 
@@ -369,7 +370,7 @@ define (require) ->
             expect(subview.options.anotherParam).to.be.equal 'prop!'
             expect(subview.options.absentParam).to.be.equal 'some string'
             done()
-          .end()
+          .done()
 
       it 'should handle already instantiated views', (done) ->
 
@@ -396,7 +397,7 @@ define (require) ->
             expect(subview.el.tagName).to.be.equal 'DIV'
             expect(subview instanceof SomeView).to.be.ok
             done()
-          .end()
+          .done()
 
     describe 'conditional blocks', ->
 
@@ -422,7 +423,7 @@ define (require) ->
             expect(view.$('.show1').length).to.be.equal 1
             expect(view.$('.show2').length).to.be.equal 0
             done()
-          .end()
+          .done()
 
       it 'should conditionally render by view property by path', (done) ->
 
@@ -445,7 +446,7 @@ define (require) ->
             expect(view.$('.show1').length).to.be.equal 1
             expect(view.$('.show2').length).to.be.equal 0
             done()
-          .end()
+          .done()
 
       it 'should conditionally render by view function', (done) ->
 
@@ -472,7 +473,7 @@ define (require) ->
             expect(view.$('.show1').length).to.be.equal 1
             expect(view.$('.show2').length).to.be.equal 0
             done()
-          .end()
+          .done()
 
       it 'should conditionally render by view function by path', (done) ->
 
@@ -501,7 +502,7 @@ define (require) ->
             expect(view.$('.show1').length).to.be.equal 1
             expect(view.$('.show2').length).to.be.equal 0
             done()
-          .end()
+          .done()
 
     describe 'text node interpolation', ->
 
@@ -522,7 +523,7 @@ define (require) ->
           .then ->
             expect(view.$el.text()).to.be.equal 'Hello, World!'
             done()
-          .end()
+          .done()
 
       it 'should interpolate missing values to empty string', (done) ->
 
@@ -538,7 +539,7 @@ define (require) ->
           .then ->
             expect(view.$el.text()).to.be.equal 'Hello, !'
             done()
-          .end()
+          .done()
 
       it 'should interpolate values from local context', (done) ->
 
@@ -557,7 +558,7 @@ define (require) ->
           .then ->
             expect(view.$el.text()).to.be.equal 'Hello, World!!!'
             done()
-          .end()
+          .done()
 
       it 'should interpolate strings in HTML template', (done) ->
 
@@ -578,7 +579,7 @@ define (require) ->
           .then ->
             expect(view.$('span.name').text()).to.be.equal 'World'
             done()
-          .end()
+          .done()
 
       it 'should interpolate strings using a function call', (done) ->
 
@@ -599,7 +600,7 @@ define (require) ->
           .then ->
             expect(view.$('span.name').text()).to.be.equal 'MyView'
             done()
-          .end()
+          .done()
 
       it 'should interpolate jQuery objects', (done) ->
 
@@ -620,7 +621,7 @@ define (require) ->
           .then ->
             expect(view.$('span.inner-name').text()).to.be.equal 'World'
             done()
-          .end()
+          .done()
 
       it 'should interpolate DOM nodes', (done) ->
 
@@ -641,7 +642,7 @@ define (require) ->
           .then ->
             expect(view.$('span.inner-name').text()).to.be.equal 'World'
             done()
-          .end()
+          .done()
 
       it 'should interpolate strings by path', (done) ->
 
@@ -660,7 +661,7 @@ define (require) ->
           .then ->
             expect(view.$el.text()).to.be.equal 'Hello, World!'
             done()
-          .end()
+          .done()
 
       it 'should interpolate strings using a function call by path', (done) ->
 
@@ -685,4 +686,4 @@ define (require) ->
           .then ->
             expect(view.$('span.name').text()).to.be.equal 'MyClass'
             done()
-          .end()
+          .done()
