@@ -50,10 +50,6 @@
         promise[type](value)
 
     constructor: ->
-      this.on 'promise:resolved', (e) =>
-        this.trigger 'success', detail: e.detail
-      this.on 'promise:failed', (e) =>
-        this.trigger 'error', detail: event.detail
       this.isDone = false
 
     then: (done, fail) ->

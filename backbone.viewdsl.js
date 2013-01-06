@@ -71,17 +71,6 @@ var __slice = [].slice,
     };
 
     function Promise() {
-      var _this = this;
-      this.on('promise:resolved', function(e) {
-        return _this.trigger('success', {
-          detail: e.detail
-        });
-      });
-      this.on('promise:failed', function(e) {
-        return _this.trigger('error', {
-          detail: event.detail
-        });
-      });
       this.isDone = false;
     }
 
