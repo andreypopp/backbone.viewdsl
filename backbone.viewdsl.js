@@ -25,8 +25,11 @@ var __slice = [].slice,
   toArray = function(o) {
     return Array.prototype.slice.call(o);
   };
-  getByPath = function(o, p) {
+  getByPath = function(o, p, callIfMethod) {
     var ctx, n, _i, _len, _ref;
+    if (callIfMethod == null) {
+      callIfMethod = false;
+    }
     if (p.trim().length === 0) {
       return [o, window];
     }
@@ -39,18 +42,26 @@ var __slice = [].slice,
         break;
       }
     }
+    if (callIfMethod && jQuery.isFunction(o)) {
+      o = o.call(ctx);
+    }
     return {
       attr: o,
       attrCtx: ctx
     };
   };
-  getBySpec = function(spec) {
+  getBySpec = function(spec, context) {
     var module, path, _ref;
+    if (context == null) {
+      context = window;
+    }
     if (/:/.test(spec)) {
       _ref = spec.split(':', 2), module = _ref[0], path = _ref[1];
       return promiseRequire(module).then(function(module) {
         return getByPath(module, path).attr;
       });
+    } else if (spec && spec[0] === '@') {
+      return promise(getByPath(context, spec.slice(1), true).attr);
     } else {
       return promise(getByPath(window, spec).attr);
     }
@@ -177,7 +188,7 @@ var __slice = [].slice,
   };
   textNodeSplitRe = /({{)|(}})/;
   processTextNode = function(context, node) {
-    var attr, attrCtx, data, part, parts, value, _i, _len, _ref, _results;
+    var data, part, parts, _i, _len, _results;
     if (!textNodeSplitRe.test(node.data)) {
       return;
     }
@@ -191,9 +202,7 @@ var __slice = [].slice,
     for (_i = 0, _len = parts.length; _i < _len; _i++) {
       part = parts[_i];
       if (part[0] === '\uF001') {
-        _ref = getByPath(context, part.slice(1).trim()), attr = _ref.attr, attrCtx = _ref.attrCtx;
-        value = jQuery.isFunction(attr) ? attr.call(attrCtx) : attr;
-        _results.push(value || '');
+        _results.push(getByPath(context, part.slice(1).trim(), true).attr || '');
       } else {
         _results.push(part);
       }
@@ -201,18 +210,17 @@ var __slice = [].slice,
     return _results;
   };
   processAttributes = function(context, node) {
-    var attr, attrCtx, show, viewId, viewParams, _ref, _ref1, _ref2, _ref3;
+    var show, viewId, viewParams, _ref, _ref1, _ref2;
     if ((_ref = node.attributes) != null ? _ref["if"] : void 0) {
-      _ref1 = getByPath(context, node.attributes["if"].value), attr = _ref1.attr, attrCtx = _ref1.attrCtx;
-      show = jQuery.isFunction(attr) ? attr.call(attrCtx) : attr;
+      show = getByPath(context, node.attributes["if"].value, true).attr;
       if (!show) {
         return promise({
           remove: true
         });
       }
     }
-    if ((_ref2 = node.attributes) != null ? _ref2.view : void 0) {
-      _ref3 = consumeViewParams(context, node, 'view-'), viewParams = _ref3.viewParams, viewId = _ref3.viewId;
+    if ((_ref1 = node.attributes) != null ? _ref1.view : void 0) {
+      _ref2 = consumeViewParams(context, node, 'view-'), viewParams = _ref2.viewParams, viewId = _ref2.viewId;
       viewParams.el = node;
       return instantiateView(context, node.attributes.view.value, viewParams, viewId).then(function() {
         return {
@@ -226,7 +234,7 @@ var __slice = [].slice,
     }
   };
   instantiateView = function(context, spec, params, id) {
-    return getBySpec(spec).then(function(viewCls) {
+    return getBySpec(spec, context).then(function(viewCls) {
       var view;
       if (viewCls === void 0) {
         throw new Error("can't find view class by '" + spec + "' spec");
@@ -240,7 +248,7 @@ var __slice = [].slice,
     });
   };
   consumeViewParams = function(context, node, prefix) {
-    var a, attr, attrCtx, attrName, viewId, viewParams, _i, _len, _ref, _ref1;
+    var a, attrName, viewId, viewParams, _i, _len, _ref;
     viewParams = {};
     viewId = void 0;
     _ref = node.attributes;
@@ -254,8 +262,7 @@ var __slice = [].slice,
       if (attrName === 'id') {
         viewId = a.value;
       }
-      _ref1 = getByPath(context, a.value), attr = _ref1.attr, attrCtx = _ref1.attrCtx;
-      viewParams[attrName] = jQuery.isFunction(attr) ? attr.call(attrCtx) : attr === void 0 ? a.value : attr;
+      viewParams[attrName] = getByPath(context, a.value, true).attr || a.value;
     }
     return {
       viewParams: viewParams,

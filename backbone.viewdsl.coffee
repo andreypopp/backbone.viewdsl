@@ -17,20 +17,24 @@
   toArray = (o) ->
     Array::slice.call(o)
 
-  getByPath = (o, p) ->
+  getByPath = (o, p, callIfMethod = false) ->
     if p.trim().length == 0
       return [o, window]
     for n in p.split('.')
       ctx = o
       o = ctx[n]
       break if o == undefined
+    if callIfMethod and jQuery.isFunction(o)
+      o = o.call(ctx)
     {attr: o, attrCtx: ctx}
 
-  getBySpec = (spec) ->
+  getBySpec = (spec, context = window) ->
     if /:/.test spec
       [module, path] = spec.split(':', 2)
       promiseRequire(module)
         .then (module) -> getByPath(module, path).attr
+    else if spec and spec[0] == '@'
+      promise getByPath(context, spec.slice(1), true).attr
     else
       promise getByPath(window, spec).attr
 
@@ -117,16 +121,13 @@
     parts = parts.filter (e) -> e and e != '{{' and e != '}}'
     for part in parts
       if part[0] == '\uF001'
-        {attr, attrCtx} = getByPath(context, part.slice(1).trim())
-        value = if jQuery.isFunction(attr) then attr.call(attrCtx) else attr
-        value or ''
+        getByPath(context, part.slice(1).trim(), true).attr or ''
       else
         part
 
   processAttributes = (context, node) ->
     if node.attributes?.if
-      {attr, attrCtx} = getByPath(context, node.attributes.if.value)
-      show = if jQuery.isFunction(attr) then attr.call(attrCtx) else attr
+      show = getByPath(context, node.attributes.if.value, true).attr
       return promise {remove: true} unless show
 
     if node.attributes?.view
@@ -138,7 +139,7 @@
       promise {remove: false}
 
   instantiateView = (context, spec, params, id) ->
-    getBySpec(spec)
+    getBySpec(spec, context)
       .then (viewCls) ->
         if viewCls == undefined
           throw new Error("can't find view class by '#{spec}' spec")
@@ -161,13 +162,7 @@
       if attrName == 'id'
         viewId = a.value
 
-      {attr, attrCtx} = getByPath(context, a.value)
-      viewParams[attrName] = if jQuery.isFunction(attr)
-        attr.call(attrCtx)
-      else if attr == undefined
-        a.value
-      else
-        attr
+      viewParams[attrName] = getByPath(context, a.value, true).attr or a.value
 
     {viewParams, viewId}
 
