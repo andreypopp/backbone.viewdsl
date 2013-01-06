@@ -15,7 +15,7 @@ var __slice = [].slice,
     return root.Backbone.ViewDSL = factory(root.jQuery, root.Backbone, root._);
   }
 })(this, function(jQuery, Backbone, _) {
-  var Promise, View, consumeViewParams, getByPath, getBySpec, hypensToCamelCase, instantiateView, isPromise, join, process, processAttributes, processNode, processTextNode, promise, promiseRequire, render, replaceChild, textNodeSplitRe, toArray, wrapTemplate;
+  var Promise, View, consumeViewParams, getByPath, getBySpec, hypensToCamelCase, instantiateView, isPromise, join, process, processAttributes, processNode, processTextNode, promise, promiseRequire, render, renderInPlace, replaceChild, textNodeSplitRe, toArray, wrapTemplate;
   Promise = (function() {
     var invokeCallback, noop, reject, resolve;
 
@@ -168,6 +168,9 @@ var __slice = [].slice,
   };
   promise = function(value) {
     var p;
+    if (typeof (value != null ? value.then : void 0) === 'function') {
+      return value;
+    }
     p = new Promise();
     p.resolve(value);
     return p;
@@ -269,7 +272,9 @@ var __slice = [].slice,
       node = node.cloneNode(true);
     }
     currentContext = parentContext ? Object.create(parentContext) : {};
-    currentContext = _.extend(currentContext, context);
+    if (context) {
+      currentContext = _.extend(currentContext, context);
+    }
     if (localContext) {
       currentContext = _.extend(Object.create(currentContext), localContext);
     }
@@ -284,7 +289,14 @@ var __slice = [].slice,
       return result;
     });
   };
+  renderInPlace = function(node, localContext, context, parentContext) {
+    return render(node, localContext, context, parentContext, false);
+  };
   process = function(context, node) {
+    if (node.seen) {
+      return promise(node);
+    }
+    node.seen = true;
     return processAttributes(context, node).then(function(pragmas) {
       if (pragmas.skip) {
         return promise();
@@ -398,7 +410,7 @@ var __slice = [].slice,
   };
   instantiateView = function(options) {
     return getBySpec(options.spec, options.context).then(function(viewCls) {
-      var c, partial, prefix, view, viewId, viewParams, _ref;
+      var c, p, partial, prefix, view, viewId, viewParams, _ref;
       prefix = options.node.tagName === 'VIEW' ? void 0 : 'view-';
       _ref = consumeViewParams(options.context, options.node, prefix), viewParams = _ref.viewParams, viewId = _ref.viewId;
       if (viewCls === void 0) {
@@ -408,26 +420,22 @@ var __slice = [].slice,
       if (view.setParentContext) {
         view.setParentContext(options.context);
       }
-      if (view.parameterizable) {
-        partial = $((function() {
-          var _i, _len, _ref1, _results;
-          _ref1 = toArray(options.node.childNodes);
-          _results = [];
-          for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-            c = _ref1[_i];
-            _results.push(options.node.removeChild(c));
-          }
-          return _results;
-        })());
-        partial = wrapTemplate(partial);
-        view.render(partial);
-      } else {
-        view.render();
-      }
       if (options.context.addView) {
         options.context.addView(view, viewId);
       }
-      return view;
+      p = view.parameterizable ? (partial = $((function() {
+        var _i, _len, _ref1, _results;
+        _ref1 = toArray(options.node.childNodes);
+        _results = [];
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          c = _ref1[_i];
+          _results.push(options.node.removeChild(c));
+        }
+        return _results;
+      })()), partial = wrapTemplate(partial), promise(view.render(partial))) : promise(view.render());
+      return p.then(function() {
+        return view;
+      });
     });
   };
   consumeViewParams = function(context, node, prefix) {
@@ -534,6 +542,9 @@ var __slice = [].slice,
 
   })(Backbone.View);
   return {
-    View: View
+    View: View,
+    render: render,
+    renderInPlace: renderInPlace,
+    wrapTemplate: wrapTemplate
   };
 });

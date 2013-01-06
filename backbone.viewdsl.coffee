@@ -107,6 +107,7 @@
       promise getByPath(window, spec).attr
 
   promise = (value) ->
+    return value if typeof value?.then == 'function'
     p = new Promise()
     p.resolve(value)
     p
@@ -175,7 +176,7 @@
       node = node.cloneNode(true)
 
     currentContext = if parentContext then Object.create(parentContext) else {}
-    currentContext = _.extend(currentContext, context)
+    currentContext = _.extend(currentContext, context) if context
     currentContext = _.extend(Object.create(currentContext), localContext) if localContext
     currentContext = Object.create(currentContext)
 
@@ -184,7 +185,13 @@
         context[prop] = currentContext[prop]
       result
 
+  renderInPlace = (node, localContext, context, parentContext) ->
+    render(node, localContext, context, parentContext, false)
+
   process = (context, node) ->
+    return promise(node) if node.seen
+    node.seen = true
+
     processAttributes(context, node).then (pragmas) ->
       if pragmas.skip
         promise()
@@ -255,14 +262,14 @@
         viewCls.setElement(options.node) if options.useNode
         viewCls
       view.setParentContext(options.context) if view.setParentContext
-      if view.parameterizable
+      options.context.addView(view, viewId) if options.context.addView
+      p = if view.parameterizable
         partial = $(options.node.removeChild(c) for c in toArray(options.node.childNodes))
         partial = wrapTemplate(partial)
-        view.render(partial)
+        promise view.render(partial)
       else
-        view.render()
-      options.context.addView(view, viewId) if options.context.addView
-      view
+        promise view.render()
+      p.then -> view
 
   consumeViewParams = (context, node, prefix) ->
     viewParams = {}
@@ -330,4 +337,4 @@
       for view in this.views
         view.remove()
 
-  {View}
+  {View, render, renderInPlace, wrapTemplate}
