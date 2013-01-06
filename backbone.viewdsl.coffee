@@ -145,11 +145,35 @@
     p.removeChild(o)
     ns
 
-  render = (context, node, overlays...) ->
-    synContext = makeContext(context, overlays...)
-    process(synContext, node).then (result) ->
-      for prop of synContext when synContext.hasOwnProperty(prop)
-        context[prop] = synContext[prop]
+  wrapTemplate = (template, requireSingleNode = false) ->
+    nodes = if template.jquery
+      template.clone()
+    else if typeof template.cloneNode == 'function'
+      [template.cloneNode(true)]
+    else
+      jQuery.parseHTML(template)
+    if requireSingleNode and nodes.length != 1
+      throw new Error('templates only of single element are allowed')
+    if nodes.length > 1 or nodes[0].nodeType == 3
+      fragment = document.createDocumentFragment()
+      for node in nodes
+        fragment.appendChild(node)
+      fragment
+    else
+      nodes[0]
+
+  render = (node, context, parentContext, overlay) ->
+    if not typeof node.cloneNode == 'function'
+      node = wrapTemplate(node)
+
+    currentContext = if parentContext then Object.create(parentContext) else {}
+    currentContext = _.extend(currentContext, context)
+    currentContext = _.extend(Object.create(currentContext), overlay) if overlay
+    currentContext = Object.create(currentContext)
+
+    process(currentContext, node).then (result) ->
+      for prop of currentContext when currentContext.hasOwnProperty(prop)
+        context[prop] = currentContext[prop]
       result
 
   process = (context, node) ->
@@ -234,26 +258,6 @@
 
     {viewParams, viewId}
 
-  wrapTemplate = (template, requireSingleNode = false) ->
-    nodes = if template.jquery
-      template.clone()
-    else if typeof template.cloneNode == 'function'
-      [template.cloneNode(true)]
-    else
-      jQuery.parseHTML(template)
-    if requireSingleNode and nodes.length != 1
-      throw new Error('templates only of single element are allowed')
-    if nodes.length > 1 or nodes[0].nodeType == 3
-      fragment = document.createDocumentFragment()
-      for node in nodes
-        fragment.appendChild(node)
-      fragment
-    else
-      nodes[0]
-
-  makeContext = (o, overlays...) ->
-    Object.create(_.extend(Object.create(o), overlays...))
-
   class View extends Backbone.View
 
     template: undefined
@@ -262,7 +266,7 @@
     @from: (template, options) ->
       node = wrapTemplate(template, true)
       view = new this(el: node)
-      render(view, node).then ->
+      render(node, view).then ->
         view.render()
         view
 
@@ -272,7 +276,7 @@
 
     renderDOM: (template, localContext) ->
       node = wrapTemplate(template)
-      render(this, node, localContext).then (node) =>
+      render(node, this, undefined, localContext).then (node) =>
         this.$el.append(node)
         this
 

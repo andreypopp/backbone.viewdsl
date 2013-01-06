@@ -15,7 +15,7 @@ var __slice = [].slice,
     return root.Backbone.ViewDSL = factory(root.jQuery, root.Backbone, root._);
   }
 })(this, function(jQuery, Backbone, _) {
-  var Promise, View, consumeViewParams, getByPath, getBySpec, hypensToCamelCase, instantiateView, join, makeContext, process, processAttributes, processNode, processTextNode, promise, promiseRequire, render, replaceChild, textNodeSplitRe, toArray, wrapTemplate;
+  var Promise, View, consumeViewParams, getByPath, getBySpec, hypensToCamelCase, instantiateView, join, process, processAttributes, processNode, processTextNode, promise, promiseRequire, render, replaceChild, textNodeSplitRe, toArray, wrapTemplate;
   Promise = (function() {
     var invokeCallback, noop, reject, resolve;
 
@@ -227,15 +227,42 @@ var __slice = [].slice,
     p.removeChild(o);
     return ns;
   };
-  render = function() {
-    var context, node, overlays, synContext;
-    context = arguments[0], node = arguments[1], overlays = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
-    synContext = makeContext.apply(null, [context].concat(__slice.call(overlays)));
-    return process(synContext, node).then(function(result) {
+  wrapTemplate = function(template, requireSingleNode) {
+    var fragment, node, nodes, _i, _len;
+    if (requireSingleNode == null) {
+      requireSingleNode = false;
+    }
+    nodes = template.jquery ? template.clone() : typeof template.cloneNode === 'function' ? [template.cloneNode(true)] : jQuery.parseHTML(template);
+    if (requireSingleNode && nodes.length !== 1) {
+      throw new Error('templates only of single element are allowed');
+    }
+    if (nodes.length > 1 || nodes[0].nodeType === 3) {
+      fragment = document.createDocumentFragment();
+      for (_i = 0, _len = nodes.length; _i < _len; _i++) {
+        node = nodes[_i];
+        fragment.appendChild(node);
+      }
+      return fragment;
+    } else {
+      return nodes[0];
+    }
+  };
+  render = function(node, context, parentContext, overlay) {
+    var currentContext;
+    if (!typeof node.cloneNode === 'function') {
+      node = wrapTemplate(node);
+    }
+    currentContext = parentContext ? Object.create(parentContext) : {};
+    currentContext = _.extend(currentContext, context);
+    if (overlay) {
+      currentContext = _.extend(Object.create(currentContext), overlay);
+    }
+    currentContext = Object.create(currentContext);
+    return process(currentContext, node).then(function(result) {
       var prop;
-      for (prop in synContext) {
-        if (synContext.hasOwnProperty(prop)) {
-          context[prop] = synContext[prop];
+      for (prop in currentContext) {
+        if (currentContext.hasOwnProperty(prop)) {
+          context[prop] = currentContext[prop];
         }
       }
       return result;
@@ -366,31 +393,6 @@ var __slice = [].slice,
       viewId: viewId
     };
   };
-  wrapTemplate = function(template, requireSingleNode) {
-    var fragment, node, nodes, _i, _len;
-    if (requireSingleNode == null) {
-      requireSingleNode = false;
-    }
-    nodes = template.jquery ? template.clone() : typeof template.cloneNode === 'function' ? [template.cloneNode(true)] : jQuery.parseHTML(template);
-    if (requireSingleNode && nodes.length !== 1) {
-      throw new Error('templates only of single element are allowed');
-    }
-    if (nodes.length > 1 || nodes[0].nodeType === 3) {
-      fragment = document.createDocumentFragment();
-      for (_i = 0, _len = nodes.length; _i < _len; _i++) {
-        node = nodes[_i];
-        fragment.appendChild(node);
-      }
-      return fragment;
-    } else {
-      return nodes[0];
-    }
-  };
-  makeContext = function() {
-    var o, overlays;
-    o = arguments[0], overlays = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-    return Object.create(_.extend.apply(_, [Object.create(o)].concat(__slice.call(overlays))));
-  };
   View = (function(_super) {
 
     __extends(View, _super);
@@ -405,7 +407,7 @@ var __slice = [].slice,
       view = new this({
         el: node
       });
-      return render(view, node).then(function() {
+      return render(node, view).then(function() {
         view.render();
         return view;
       });
@@ -420,7 +422,7 @@ var __slice = [].slice,
       var node,
         _this = this;
       node = wrapTemplate(template);
-      return render(this, node, localContext).then(function(node) {
+      return render(node, this, void 0, localContext).then(function(node) {
         _this.$el.append(node);
         return _this;
       });
