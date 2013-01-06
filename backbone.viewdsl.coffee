@@ -163,7 +163,7 @@
       nodes[0]
 
   render = (node, context, parentContext, overlay) ->
-    if not typeof node.cloneNode == 'function'
+    if not (typeof node.cloneNode == 'function')
       node = wrapTemplate(node)
 
     currentContext = if parentContext then Object.create(parentContext) else {}
@@ -178,11 +178,11 @@
 
   process = (context, node) ->
     processAttributes(context, node).then (pragmas) ->
-        if pragmas.remove and node.parentNode
-          node.parentNode.removeChild(node)
-          promise
-        else
-          processNode(context, node)
+      if pragmas.remove and node.parentNode
+        node.parentNode.removeChild(node)
+        promise
+      else
+        processNode(context, node)
 
   processNode = (context, node) ->
     if node.nodeType == 3
@@ -228,17 +228,17 @@
 
   instantiateView = (context, spec, params, id, node) ->
     getBySpec(spec, context).then (viewCls) ->
-        if viewCls == undefined
-          throw new Error("can't find a view by '#{spec}' spec")
-        view = if jQuery.isFunction(viewCls)
-          params.el = node if node
-          new viewCls(params)
-        else
-          viewCls.setElement(node) if node
-          viewCls
-        view.render()
-        context.addView(view, id) if context.addView
-        view
+      if viewCls == undefined
+        throw new Error("can't find a view by '#{spec}' spec")
+      view = if jQuery.isFunction(viewCls)
+        params.el = node if node
+        new viewCls(params)
+      else
+        viewCls.setElement(node) if node
+        viewCls
+      view.render()
+      context.addView(view, id) if context.addView
+      view
 
   consumeViewParams = (context, node, prefix) ->
     viewParams = {}
@@ -275,8 +275,7 @@
       this.views = []
 
     renderDOM: (template, localContext) ->
-      node = wrapTemplate(template)
-      render(node, this, undefined, localContext).then (node) =>
+      render(template, this, undefined, localContext).then (node) =>
         this.$el.append(node)
         this
 

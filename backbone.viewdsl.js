@@ -249,7 +249,7 @@ var __slice = [].slice,
   };
   render = function(node, context, parentContext, overlay) {
     var currentContext;
-    if (!typeof node.cloneNode === 'function') {
+    if (!(typeof node.cloneNode === 'function')) {
       node = wrapTemplate(node);
     }
     currentContext = parentContext ? Object.create(parentContext) : {};
@@ -415,10 +415,8 @@ var __slice = [].slice,
     }
 
     View.prototype.renderDOM = function(template, localContext) {
-      var node,
-        _this = this;
-      node = wrapTemplate(template);
-      return render(node, this, void 0, localContext).then(function(node) {
+      var _this = this;
+      return render(template, this, void 0, localContext).then(function(node) {
         _this.$el.append(node);
         return _this;
       });
