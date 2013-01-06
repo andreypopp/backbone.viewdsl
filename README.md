@@ -47,8 +47,7 @@ safe from memory leaks.
 
 You can simply get [`backbone.viewdsl.js`][Backbone.ViewDSL] from the repository
 or use the repository as a submodule in your project. In that case you will need
-all the dependencies to be in place — [jQuery][jQuery], [Backbone][Backbone] and
-[RSVP.js][RSVP.js].
+all the dependencies to be in place — [jQuery][jQuery], [Backbone][Backbone].
 
 Otherwise you can use awesome [bower][bower] package manager and install
 Backbone.ViewDSL with:
@@ -331,6 +330,5 @@ to some object inside AMD module:
 
 [jQuery]: http://jquery.com
 [Backbone]: http://backbonejs.org
-[RSVP.js]: https://github.com/tildeio/rsvp.js
 [Backbone.ViewDSL]: https://raw.github.com/andreypopp/backbone.viewdsl/master/backbone.viewdsl.js
 [bower]: http://twitter.github.com/bower/
