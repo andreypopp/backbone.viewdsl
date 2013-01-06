@@ -295,12 +295,13 @@ var __slice = [].slice,
   process = function(context, node) {
     if (node.seen) {
       return promise(node);
+    } else {
+      node.seen = true;
     }
-    node.seen = true;
     return processAttributes(context, node).then(function(pragmas) {
       if (pragmas.skip) {
         return promise();
-      } else if (pragmas.remove && node.parentNode) {
+      } else if (pragmas.remove) {
         node.parentNode.removeChild(node);
         return promise();
       } else {
@@ -377,9 +378,10 @@ var __slice = [].slice,
     return join(nodes);
   };
   processAttributes = function(context, node) {
-    var show, _ref, _ref1, _ref2, _ref3;
+    var show, spec, _ref, _ref1, _ref2, _ref3;
     if ((_ref = node.attributes) != null ? _ref["if"] : void 0) {
       show = getByPath(context, node.attributes["if"].value, true).attr;
+      node.removeAttribute('if');
       if (!show) {
         return promise({
           remove: true
@@ -388,11 +390,14 @@ var __slice = [].slice,
     }
     if ((_ref1 = node.attributes) != null ? _ref1['element-id'] : void 0) {
       context[(_ref2 = node.attributes) != null ? _ref2['element-id'].value : void 0] = $(node);
+      node.removeAttribute('element-id');
     }
     if ((_ref3 = node.attributes) != null ? _ref3.view : void 0) {
+      spec = node.attributes.view.value;
+      node.removeAttribute('view');
       return instantiateView({
         context: context,
-        spec: node.attributes.view.value,
+        spec: spec,
         node: node,
         useNode: true
       }).then(function(view) {

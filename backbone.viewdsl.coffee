@@ -229,24 +229,34 @@
 
   # Process single `node`.
   process = (context, node) ->
-    return promise(node) if node.seen
-    node.seen = true
+
+    # check if we already seen the node
+    if node.seen
+      return promise(node)
+    else
+      node.seen = true
 
     processAttributes(context, node).then (pragmas) ->
       if pragmas.skip
         promise()
-      else if pragmas.remove and node.parentNode
+
+      else if pragmas.remove
         node.parentNode.removeChild(node)
         promise()
+
       else
         processNode(context, node)
 
   # Process `node` content.
   processNode = (context, node) ->
+
+    # text node interpolation
     if node.nodeType == 3
       processTextNode(context, node).then (nodes) ->
         node = replaceChild(node, nodes...) if nodes
         node
+
+    # view instantiation view <view /> tag
     else if node.tagName == 'VIEW'
       if not node.attributes.name
         throw new Error('<view> element should have a name attribute')
@@ -257,6 +267,8 @@
           p = node.parentNode
           nodes = replaceChild(node, view.el)
           nodes
+
+    # recursively traverse children
     else
       join(process(context, n) for n in toArray(node.childNodes)).then -> node
 
@@ -265,30 +277,42 @@
   # Process `TextNode`'s content to interpolate values.
   processTextNode = (context, node) ->
     return promise() unless textNodeSplitRe.test node.data
+
     data = node.data
     data = data.replace(/{{/g, '{{\uF001')
+
     parts = data.split(textNodeSplitRe)
     parts = parts.filter (e) -> e and e != '{{' and e != '}}'
+
     nodes = for part in parts
       if part[0] == '\uF001'
         getByPath(context, part.slice(1).trim(), true).attr or ''
       else
         part
+
     join(nodes)
 
   # Process `node`'s attributes.
   processAttributes = (context, node) ->
+
+    # conditional exclusion
     if node.attributes?.if
       show = getByPath(context, node.attributes.if.value, true).attr
+      node.removeAttribute('if')
       return promise {remove: true} unless show
 
+    # DOM element references
     if node.attributes?['element-id']
       context[node.attributes?['element-id'].value] = $(node)
+      node.removeAttribute('element-id')
 
+    # view instantiation view attribute
     if node.attributes?.view
-      instantiateView(context: context, spec: node.attributes.view.value, node: node, useNode: true)
-        .then (view) ->
-          if view.parameterizable then {skip: true} else {}
+      spec = node.attributes.view.value
+      node.removeAttribute('view')
+      instantiateView(context: context, spec: spec, node: node, useNode: true)
+        .then (view) -> if view.parameterizable then {skip: true} else {}
+
     else
       promise {}
 
