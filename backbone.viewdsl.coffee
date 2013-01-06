@@ -33,7 +33,7 @@
       [module, path] = spec.split(':', 2)
       promiseRequire(module).then (module) -> getByPath(module, path).attr
     else if spec and spec[0] == '@'
-      promise getByPath(context, spec.slice(1), true).attr
+      promise getByPath(context, spec.slice(1)).attr
     else
       promise getByPath(window, spec).attr
 

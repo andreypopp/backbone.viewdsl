@@ -212,7 +212,7 @@ define(function(require) {
       });
     });
     describe('view instantiation via view attribute', function() {
-      it('should instantiate views by global spec', function(done) {
+      it('should instantiate views by a global spec', function(done) {
         var promise;
         promise = View.from("<div class=\"some-class\">\n  <div view=\"SomeView\">Some View</div>\n</div>");
         return promise.then(function(view) {
@@ -241,7 +241,7 @@ define(function(require) {
           return done();
         }).end();
       });
-      return it('should instantiate view by global spec inside other view', function(done) {
+      it('should instantiate view by global spec inside other view', function(done) {
         var MyView, view;
         MyView = (function(_super) {
 
@@ -279,6 +279,38 @@ define(function(require) {
           expect(subview.options.someParam).to.be.equal('MyView');
           expect(subview.options.anotherParam).to.be.equal('prop!');
           expect(subview.options.absentParam).to.be.equal('some string');
+          return done();
+        }).end();
+      });
+      return it('should instantiate views by a context-bound spec', function(done) {
+        var MyView, view;
+        MyView = (function(_super) {
+
+          __extends(MyView, _super);
+
+          function MyView() {
+            return MyView.__super__.constructor.apply(this, arguments);
+          }
+
+          MyView.prototype.viewClass = window.SomeView;
+
+          MyView.prototype.render = function() {
+            return this.renderDOM("<div class=\"some-class\">\n  <div\n    view=\"@viewClass\"\n    view-id=\"someView\"\n    >Some View</div>\n</div>");
+          };
+
+          return MyView;
+
+        })(View);
+        view = new MyView();
+        return view.render().then(function() {
+          var subview;
+          expect(view.views.length).to.be.equal(1);
+          expect(view instanceof View).to.be.ok;
+          subview = view.views[0];
+          expect(view.someView).to.be.equal(subview);
+          expect(subview.el.tagName).to.be.equal('DIV');
+          expect(subview.$el.text()).to.be.equal('Some View');
+          expect(subview instanceof SomeView).to.be.ok;
           return done();
         }).end();
       });

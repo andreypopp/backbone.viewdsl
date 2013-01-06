@@ -61,7 +61,7 @@ var __slice = [].slice,
         return getByPath(module, path).attr;
       });
     } else if (spec && spec[0] === '@') {
-      return promise(getByPath(context, spec.slice(1), true).attr);
+      return promise(getByPath(context, spec.slice(1)).attr);
     } else {
       return promise(getByPath(window, spec).attr);
     }
