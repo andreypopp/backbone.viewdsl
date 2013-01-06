@@ -14,19 +14,19 @@
     noop = ->
 
     resolve = (promise, value) ->
-      promise.trigger('promise:resolved', detail: value)
+      promise.trigger 'promise:resolved', detail: value
       promise.isResolved = true
       promise.resolvedValue = value
 
     reject = (promise, value) ->
-      promise.trigger('promise:failed', detail: value)
+      promise.trigger 'promise:failed', detail: value
       promise.isRejected = true
       promise.rejectedValue = value
 
     invokeCallback = (type, promise, callback, event) ->
       hasCallback = typeof callback == 'function'
 
-      if  hasCallback
+      if hasCallback
         try
           value = callback(event.detail)
           succeeded = true
@@ -55,7 +55,6 @@
       this.on 'promise:failed', (e) =>
         this.trigger 'error', detail: event.detail
 
-
     then: (done, fail) ->
       thenPromise = new Promise()
       if this.isResolved
@@ -66,15 +65,15 @@
         invokeCallback('resolve', thenPromise, done, event)
       this.on 'promise:failed', (event) ->
         invokeCallback('reject', thenPromise, fail, event)
-      thenPromise;
+      thenPromise
 
     resolve: (value) ->
-      resolve(this, value)
+      resolve this, value
       this.resolve = noop
       this.reject = noop
 
     reject: (value) ->
-      reject(this, value)
+      reject this, value
       this.resolve = noop
       this.reject = noop
 
