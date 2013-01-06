@@ -96,6 +96,14 @@
       nodes = processTextNode(context, node)
       node = replaceChild(node, nodes) if nodes
       promise node
+    else if node.tagName == 'VIEW'
+      if not node.attributes.name
+        throw new Error('<view> element should have a name attribute')
+      spec = node.attributes.name.value
+      node.removeAttribute('name')
+      {viewParams, viewId} = consumeViewParams(context, node)
+      instantiateView(context, spec, viewParams, viewId)
+        .then (view) -> replaceChild(node, view.el)
     else
       join(process(context, n) for n in toArray(node.childNodes)).then -> node
 
@@ -122,24 +130,33 @@
       return promise {remove: true} unless show
 
     if node.attributes?.view
-      getBySpec(node.attributes.view.value)
-        .then (viewCls) ->
-          if viewCls == undefined
-            throw new Error("can't find view class by #{node.attributes.view.value}")
-          {viewParams, viewId} = consumeViewParams(context, node)
-          view = new viewCls(viewParams)
-          view.render()
-          context.addView(view, viewId) if context.addView
-          return {remove: false}
-
+      {viewParams, viewId} = consumeViewParams(context, node, 'view-')
+      viewParams.el = node
+      instantiateView(context, node.attributes.view.value, viewParams, viewId)
+        .then -> {remove: false}
     else
       promise {remove: false}
 
-  consumeViewParams = (context, node) ->
+  instantiateView = (context, spec, params, id) ->
+    getBySpec(spec)
+      .then (viewCls) ->
+        if viewCls == undefined
+          throw new Error("can't find view class by '#{spec}' spec")
+        view = new viewCls(params)
+        view.render()
+        context.addView(view, id) if context.addView
+        view
+
+  consumeViewParams = (context, node, prefix) ->
     viewParams = {}
     viewId = undefined
-    for a in node.attributes when a.name.slice(0, 5) == 'view-'
-      attrName = hypensToCamelCase(a.name.slice(5))
+
+    for a in node.attributes
+      if not (prefix and a.name.slice(0, prefix.length) == prefix or not prefix)
+        continue
+
+      attrName = if prefix then a.name.slice(prefix.length) else a.name
+      attrName = hypensToCamelCase(attrName)
 
       if attrName == 'id'
         viewId = a.value
@@ -151,7 +168,7 @@
         a.value
       else
         attr
-    viewParams.el = node
+
     {viewParams, viewId}
 
   wrapTemplate = (template, requireSingleNode = false) ->

@@ -16,7 +16,7 @@ var __slice = [].slice,
     return root.Backbone.ViewDSL = factory(root.jQuery, root.RSVP, root.Backbone, root._);
   }
 })(this, function(jQuery, RSVP, Backbone, _) {
-  var View, consumeViewParams, getByPath, getBySpec, hypensToCamelCase, join, makeContext, process, processAttributes, processNode, processTextNode, promise, promiseRequire, render, replaceChild, textNodeSplitRe, toArray, wrapTemplate;
+  var View, consumeViewParams, getByPath, getBySpec, hypensToCamelCase, instantiateView, join, makeContext, process, processAttributes, processNode, processTextNode, promise, promiseRequire, render, replaceChild, textNodeSplitRe, toArray, wrapTemplate;
   RSVP.Promise.prototype.end = function() {
     return this.then(void 0, function(e) {
       throw e;
@@ -143,20 +143,30 @@ var __slice = [].slice,
     });
   };
   processNode = function(context, node) {
-    var n, nodes;
+    var n, nodes, spec, viewId, viewParams, _ref;
     if (node.nodeType === 3) {
       nodes = processTextNode(context, node);
       if (nodes) {
         node = replaceChild(node, nodes);
       }
       return promise(node);
+    } else if (node.tagName === 'VIEW') {
+      if (!node.attributes.name) {
+        throw new Error('<view> element should have a name attribute');
+      }
+      spec = node.attributes.name.value;
+      node.removeAttribute('name');
+      _ref = consumeViewParams(context, node), viewParams = _ref.viewParams, viewId = _ref.viewId;
+      return instantiateView(context, spec, viewParams, viewId).then(function(view) {
+        return replaceChild(node, view.el);
+      });
     } else {
       return join((function() {
-        var _i, _len, _ref, _results;
-        _ref = toArray(node.childNodes);
+        var _i, _len, _ref1, _results;
+        _ref1 = toArray(node.childNodes);
         _results = [];
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          n = _ref[_i];
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          n = _ref1[_i];
           _results.push(process(context, n));
         }
         return _results;
@@ -191,7 +201,7 @@ var __slice = [].slice,
     return _results;
   };
   processAttributes = function(context, node) {
-    var attr, attrCtx, show, _ref, _ref1, _ref2;
+    var attr, attrCtx, show, viewId, viewParams, _ref, _ref1, _ref2, _ref3;
     if ((_ref = node.attributes) != null ? _ref["if"] : void 0) {
       _ref1 = getByPath(context, node.attributes["if"].value), attr = _ref1.attr, attrCtx = _ref1.attrCtx;
       show = jQuery.isFunction(attr) ? attr.call(attrCtx) : attr;
@@ -202,17 +212,9 @@ var __slice = [].slice,
       }
     }
     if ((_ref2 = node.attributes) != null ? _ref2.view : void 0) {
-      return getBySpec(node.attributes.view.value).then(function(viewCls) {
-        var view, viewId, viewParams, _ref3;
-        if (viewCls === void 0) {
-          throw new Error("can't find view class by " + node.attributes.view.value);
-        }
-        _ref3 = consumeViewParams(context, node), viewParams = _ref3.viewParams, viewId = _ref3.viewId;
-        view = new viewCls(viewParams);
-        view.render();
-        if (context.addView) {
-          context.addView(view, viewId);
-        }
+      _ref3 = consumeViewParams(context, node, 'view-'), viewParams = _ref3.viewParams, viewId = _ref3.viewId;
+      viewParams.el = node;
+      return instantiateView(context, node.attributes.view.value, viewParams, viewId).then(function() {
         return {
           remove: false
         };
@@ -223,24 +225,38 @@ var __slice = [].slice,
       });
     }
   };
-  consumeViewParams = function(context, node) {
+  instantiateView = function(context, spec, params, id) {
+    return getBySpec(spec).then(function(viewCls) {
+      var view;
+      if (viewCls === void 0) {
+        throw new Error("can't find view class by '" + spec + "' spec");
+      }
+      view = new viewCls(params);
+      view.render();
+      if (context.addView) {
+        context.addView(view, id);
+      }
+      return view;
+    });
+  };
+  consumeViewParams = function(context, node, prefix) {
     var a, attr, attrCtx, attrName, viewId, viewParams, _i, _len, _ref, _ref1;
     viewParams = {};
     viewId = void 0;
     _ref = node.attributes;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       a = _ref[_i];
-      if (!(a.name.slice(0, 5) === 'view-')) {
+      if (!(prefix && a.name.slice(0, prefix.length) === prefix || !prefix)) {
         continue;
       }
-      attrName = hypensToCamelCase(a.name.slice(5));
+      attrName = prefix ? a.name.slice(prefix.length) : a.name;
+      attrName = hypensToCamelCase(attrName);
       if (attrName === 'id') {
         viewId = a.value;
       }
       _ref1 = getByPath(context, a.value), attr = _ref1.attr, attrCtx = _ref1.attrCtx;
       viewParams[attrName] = jQuery.isFunction(attr) ? attr.call(attrCtx) : attr === void 0 ? a.value : attr;
     }
-    viewParams.el = node;
     return {
       viewParams: viewParams,
       viewId: viewId

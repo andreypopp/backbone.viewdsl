@@ -156,7 +156,7 @@ define (require) ->
             done()
           .end()
 
-    describe 'view instantiation', ->
+    describe 'view instantiation via view attribute', ->
 
       it 'should instantiate views by global spec', (done) ->
 
@@ -228,6 +228,82 @@ define (require) ->
             expect(view.someView).to.be.equal subview
             expect(subview.el.tagName).to.be.equal 'DIV'
             expect(subview.$el.text()).to.be.equal 'Some View'
+            expect(subview instanceof SomeView).to.be.ok
+            expect(subview.options.someParam).to.be.equal 'MyView'
+            expect(subview.options.anotherParam).to.be.equal 'prop!'
+            expect(subview.options.absentParam).to.be.equal 'some string'
+            done()
+          .end()
+
+    describe 'view instantiation via <view> element', ->
+
+      it 'should instantiate views by global spec', (done) ->
+
+        promise = View.from """
+          <div class="some-class">
+            <view name="SomeView">Some View</view>
+          </div>
+          """
+        promise
+          .then (view) ->
+            expect(view.views.length).to.be.equal 1
+            expect(view instanceof View).to.be.ok
+            subview = view.views[0]
+            expect(subview.el.tagName).to.be.equal 'DIV'
+            expect(subview instanceof SomeView).to.be.ok
+            done()
+          .end()
+
+      it 'should instantiate views by AMD spec', (done) ->
+
+        {LoadedView} = require 'views'
+
+        promise = View.from """
+          <div class="some-class">
+            <view name="views:LoadedView" />
+          </div>
+          """
+        promise
+          .then (view) ->
+            expect(view.views.length).to.be.equal 1
+            expect(view instanceof View).to.be.ok
+            subview = view.views[0]
+            expect(subview.el.tagName).to.be.equal 'DIV'
+            expect(subview instanceof LoadedView).to.be.ok
+            done()
+          .end()
+
+      it 'should instantiate view by global spec inside other view', (done) ->
+
+        class MyView extends View
+
+          initialize: ->
+            this.propParam = 'prop!'
+
+          methodParam: ->
+            this.constructor.name
+
+          render: ->
+            this.renderDOM """
+              <div class="some-class">
+                <view
+                  name="SomeView"
+                  id="someView"
+                  some-param="methodParam"
+                  another-param="propParam"
+                  absent-param="some string"
+                  />
+              </div>
+              """
+
+        view = new MyView()
+        view.render()
+          .then ->
+            expect(view.views.length).to.be.equal 1
+            expect(view instanceof View).to.be.ok
+            subview = view.views[0]
+            expect(view.someView).to.be.equal subview
+            expect(subview.el.tagName).to.be.equal 'DIV'
             expect(subview instanceof SomeView).to.be.ok
             expect(subview.options.someParam).to.be.equal 'MyView'
             expect(subview.options.anotherParam).to.be.equal 'prop!'
