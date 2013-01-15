@@ -12,7 +12,7 @@ var __slice = [].slice,
     return root.Backbone.ViewDSL = factory(root.jQuery, root.Backbone, root._);
   }
 })(this, function(jQuery, Backbone, _) {
-  var Promise, View, consumeViewParams, getByPath, getBySpec, hypensToCamelCase, instantiateView, isPromise, join, process, processAttributes, processNode, processTextNode, promise, promiseRequire, render, renderInPlace, replaceChild, textNodeSplitRe, toArray, wrapTemplate;
+  var Promise, View, consumeViewParams, getByPath, getBySpec, hypensToCamelCase, instantiateView, isPromise, join, process, processAttributes, processNode, processTextNode, promise, promiseRequire, render, renderInPlace, replaceChild, textNodeSplitRe, toArray, wrapInFragment, wrapTemplate;
   Promise = (function() {
     var invokeCallback, noop, reject, resolve;
 
@@ -221,6 +221,13 @@ var __slice = [].slice,
   replaceChild = function() {
     var m, n, ns, o, p, _i, _j, _len, _len1;
     o = arguments[0], ns = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+    if (!o.parentNode) {
+      if (ns.length === 1) {
+        return ns[0];
+      } else {
+        return wrapInFragment(ns);
+      }
+    }
     p = o.parentNode;
     for (_i = 0, _len = ns.length; _i < _len; _i++) {
       n = ns[_i];
@@ -239,7 +246,7 @@ var __slice = [].slice,
     return ns;
   };
   wrapTemplate = function(template, requireSingleNode) {
-    var fragment, node, nodes, _i, _len;
+    var nodes;
     if (requireSingleNode == null) {
       requireSingleNode = false;
     }
@@ -248,15 +255,19 @@ var __slice = [].slice,
       throw new Error('templates only of single element are allowed');
     }
     if (nodes.length > 1 || nodes[0].nodeType === Node.TEXT_NODE) {
-      fragment = document.createDocumentFragment();
-      for (_i = 0, _len = nodes.length; _i < _len; _i++) {
-        node = nodes[_i];
-        fragment.appendChild(node);
-      }
-      return fragment;
+      return wrapInFragment(nodes);
     } else {
       return nodes[0];
     }
+  };
+  wrapInFragment = function(nodes) {
+    var fragment, node, _i, _len;
+    fragment = document.createDocumentFragment();
+    for (_i = 0, _len = nodes.length; _i < _len; _i++) {
+      node = nodes[_i];
+      fragment.appendChild(node);
+    }
+    return fragment;
   };
   render = function(node, localContext, context, parentContext, forceClone) {
     var currentContext;

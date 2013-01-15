@@ -159,6 +159,12 @@
 
   # Replace `o` DOM node with a list `ns` of DOM nodes
   replaceChild = (o, ns...) ->
+    if not o.parentNode
+      if ns.length == 1
+        return ns[0]
+      else
+        return wrapInFragment(ns)
+
     p = o.parentNode
     for n in ns
       if typeof n.cloneNode == 'function'
@@ -182,15 +188,18 @@
       [template.cloneNode(true)]
     else
       jQuery.parseHTML(template)
+
     if requireSingleNode and nodes.length != 1
       throw new Error('templates only of single element are allowed')
     if nodes.length > 1 or nodes[0].nodeType == Node.TEXT_NODE
-      fragment = document.createDocumentFragment()
-      for node in nodes
-        fragment.appendChild(node)
-      fragment
+      wrapInFragment(nodes)
     else
       nodes[0]
+
+  wrapInFragment = (nodes) ->
+    fragment = document.createDocumentFragment()
+    fragment.appendChild(node) for node in nodes
+    fragment
 
   # Render `node` in some context.
   #
