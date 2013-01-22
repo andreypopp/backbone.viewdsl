@@ -327,7 +327,7 @@
 
       node.removeAttribute(attr.name)
 
-    # view instantiation view attribute
+    # view instantiation via view attribute
     if node.attributes?.view
       spec = node.attributes.view.value
       node.removeAttribute('view')
