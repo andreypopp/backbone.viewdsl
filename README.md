@@ -295,6 +295,22 @@ This will render a `Hello, <span class="name">World</span>` string inside
 `name()` method — it will be converted to DOM `TextNode`; otherwise you can
 return any DOM object.
 
+## DOM attributes insertion
+
+Attributes prefixed with `attr-` will be resolved against context:
+
+    View.from """
+      <div attr-id="model.id"></div>
+      """, {model: {id: 1}, ...}
+
+will be rendered as
+
+    <div id="1"></div>
+
+If you need just to set attribute without any value you can return boolean
+value — `true` means attribute will present and `false` means attribute will not
+be inserted.
+
 ## Conditional exclusion
 
 To remove DOM nodes conditionally you can use `if` DOM attribute:
