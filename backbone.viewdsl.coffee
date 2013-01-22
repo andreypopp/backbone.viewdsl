@@ -298,6 +298,8 @@
 
     join(nodes)
 
+  processAttrRe = /^attr-/
+
   # Process `node`'s attributes.
   processAttributes = (context, node) ->
     if node.nodeType != Node.ELEMENT_NODE
@@ -313,6 +315,17 @@
     if node.attributes?['element-id']
       context[node.attributes?['element-id'].value] = $(node)
       node.removeAttribute('element-id')
+
+    for attr in node.attributes when processAttrRe.test attr.name
+      name = attr.name.substring(5)
+      value = getByPath(context, attr.value, true).attr
+
+      if _.isBoolean(value)
+        node.setAttribute(name, '') if value
+      else
+        node.setAttribute(name, value)
+
+      node.removeAttribute(attr.name)
 
     # view instantiation view attribute
     if node.attributes?.view

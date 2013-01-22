@@ -12,7 +12,7 @@ var __slice = [].slice,
     return root.Backbone.ViewDSL = factory(root.jQuery, root.Backbone, root._);
   }
 })(this, function(jQuery, Backbone, _) {
-  var Promise, View, consumeViewParams, getByPath, getBySpec, hypensToCamelCase, instantiateView, isPromise, join, process, processAttributes, processNode, processTextNode, promise, promiseRequire, render, renderInPlace, replaceChild, textNodeSplitRe, toArray, wrapInFragment, wrapTemplate;
+  var Promise, View, consumeViewParams, getByPath, getBySpec, hypensToCamelCase, instantiateView, isPromise, join, process, processAttrRe, processAttributes, processNode, processTextNode, promise, promiseRequire, render, renderInPlace, replaceChild, textNodeSplitRe, toArray, wrapInFragment, wrapTemplate;
   Promise = (function() {
     var invokeCallback, noop, reject, resolve;
 
@@ -385,8 +385,9 @@ var __slice = [].slice,
     })();
     return join(nodes);
   };
+  processAttrRe = /^attr-/;
   processAttributes = function(context, node) {
-    var show, spec, _ref, _ref1, _ref2, _ref3;
+    var attr, name, show, spec, value, _i, _len, _ref, _ref1, _ref2, _ref3, _ref4;
     if (node.nodeType !== Node.ELEMENT_NODE) {
       return promise({});
     }
@@ -403,7 +404,24 @@ var __slice = [].slice,
       context[(_ref2 = node.attributes) != null ? _ref2['element-id'].value : void 0] = $(node);
       node.removeAttribute('element-id');
     }
-    if ((_ref3 = node.attributes) != null ? _ref3.view : void 0) {
+    _ref3 = node.attributes;
+    for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
+      attr = _ref3[_i];
+      if (!(processAttrRe.test(attr.name))) {
+        continue;
+      }
+      name = attr.name.substring(5);
+      value = getByPath(context, attr.value, true).attr;
+      if (_.isBoolean(value)) {
+        if (value) {
+          node.setAttribute(name, '');
+        }
+      } else {
+        node.setAttribute(name, value);
+      }
+      node.removeAttribute(attr.name);
+    }
+    if ((_ref4 = node.attributes) != null ? _ref4.view : void 0) {
       spec = node.attributes.view.value;
       node.removeAttribute('view');
       return instantiateView({

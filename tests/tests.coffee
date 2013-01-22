@@ -166,6 +166,47 @@ define (require) ->
             done()
           .done()
 
+    describe 'attribute interpolation', ->
+
+      it 'should set attribute to some value', (done) ->
+
+        promise = View.from """
+          <div attr-id="id"></div>
+          """, {id: 'myid'}
+        promise
+          .then (view) ->
+            el = view.$el
+            expect(view.$el.attr('id')).to.be.equal 'myid'
+            expect(view.$el.attr('attr-id')).to.be.equal undefined
+            done()
+          .done()
+
+      it 'should add attribute if returned value is boolean and true', (done) ->
+
+        promise = View.from """
+          <div attr-enabled="isEnabled"></div>
+          """, {isEnabled: true}
+        promise
+          .then (view) ->
+            el = view.$el
+            expect(view.$el.attr('enabled')).to.be.equal ''
+            expect(view.$el.attr('attr-enabled')).to.be.equal undefined
+            done()
+          .done()
+
+      it 'should not add attribute if returned value is boolean and false', (done) ->
+
+        promise = View.from """
+          <div attr-enabled="isEnabled"></div>
+          """, {isEnabled: false}
+        promise
+          .then (view) ->
+            el = view.$el
+            expect(view.$el.attr('enabled')).to.be.equal undefined
+            expect(view.$el.attr('attr-enabled')).to.be.equal undefined
+            done()
+          .done()
+
     describe 'view instantiation', ->
 
       describe 'via view attribute', ->

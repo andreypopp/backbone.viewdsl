@@ -234,6 +234,47 @@ define(function(require) {
         }).done();
       });
     });
+    describe('attribute interpolation', function() {
+      it('should set attribute to some value', function(done) {
+        var promise;
+        promise = View.from("<div attr-id=\"id\"></div>", {
+          id: 'myid'
+        });
+        return promise.then(function(view) {
+          var el;
+          el = view.$el;
+          expect(view.$el.attr('id')).to.be.equal('myid');
+          expect(view.$el.attr('attr-id')).to.be.equal(void 0);
+          return done();
+        }).done();
+      });
+      it('should add attribute if returned value is boolean and true', function(done) {
+        var promise;
+        promise = View.from("<div attr-enabled=\"isEnabled\"></div>", {
+          isEnabled: true
+        });
+        return promise.then(function(view) {
+          var el;
+          el = view.$el;
+          expect(view.$el.attr('enabled')).to.be.equal('');
+          expect(view.$el.attr('attr-enabled')).to.be.equal(void 0);
+          return done();
+        }).done();
+      });
+      return it('should not add attribute if returned value is boolean and false', function(done) {
+        var promise;
+        promise = View.from("<div attr-enabled=\"isEnabled\"></div>", {
+          isEnabled: false
+        });
+        return promise.then(function(view) {
+          var el;
+          el = view.$el;
+          expect(view.$el.attr('enabled')).to.be.equal(void 0);
+          expect(view.$el.attr('attr-enabled')).to.be.equal(void 0);
+          return done();
+        }).done();
+      });
+    });
     describe('view instantiation', function() {
       describe('via view attribute', function() {
         it('should instantiate views by a global spec', function(done) {
