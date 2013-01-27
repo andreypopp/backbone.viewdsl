@@ -373,7 +373,7 @@ define (require) ->
 
           promise = View.from """
             <div class="some-class">
-              <view name="SomeView">Some View</view>
+              <view class="class-is-here" name="SomeView">Some View</view>
             </div>
             """
           promise
@@ -383,6 +383,7 @@ define (require) ->
               expect(view instanceof View).to.be.ok
               subview = view.views[0]
               expect(subview.el.tagName).to.be.equal 'DIV'
+              expect(subview.$el.hasClass('class-is-here')).to.be.ok
               expect(subview instanceof SomeView).to.be.ok
               done()
             .done()

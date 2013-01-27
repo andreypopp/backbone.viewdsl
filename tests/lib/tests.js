@@ -446,7 +446,7 @@ define(function(require) {
       return describe('via <view> element', function() {
         it('should instantiate views by global spec', function(done) {
           var promise;
-          promise = View.from("<div class=\"some-class\">\n  <view name=\"SomeView\">Some View</view>\n</div>");
+          promise = View.from("<div class=\"some-class\">\n  <view class=\"class-is-here\" name=\"SomeView\">Some View</view>\n</div>");
           return promise.then(function(view) {
             var subview;
             expect(view.$('.some-view').length).to.be.equal(1);
@@ -454,6 +454,7 @@ define(function(require) {
             expect(view instanceof View).to.be.ok;
             subview = view.views[0];
             expect(subview.el.tagName).to.be.equal('DIV');
+            expect(subview.$el.hasClass('class-is-here')).to.be.ok;
             expect(subview instanceof SomeView).to.be.ok;
             return done();
           }).done();

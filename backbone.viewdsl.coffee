@@ -343,8 +343,10 @@
       if viewCls == undefined
         throw new Error("can't find a view by '#{options.spec}' spec")
 
+      fromViewTag = options.node.tagName == 'VIEW'
+
       # read view params from node's attributes
-      prefix = if options.node.tagName == 'VIEW' then undefined else 'view-'
+      prefix = if fromViewTag then undefined else 'view-'
       {viewParams, viewId} = consumeViewParams(options.context, options.node, prefix)
 
       # create or init view
@@ -354,6 +356,10 @@
       else
         viewCls.setElement(options.node) if options.useNode
         viewCls
+
+      # set class on a view if view was instantiated from a <view> tag
+      if fromViewTag and options.node.attributes['class']
+        view.$el.addClass(options.node.attributes['class'].value)
 
       # notify view about being a part of a view hierarchy
       view.setParentContext(options.context) if view.setParentContext

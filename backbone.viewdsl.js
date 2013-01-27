@@ -444,13 +444,17 @@ var __slice = [].slice,
   };
   instantiateView = function(options) {
     return getBySpec(options.spec, options.context).then(function(viewCls) {
-      var c, p, partial, prefix, view, viewId, viewParams, _ref;
+      var c, fromViewTag, p, partial, prefix, view, viewId, viewParams, _ref;
       if (viewCls === void 0) {
         throw new Error("can't find a view by '" + options.spec + "' spec");
       }
-      prefix = options.node.tagName === 'VIEW' ? void 0 : 'view-';
+      fromViewTag = options.node.tagName === 'VIEW';
+      prefix = fromViewTag ? void 0 : 'view-';
       _ref = consumeViewParams(options.context, options.node, prefix), viewParams = _ref.viewParams, viewId = _ref.viewId;
       view = jQuery.isFunction(viewCls) ? (options.useNode ? viewParams.el = options.node : void 0, new viewCls(viewParams)) : (options.useNode ? viewCls.setElement(options.node) : void 0, viewCls);
+      if (fromViewTag && options.node.attributes['class']) {
+        view.$el.addClass(options.node.attributes['class'].value);
+      }
       if (view.setParentContext) {
         view.setParentContext(options.context);
       }
