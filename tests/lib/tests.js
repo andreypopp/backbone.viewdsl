@@ -3,8 +3,8 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 define(function(require) {
-  var View;
-  View = require('backbone.viewdsl').View;
+  var ParameterizableView, View, _ref;
+  _ref = require('backbone.viewdsl'), View = _ref.View, ParameterizableView = _ref.ParameterizableView;
   window.SomeView = (function(_super) {
 
     __extends(SomeView, _super);
@@ -39,6 +39,34 @@ define(function(require) {
     return ParametrizedView;
 
   })(View);
+  window.MyParameterizableView = (function(_super) {
+
+    __extends(MyParameterizableView, _super);
+
+    function MyParameterizableView() {
+      return MyParameterizableView.__super__.constructor.apply(this, arguments);
+    }
+
+    MyParameterizableView.prototype.className = 'MyParameterizableView';
+
+    return MyParameterizableView;
+
+  })(ParameterizableView);
+  window.MyParameterizableTView = (function(_super) {
+
+    __extends(MyParameterizableTView, _super);
+
+    function MyParameterizableTView() {
+      return MyParameterizableTView.__super__.constructor.apply(this, arguments);
+    }
+
+    MyParameterizableTView.prototype.className = 'MyParameterizableTView';
+
+    MyParameterizableTView.prototype.template = "<div class=\"wrapper\">\n  {{partial}}\n</div>";
+
+    return MyParameterizableTView;
+
+  })(ParameterizableView);
   return describe('View', function() {
     describe('basic DOM rendering', function() {
       it('should construct a view from a text only template', function(done) {
@@ -736,7 +764,7 @@ define(function(require) {
         }).done();
       });
     });
-    return describe('text node interpolation', function() {
+    describe('text node interpolation', function() {
       it('should interpolate strings in basic text template', function(done) {
         var MyView, view;
         MyView = (function(_super) {
@@ -998,6 +1026,24 @@ define(function(require) {
         view = new MyView();
         return view.render().then(function() {
           expect(view.$('span.name').text()).to.be.equal('MyClass');
+          return done();
+        }).done();
+      });
+    });
+    return describe('ParametrizedView', function() {
+      it('should append to its el if no template is defined', function(done) {
+        var promise;
+        promise = View.from("<div class=\"outer\">\n  <view name=\"MyParameterizableView\">\n    <div class=\"sentinel\"></div>\n  </view>\n</div>");
+        return promise.then(function(view) {
+          expect(view.$el.has('.MyParameterizableView .sentinel').length).to.be.equal(1);
+          return done();
+        }).done();
+      });
+      return it('should render its partial into template if provided', function(done) {
+        var promise;
+        promise = View.from("<div class=\"outer\">\n  <view name=\"MyParameterizableTView\">\n    <div class=\"sentinel\"></div>\n  </view>\n</div>");
+        return promise.then(function(view) {
+          expect(view.$el.has('.MyParameterizableTView .wrapper .sentinel').length).to.be.equal(1);
           return done();
         }).done();
       });

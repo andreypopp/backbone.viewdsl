@@ -1,6 +1,6 @@
 define (require) ->
 
-  {View} = require 'backbone.viewdsl'
+  {View, ParameterizableView} = require 'backbone.viewdsl'
 
   class window.SomeView extends View
     className: 'some-view'
@@ -13,6 +13,17 @@ define (require) ->
       """
     render: (partial) ->
       this.renderDOM this.template, {node: this.renderTemplate(partial)}
+
+  class window.MyParameterizableView extends ParameterizableView
+    className: 'MyParameterizableView'
+
+  class window.MyParameterizableTView extends ParameterizableView
+    className: 'MyParameterizableTView'
+    template: """
+      <div class="wrapper">
+        {{partial}}
+      </div>
+      """
 
   describe 'View', ->
 
@@ -783,5 +794,39 @@ define (require) ->
         view.render()
           .then ->
             expect(view.$('span.name').text()).to.be.equal 'MyClass'
+            done()
+          .done()
+
+    describe 'ParametrizedView', ->
+
+      it 'should append to its el if no template is defined', (done) ->
+
+        promise = View.from  """
+          <div class="outer">
+            <view name="MyParameterizableView">
+              <div class="sentinel"></div>
+            </view>
+          </div>
+          """
+
+        promise
+          .then (view) ->
+            expect(view.$el.has('.MyParameterizableView .sentinel').length).to.be.equal 1
+            done()
+          .done()
+
+      it 'should render its partial into template if provided', (done) ->
+
+        promise = View.from  """
+          <div class="outer">
+            <view name="MyParameterizableTView">
+              <div class="sentinel"></div>
+            </view>
+          </div>
+          """
+
+        promise
+          .then (view) ->
+            expect(view.$el.has('.MyParameterizableTView .wrapper .sentinel').length).to.be.equal 1
             done()
           .done()

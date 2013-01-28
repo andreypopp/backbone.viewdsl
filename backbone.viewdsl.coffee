@@ -451,4 +451,14 @@
       for view in this.views
         view.remove()
 
-  {View, render, renderInPlace, wrapTemplate}
+  class ParameterizableView extends View
+    parameterizable: true
+
+    render: (partial, localContext) ->
+      if this.template
+        localContext = _.extend({}, localContext, {partial: this.renderTemplate(partial)})
+        super(localContext)
+      else
+        this.renderDOM(partial)
+
+  {View, ParameterizableView, render, renderInPlace, wrapTemplate}

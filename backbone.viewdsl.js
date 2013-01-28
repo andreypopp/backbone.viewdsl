@@ -12,7 +12,7 @@ var __slice = [].slice,
     return root.Backbone.ViewDSL = factory(root.jQuery, root.Backbone, root._);
   }
 })(this, function(jQuery, Backbone, _) {
-  var Promise, View, consumeViewParams, getByPath, getBySpec, hypensToCamelCase, instantiateView, isPromise, join, process, processAttrRe, processAttributes, processNode, processTextNode, promise, promiseRequire, render, renderInPlace, replaceChild, textNodeSplitRe, toArray, wrapInFragment, wrapTemplate;
+  var ParameterizableView, Promise, View, consumeViewParams, getByPath, getBySpec, hypensToCamelCase, instantiateView, isPromise, join, process, processAttrRe, processAttributes, processNode, processTextNode, promise, promiseRequire, render, renderInPlace, replaceChild, textNodeSplitRe, toArray, wrapInFragment, wrapTemplate;
   Promise = (function() {
     var invokeCallback, noop, reject, resolve;
 
@@ -579,8 +579,33 @@ var __slice = [].slice,
     return View;
 
   })(Backbone.View);
+  ParameterizableView = (function(_super) {
+
+    __extends(ParameterizableView, _super);
+
+    function ParameterizableView() {
+      return ParameterizableView.__super__.constructor.apply(this, arguments);
+    }
+
+    ParameterizableView.prototype.parameterizable = true;
+
+    ParameterizableView.prototype.render = function(partial, localContext) {
+      if (this.template) {
+        localContext = _.extend({}, localContext, {
+          partial: this.renderTemplate(partial)
+        });
+        return ParameterizableView.__super__.render.call(this, localContext);
+      } else {
+        return this.renderDOM(partial);
+      }
+    };
+
+    return ParameterizableView;
+
+  })(View);
   return {
     View: View,
+    ParameterizableView: ParameterizableView,
     render: render,
     renderInPlace: renderInPlace,
     wrapTemplate: wrapTemplate
