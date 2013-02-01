@@ -135,8 +135,8 @@
       ctx = o
       o = ctx[n]
       break if o == undefined
-    if callIfMethod and jQuery.isFunction(o)
-      o = o.call(ctx)
+      if callIfMethod and jQuery.isFunction(o)
+        o = o.call(ctx)
     {attr: o, attrCtx: ctx}
 
   # Resolve spec
@@ -419,7 +419,6 @@
     # Render `template` in a context of a view, optionally with `localContext`.
     renderTemplate: (template, localContext) ->
       render(template, localContext, this, this.parentContext)
-
 
     # Render `template` in a context of a view and append result to view's `el`.
     renderDOM: (template, localContext) ->

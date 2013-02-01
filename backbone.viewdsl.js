@@ -188,9 +188,9 @@ var __slice = [].slice,
       if (o === void 0) {
         break;
       }
-    }
-    if (callIfMethod && jQuery.isFunction(o)) {
-      o = o.call(ctx);
+      if (callIfMethod && jQuery.isFunction(o)) {
+        o = o.call(ctx);
+      }
     }
     return {
       attr: o,
