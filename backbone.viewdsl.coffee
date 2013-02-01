@@ -157,6 +157,17 @@
   hypensToCamelCase = (o) ->
     o.replace /-([a-z])/g, (g) -> g[1].toUpperCase()
 
+  insertBefore = (o, n) ->
+    p = o.parentNode
+    if typeof n.cloneNode == 'function'
+      p.insertBefore(n, o)
+    else if typeof n.item == 'function' and n.length or n.jquery
+      p.insertBefore(m, o) for m in n
+    else if _.isArray(n)
+      insertBefore(o, m) for m in n
+    else
+      p.insertBefore(document.createTextNode(String(n)), o)
+
   # Replace `o` DOM node with a list `ns` of DOM nodes
   replaceChild = (o, ns...) ->
     if not o.parentNode
@@ -165,15 +176,9 @@
       else
         return wrapInFragment(ns)
 
-    p = o.parentNode
-    for n in ns
-      if typeof n.cloneNode == 'function'
-        p.insertBefore(n, o)
-      else if typeof n.item == 'function' and n.length or n.jquery
-        p.insertBefore(m, o) for m in n
-      else
-        p.insertBefore(document.createTextNode(String(n)), o)
-    p.removeChild(o)
+    insertBefore(o, n) for n in ns
+
+    o.parentNode.removeChild(o)
     ns
 
   # Prepare `template` to be processed

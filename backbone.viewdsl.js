@@ -12,7 +12,7 @@ var __slice = [].slice,
     return root.Backbone.ViewDSL = factory(root.jQuery, root.Backbone, root._);
   }
 })(this, function(jQuery, Backbone, _) {
-  var ParameterizableView, Promise, View, consumeViewParams, getByPath, getBySpec, hypensToCamelCase, instantiateView, isPromise, join, process, processAttrRe, processAttributes, processNode, processTextNode, promise, promiseRequire, render, renderInPlace, replaceChild, textNodeSplitRe, toArray, wrapInFragment, wrapTemplate;
+  var ParameterizableView, Promise, View, consumeViewParams, getByPath, getBySpec, hypensToCamelCase, insertBefore, instantiateView, isPromise, join, process, processAttrRe, processAttributes, processNode, processTextNode, promise, promiseRequire, render, renderInPlace, replaceChild, textNodeSplitRe, toArray, wrapInFragment, wrapTemplate;
   Promise = (function() {
     var invokeCallback, noop, reject, resolve;
 
@@ -218,8 +218,31 @@ var __slice = [].slice,
       return g[1].toUpperCase();
     });
   };
+  insertBefore = function(o, n) {
+    var m, p, _i, _j, _len, _len1, _results, _results1;
+    p = o.parentNode;
+    if (typeof n.cloneNode === 'function') {
+      return p.insertBefore(n, o);
+    } else if (typeof n.item === 'function' && n.length || n.jquery) {
+      _results = [];
+      for (_i = 0, _len = n.length; _i < _len; _i++) {
+        m = n[_i];
+        _results.push(p.insertBefore(m, o));
+      }
+      return _results;
+    } else if (_.isArray(n)) {
+      _results1 = [];
+      for (_j = 0, _len1 = n.length; _j < _len1; _j++) {
+        m = n[_j];
+        _results1.push(insertBefore(o, m));
+      }
+      return _results1;
+    } else {
+      return p.insertBefore(document.createTextNode(String(n)), o);
+    }
+  };
   replaceChild = function() {
-    var m, n, ns, o, p, _i, _j, _len, _len1;
+    var n, ns, o, _i, _len;
     o = arguments[0], ns = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
     if (!o.parentNode) {
       if (ns.length === 1) {
@@ -228,21 +251,11 @@ var __slice = [].slice,
         return wrapInFragment(ns);
       }
     }
-    p = o.parentNode;
     for (_i = 0, _len = ns.length; _i < _len; _i++) {
       n = ns[_i];
-      if (typeof n.cloneNode === 'function') {
-        p.insertBefore(n, o);
-      } else if (typeof n.item === 'function' && n.length || n.jquery) {
-        for (_j = 0, _len1 = n.length; _j < _len1; _j++) {
-          m = n[_j];
-          p.insertBefore(m, o);
-        }
-      } else {
-        p.insertBefore(document.createTextNode(String(n)), o);
-      }
+      insertBefore(o, n);
     }
-    p.removeChild(o);
+    o.parentNode.removeChild(o);
     return ns;
   };
   wrapTemplate = function(template, requireSingleNode) {
