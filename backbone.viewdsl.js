@@ -373,7 +373,7 @@ var __slice = [].slice,
   };
   textNodeSplitRe = /({{)|(}})/;
   processTextNode = function(context, node) {
-    var data, nodes, part, parts;
+    var data, nodes, part, parts, val;
     if (!textNodeSplitRe.test(node.data)) {
       return promise();
     }
@@ -389,7 +389,11 @@ var __slice = [].slice,
       for (_i = 0, _len = parts.length; _i < _len; _i++) {
         part = parts[_i];
         if (part[0] === '\uF001') {
-          _results.push(getByPath(context, part.slice(1).trim(), true).attr || '');
+          val = getByPath(context, part.slice(1).trim(), true).attr;
+          if (val == null) {
+            val = '';
+          }
+          _results.push(val);
         } else {
           _results.push(part);
         }

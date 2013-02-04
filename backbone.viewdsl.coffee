@@ -297,7 +297,9 @@
 
     nodes = for part in parts
       if part[0] == '\uF001'
-        getByPath(context, part.slice(1).trim(), true).attr or ''
+        val = getByPath(context, part.slice(1).trim(), true).attr
+        val = '' unless val?
+        val
       else
         part
 
