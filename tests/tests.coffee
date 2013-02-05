@@ -12,7 +12,7 @@ define (require) ->
       <span class="author">by {{options.localName}}</span>
       """
     render: (partial) ->
-      this.renderDOM this.template, {node: this.renderTemplate(partial)}
+      this.renderTemplate(this.template, {node: this.renderTemplate(partial)}).appendTo(this.$el)
 
   class window.MyParameterizableView extends ParameterizableView
     className: 'MyParameterizableView'
@@ -77,7 +77,7 @@ define (require) ->
         class MyView extends View
 
           render: ->
-            this.renderDOM 'Hello'
+            this.renderTemplate('Hello').appendTo(this.$el)
 
         view = new MyView()
         view.render()
@@ -91,9 +91,9 @@ define (require) ->
         class MyView extends View
 
           render: ->
-            this.renderDOM """
+            this.renderTemplate("""
               <div class="some-class">Hello</div>
-              """
+              """).appendTo(this.$el)
 
         view = new MyView()
         view.render()
@@ -111,10 +111,10 @@ define (require) ->
         class MyView extends View
 
           render: ->
-            this.renderDOM """
+            this.renderTemplate("""
               <div class="some-class">Hello</div>
               <div class="another-class">Hello2</div>
-              """
+              """).appendTo(this.$el)
 
         view = new MyView()
         view.render()
@@ -132,7 +132,7 @@ define (require) ->
         class MyView extends View
 
           render: ->
-            this.renderDOM document.createElement('div')
+            this.renderTemplate(document.createElement('div')).appendTo(this.$el)
 
         view = new MyView()
         view.render()
@@ -147,7 +147,7 @@ define (require) ->
         class MyView extends View
 
           render: ->
-            this.renderDOM $ '<div>Hello</div>'
+            this.renderTemplate($ '<div>Hello</div>').appendTo(this.$el)
 
         view = new MyView()
         view.render()
@@ -168,12 +168,10 @@ define (require) ->
             """
 
         view = new MyView()
-        expect(view.templateCached).to.be.equal undefined
         view.render()
           .then ->
             expect(view.$el.children().length).to.be.equal 1
             expect(view.$el.text()).to.be.equal 'Hello'
-            expect(view.templateCached).to.not.be.equal undefined
             done()
           .done()
 
@@ -271,7 +269,7 @@ define (require) ->
               this.constructor.name
 
             render: ->
-              this.renderDOM """
+              this.renderTemplate("""
                 <div class="some-class">
                   <div
                     view="SomeView"
@@ -281,7 +279,7 @@ define (require) ->
                     view-absent-param="some string"
                     >Some View</div>
                 </div>
-                """
+                """).appendTo(this.$el)
 
           view = new MyView()
           view.render()
@@ -306,14 +304,14 @@ define (require) ->
             viewClass: window.SomeView
 
             render: ->
-              this.renderDOM """
+              this.renderTemplate("""
                 <div class="some-class">
                   <div
                     view="@viewClass"
                     view-id="someView"
                     >Some View</div>
                 </div>
-                """
+                """).appendTo(this.$el)
 
           view = new MyView()
           view.render()
@@ -336,11 +334,11 @@ define (require) ->
               this.someView = new SomeView()
 
             render: ->
-              this.renderDOM """
+              this.renderTemplate("""
                 <div class="some-class">
                   <div view="@someView">Some View</div>
                 </div>
-                """
+                """).appendTo(this.$el)
 
           view = new MyView()
           view.render()
@@ -430,7 +428,7 @@ define (require) ->
               this.constructor.name
 
             render: ->
-              this.renderDOM """
+              this.renderTemplate("""
                 <div class="some-class">
                   <view
                     name="SomeView"
@@ -440,7 +438,7 @@ define (require) ->
                     absent-param="some string"
                     />
                 </div>
-                """
+                """).appendTo(this.$el)
 
           view = new MyView()
           view.render()
@@ -466,11 +464,11 @@ define (require) ->
               this.someView = new SomeView()
 
             render: ->
-              this.renderDOM """
+              this.renderTemplate("""
                 <div class="some-class">
                   <view name="@someView" />
                 </div>
-                """
+                """).appendTo(this.$el)
 
           view = new MyView()
           view.render()
@@ -519,12 +517,12 @@ define (require) ->
             this.show2 = options.show2
 
           render: ->
-            this.renderDOM """
+            this.renderTemplate("""
               <div>
                 <div if="show1" class="show1"></div>
                 <div if="show2" class="show2"></div>
               </div>
-              """
+              """).appendTo(this.$el)
 
         view = new MyView(show1: true, show2: false)
         view.render()
@@ -542,12 +540,12 @@ define (require) ->
             this.obj = {show1: options.show1, show2: options.show2}
 
           render: ->
-            this.renderDOM """
+            this.renderTemplate("""
               <div>
                 <div if="obj.show1" class="show1"></div>
                 <div if="obj.show2" class="show2"></div>
               </div>
-              """
+              """).appendTo(this.$el)
 
         view = new MyView(show1: true, show2: false)
         view.render()
@@ -569,12 +567,12 @@ define (require) ->
           show2: -> this._show2
 
           render: ->
-            this.renderDOM """
+            this.renderTemplate("""
               <div>
                 <div if="show1" class="show1"></div>
                 <div if="show2" class="show2"></div>
               </div>
-              """
+              """).appendTo(this.$el)
 
         view = new MyView(show1: true, show2: false)
         view.render()
@@ -598,12 +596,12 @@ define (require) ->
             this.obj.show2 = options.show2
 
           render: ->
-            this.renderDOM """
+            this.renderTemplate("""
               <div>
                 <div if="obj.show1" class="show1"></div>
                 <div if="obj.show2" class="show2"></div>
               </div>
-              """
+              """).appendTo(this.$el)
 
         view = new MyView(show1: true, show2: false)
         view.render()
@@ -623,9 +621,9 @@ define (require) ->
             this.name = options.name
 
           render: ->
-            this.renderDOM """
+            this.renderTemplate("""
               Hello, {{name}}!
-              """
+              """).appendTo(this.$el)
 
         view = new MyView(name: 'World')
         view.render()
@@ -639,9 +637,9 @@ define (require) ->
         class MyView extends View
 
           render: ->
-            this.renderDOM """
+            this.renderTemplate("""
               Hello, {{name}}!
-              """
+              """).appendTo(this.$el)
 
         view = new MyView(name: 'World')
         view.render()
@@ -658,9 +656,9 @@ define (require) ->
             this.name = options.name
 
           render: ->
-            this.renderDOM """
+            this.renderTemplate("""
               Hello, {{name}}{{greetingEnd}}
-              """, {greetingEnd: '!!!'}
+              """, {greetingEnd: '!!!'}).appendTo(this.$el)
 
         view = new MyView(name: 'World')
         view.render()
@@ -677,11 +675,11 @@ define (require) ->
             this.name = options.name
 
           render: ->
-            this.renderDOM """
+            this.renderTemplate("""
               <div>
                 Hello, <span class="name">{{name}}</span>!
               </div>
-              """
+              """).appendTo(this.$el)
 
         view = new MyView(name: 'World')
         view.render()
@@ -698,11 +696,11 @@ define (require) ->
             this.constructor.name
 
           render: ->
-            this.renderDOM """
+            this.renderTemplate("""
               <div>
                 Hello, <span class="name">{{name}}</span>!
               </div>
-              """
+              """).appendTo(this.$el)
 
         view = new MyView()
         view.render()
@@ -719,11 +717,11 @@ define (require) ->
             $('<span class="inner-name">World</span>')
 
           render: ->
-            this.renderDOM """
+            this.renderTemplate("""
               <div>
                 Hello, <span class="name">{{name}}</span>!
               </div>
-              """
+              """).appendTo(this.$el)
 
         view = new MyView()
         view.render()
@@ -740,11 +738,11 @@ define (require) ->
             $('<span class="inner-name">World</span>')[0]
 
           render: ->
-            this.renderDOM """
+            this.renderTemplate("""
               <div>
                 Hello, <span class="name">{{name}}</span>!
               </div>
-              """
+              """).appendTo(this.$el)
 
         view = new MyView()
         view.render()
@@ -761,9 +759,9 @@ define (require) ->
             this.obj = {name: 'World'}
 
           render: ->
-            this.renderDOM """
+            this.renderTemplate("""
               Hello, {{obj.name}}!
-              """
+              """).appendTo(this.$el)
 
         view = new MyView(name: 'World')
         view.render()
@@ -784,11 +782,11 @@ define (require) ->
             this.obj = new MyClass()
 
           render: ->
-            this.renderDOM """
+            this.renderTemplate("""
               <div>
                 Hello, <span class="name">{{obj.name}}</span>!
               </div>
-              """
+              """).appendTo(this.$el)
 
         view = new MyView()
         view.render()

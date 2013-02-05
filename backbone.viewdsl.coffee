@@ -17,6 +17,8 @@
   # To prevent uncatched and unlogged exception it is always useful to call
   # Promise.done() method at the end of the chain.
   class Promise
+    extend this.prototype, Backbone.Events
+
     noop = ->
 
     resolve = (promise, value) ->
@@ -84,7 +86,11 @@
       this.isDone = true
       throw this.rejectedValue if this.rejectedValue
 
-  extend(Promise.prototype, Backbone.Events)
+    appendTo: (target) ->
+      this.then (node) -> $(node).appendTo(target)
+
+    prependTo: (target) ->
+      this.then (node) -> $(node).prependTo(target)
 
   isPromise = (o) ->
     typeof o.then == 'function'
@@ -123,10 +129,29 @@
     require [moduleName], (module) -> p.resolve(module)
     p
 
+  class Scope
+
+    constructor: (ctx, locals, parent) ->
+      this.ctx = ctx
+      this.locals = locals
+      this.parent = parent
+
+    get: (path, callIfMethod = false) ->
+      result = getByPath(this.locals, path, callIfMethod) if this.locals?
+      return result if result?.attr?
+
+      result = getByPath(this.ctx, path, callIfMethod)
+      return result if result?.attr?
+
+      result = this.parent.get(path, callIfMethod) if this.parent?
+      return result if result?.attr?
+
+      {attr: undefined, attrCtx: undefined}
+
   # Get attribute from `o` object by dotted path `p`
   #
   # If `callIfMethod` argument is true and path points to a function then call
-  # it preserving right context and use returned value as a result
+  # it preserving right scope and use returned value as a result
   getByPath = (o, p, callIfMethod = false) ->
     if p.trim().length == 0
       return [o, window]
@@ -143,13 +168,13 @@
   # Specs can be:
   # * `some/module:some.obj` resolves `some.obj` against `some/module` module
   # * `some.obj` resolves `some.obj` against `window`
-  # * `@some.obj` resolves `some.obj` against `context` argument
-  getBySpec = (spec, context = window) ->
+  # * `@some.obj` resolves `some.obj` against `scope` argument
+  getBySpec = (spec, scope = window) ->
     if /:/.test spec
       [module, path] = spec.split(':', 2)
       promiseRequire(module).then (module) -> getByPath(module, path).attr
     else if spec and spec[0] == '@'
-      promise getByPath(context, spec.slice(1)).attr
+      promise scope.get(spec.slice(1)).attr
     else
       promise getByPath(window, spec).attr
 
@@ -205,40 +230,33 @@
     fragment.appendChild(node) for node in nodes
     fragment
 
-  # Render `node` in some context.
+  # Render `node` in some scope.
   #
-  # Rendering context builds up from a `localContext`, `context` and a
-  # `parentContext`. `context` is the "main" context here, it provides data for
-  # rendering `node` and all writes ends-up there. `localContext` works like an
-  # overlay for `context` — you can submit additional and temporal values there.
-  # `parentContext` is a kind of a fallback for lookups which are missed from
-  # `context`.
+  # Rendering scope builds up from a `locals`, `scope` and a
+  # `parentScope`. `scope` is the "main" scope here, it provides data for
+  # rendering `node` and all writes ends-up there. `locals` works like an
+  # overlay for `scope` — you can submit additional and temporal values there.
+  # `parentScope` is a kind of a fallback for lookups which are missed from
+  # `scope`.
   #
   # If `forceClone` is false then `node` isn't cloned.
-  render = (node, localContext, context, parentContext, forceClone = true) ->
+  render = (node, ctx, locals, parentScope, forceClone = true) ->
     if not (typeof node.cloneNode == 'function')
       node = wrapTemplate(node)
     else if forceClone
       node = node.cloneNode(true)
 
-    currentContext = if parentContext then Object.create(parentContext) else {}
-    currentContext = extend(currentContext, context) if context
-    currentContext = extend(Object.create(currentContext), localContext) if localContext
-    currentContext = Object.create(currentContext)
-
-    process(currentContext, node).then (result) ->
-      for prop of currentContext when currentContext.hasOwnProperty(prop)
-        context[prop] = currentContext[prop]
-      result
+    scope = new Scope(ctx, locals, parentScope)
+    process(scope, node)
 
   # The same as render, but only for those nodes are already in DOM.
   #
   # This can be useful if you want to define your app in original HTML.
-  renderInPlace = (node, localContext, context, parentContext) ->
-    render(node, localContext, context, parentContext, false)
+  renderInPlace = (node, ctx, locals, parentScope) ->
+    render(node, ctx, locals, parentScope, false)
 
   # Process single `node`.
-  process = (context, node) ->
+  process = (scope, node) ->
 
     # check if we already seen the node
     if node.seen
@@ -246,7 +264,7 @@
     else
       node.seen = true
 
-    processAttributes(context, node).then (pragmas) ->
+    processAttributes(scope, node).then (pragmas) ->
       if pragmas.skip
         promise()
 
@@ -255,14 +273,14 @@
         promise()
 
       else
-        processNode(context, node)
+        processNode(scope, node)
 
   # Process `node` content.
-  processNode = (context, node) ->
+  processNode = (scope, node) ->
 
     # text node interpolation
     if node.nodeType == Node.TEXT_NODE
-      processTextNode(context, node).then (nodes) ->
+      processTextNode(scope, node).then (nodes) ->
         node = replaceChild(node, nodes...) if nodes
         node
 
@@ -272,7 +290,7 @@
         throw new Error('<view> element should have a name attribute')
       spec = node.attributes.name.value
       node.removeAttribute('name')
-      instantiateView(context: context, spec: spec, node: node, useNode: false)
+      instantiateView(scope: scope, spec: spec, node: node, useNode: false)
         .then (view) ->
           p = node.parentNode
           nodes = replaceChild(node, view.el)
@@ -280,12 +298,12 @@
 
     # recursively traverse children
     else
-      join(process(context, n) for n in toArray(node.childNodes)).then -> node
+      join(process(scope, n) for n in toArray(node.childNodes)).then -> node
 
   textNodeSplitRe = /({{)|(}})/
 
   # Process `TextNode`'s content to interpolate values.
-  processTextNode = (context, node) ->
+  processTextNode = (scope, node) ->
     return promise() unless textNodeSplitRe.test node.data
 
     data = node.data
@@ -296,7 +314,7 @@
 
     nodes = for part in parts
       if part[0] == '\uF001'
-        val = getByPath(context, part.slice(1).trim(), true).attr
+        val = scope.get(part.slice(1).trim(), true).attr
         val = '' unless val?
         val
       else
@@ -307,24 +325,24 @@
   processAttrRe = /^attr-/
 
   # Process `node`'s attributes.
-  processAttributes = (context, node) ->
+  processAttributes = (scope, node) ->
     if node.nodeType != Node.ELEMENT_NODE
       return promise {}
 
     # conditional exclusion
     if node.attributes?.if
-      show = getByPath(context, node.attributes.if.value, true).attr
+      show = scope.get(node.attributes.if.value, true).attr
       node.removeAttribute('if')
       return promise {remove: true} unless show
 
     # DOM element references
     if node.attributes?['element-id']
-      context[node.attributes?['element-id'].value] = $(node)
+      scope.ctx[node.attributes?['element-id'].value] = $(node)
       node.removeAttribute('element-id')
 
     for attr in node.attributes when processAttrRe.test attr.name
       name = attr.name.substring(5)
-      value = getByPath(context, attr.value, true).attr
+      value = scope.get(attr.value, true).attr
 
       if isBoolean(value)
         node.setAttribute(name, '') if value
@@ -337,7 +355,7 @@
     if node.attributes?.view
       spec = node.attributes.view.value
       node.removeAttribute('view')
-      instantiateView(context: context, spec: spec, node: node, useNode: true)
+      instantiateView(scope: scope, spec: spec, node: node, useNode: true)
         .then (view) -> if view.parameterizable then {skip: true} else {}
 
     else
@@ -345,7 +363,7 @@
 
   # Instantiate view from `options`
   instantiateView = (options) ->
-    getBySpec(options.spec, options.context).then (viewCls) ->
+    getBySpec(options.spec, options.scope).then (viewCls) ->
       if viewCls == undefined
         throw new Error("can't find a view by '#{options.spec}' spec")
 
@@ -353,7 +371,7 @@
 
       # read view params from node's attributes
       prefix = if fromViewTag then undefined else 'view-'
-      {viewParams, viewId} = consumeViewParams(options.context, options.node, prefix)
+      {viewParams, viewId} = consumeViewParams(options.scope, options.node, prefix)
 
       # create or init view
       view = if jQuery.isFunction(viewCls)
@@ -368,8 +386,8 @@
         view.$el.addClass(options.node.attributes['class'].value)
 
       # notify view about being a part of a view hierarchy
-      view.setParentContext(options.context) if view.setParentContext
-      options.context.addView(view, viewId) if options.context.addView
+      view.setParentScope(options.scope) if view.setParentScope
+      options.scope.ctx.addView(view, viewId) if options.scope.ctx.addView
 
       p = if view.parameterizable
         # if view is parameterizable we need to pass all DOM element inside
@@ -383,8 +401,8 @@
 
       p.then -> view
 
-  # Read view params from `node` in `context` using `prefix`
-  consumeViewParams = (context, node, prefix) ->
+  # Read view params from `node` in `scope` using `prefix`
+  consumeViewParams = (scope, node, prefix) ->
     viewParams = {}
     viewId = undefined
 
@@ -400,7 +418,7 @@
         node.removeAttribute(a.name)
         continue
 
-      viewParams[attrName] = getByPath(context, a.value, true).attr or a.value
+      viewParams[attrName] = scope.get(a.value, true).attr or a.value
 
     {viewParams, viewId}
 
@@ -408,13 +426,12 @@
   class View extends Backbone.View
 
     template: undefined
-    templateCached: undefined
     parameterizable: false
 
-    @from: (template, localContext) ->
+    @from: (template, locals) ->
       node = wrapTemplate(template, true)
       view = new this(el: node)
-      render(node, localContext, view, undefined, false).then ->
+      render(node, view, locals, undefined, false).then ->
         view.render()
         view
 
@@ -422,18 +439,12 @@
       super
       this.views = []
 
-    # Render `template` in a context of a view, optionally with `localContext`.
-    renderTemplate: (template, localContext) ->
-      render(template, localContext, this, this.parentContext)
+    # Render `template` in a scope of a view, optionally with `locals`.
+    renderTemplate: (template, locals) ->
+      render(template, this, locals, this.parentScope)
 
-    # Render `template` in a context of a view and append result to view's `el`.
-    renderDOM: (template, localContext) ->
-      this.renderTemplate(template, localContext).then (node) =>
-        this.$el.append(node)
-        this
-
-    setParentContext: (parentContext) ->
-      this.parentContext = parentContext
+    setParentScope: (parentScope) ->
+      this.parentScope = parentScope
 
     addView: (view, viewId) ->
       this.views.push(view)
@@ -442,14 +453,9 @@
     # Default implementation of `render()` method which tries to render template
     # stored in `template` attribute of a view. If `template` is stored into
     # prototype then it caches it.
-    render: (localContext) ->
-      return unless this.template
-      if this.hasOwnProperty('template')
-        this.renderDOM(this.template, localContext)
-      else
-        if this.constructor::templateCached == undefined
-          this.constructor::templateCached = wrapTemplate(this.constructor::template)
-        this.renderDOM(this.constructor::templateCached, localContext)
+    render: (locals) ->
+      return unless this.template?
+      this.renderTemplate(this.template, locals).appendTo(this.$el)
 
     remove: ->
       super
@@ -459,11 +465,11 @@
   class ParameterizableView extends View
     parameterizable: true
 
-    render: (partial, localContext) ->
+    render: (partial, locals) ->
       if this.template
-        localContext = extend({}, localContext, {partial: this.renderTemplate(partial)})
-        super(localContext)
+        locals = extend({}, locals, {partial: this.renderTemplate(partial)})
+        super(locals)
       else
-        this.renderDOM(partial)
+        this.renderTemplate(partial).appendTo(this.$el)
 
   {View, ParameterizableView, render, renderInPlace, wrapTemplate}

@@ -12,10 +12,12 @@ var __slice = [].slice,
     return root.Backbone.ViewDSL = factory(root.jQuery, root.Backbone, root._);
   }
 })(this, function(jQuery, Backbone, _) {
-  var ParameterizableView, Promise, View, consumeViewParams, extend, getByPath, getBySpec, hypensToCamelCase, insertBefore, instantiateView, isArray, isBoolean, isPromise, join, process, processAttrRe, processAttributes, processNode, processTextNode, promise, promiseRequire, render, renderInPlace, replaceChild, textNodeSplitRe, toArray, wrapInFragment, wrapTemplate;
+  var ParameterizableView, Promise, Scope, View, consumeViewParams, extend, getByPath, getBySpec, hypensToCamelCase, insertBefore, instantiateView, isArray, isBoolean, isPromise, join, process, processAttrRe, processAttributes, processNode, processTextNode, promise, promiseRequire, render, renderInPlace, replaceChild, textNodeSplitRe, toArray, wrapInFragment, wrapTemplate;
   isArray = _.isArray, isBoolean = _.isBoolean, extend = _.extend, toArray = _.toArray;
   Promise = (function() {
     var invokeCallback, noop, reject, resolve;
+
+    extend(Promise.prototype, Backbone.Events);
 
     noop = function() {};
 
@@ -113,10 +115,21 @@ var __slice = [].slice,
       }
     };
 
+    Promise.prototype.appendTo = function(target) {
+      return this.then(function(node) {
+        return $(node).appendTo(target);
+      });
+    };
+
+    Promise.prototype.prependTo = function(target) {
+      return this.then(function(node) {
+        return $(node).prependTo(target);
+      });
+    };
+
     return Promise;
 
   })();
-  extend(Promise.prototype, Backbone.Events);
   isPromise = function(o) {
     return typeof o.then === 'function';
   };
@@ -170,6 +183,44 @@ var __slice = [].slice,
     });
     return p;
   };
+  Scope = (function() {
+
+    function Scope(ctx, locals, parent) {
+      this.ctx = ctx;
+      this.locals = locals;
+      this.parent = parent;
+    }
+
+    Scope.prototype.get = function(path, callIfMethod) {
+      var result;
+      if (callIfMethod == null) {
+        callIfMethod = false;
+      }
+      if (this.locals != null) {
+        result = getByPath(this.locals, path, callIfMethod);
+      }
+      if ((result != null ? result.attr : void 0) != null) {
+        return result;
+      }
+      result = getByPath(this.ctx, path, callIfMethod);
+      if ((result != null ? result.attr : void 0) != null) {
+        return result;
+      }
+      if (this.parent != null) {
+        result = this.parent.get(path, callIfMethod);
+      }
+      if ((result != null ? result.attr : void 0) != null) {
+        return result;
+      }
+      return {
+        attr: void 0,
+        attrCtx: void 0
+      };
+    };
+
+    return Scope;
+
+  })();
   getByPath = function(o, p, callIfMethod) {
     var ctx, n, _i, _len, _ref;
     if (callIfMethod == null) {
@@ -195,10 +246,10 @@ var __slice = [].slice,
       attrCtx: ctx
     };
   };
-  getBySpec = function(spec, context) {
+  getBySpec = function(spec, scope) {
     var module, path, _ref;
-    if (context == null) {
-      context = window;
+    if (scope == null) {
+      scope = window;
     }
     if (/:/.test(spec)) {
       _ref = spec.split(':', 2), module = _ref[0], path = _ref[1];
@@ -206,7 +257,7 @@ var __slice = [].slice,
         return getByPath(module, path).attr;
       });
     } else if (spec && spec[0] === '@') {
-      return promise(getByPath(context, spec.slice(1)).attr);
+      return promise(scope.get(spec.slice(1)).attr);
     } else {
       return promise(getByPath(window, spec).attr);
     }
@@ -280,8 +331,8 @@ var __slice = [].slice,
     }
     return fragment;
   };
-  render = function(node, localContext, context, parentContext, forceClone) {
-    var currentContext;
+  render = function(node, ctx, locals, parentScope, forceClone) {
+    var scope;
     if (forceClone == null) {
       forceClone = true;
     }
@@ -290,48 +341,33 @@ var __slice = [].slice,
     } else if (forceClone) {
       node = node.cloneNode(true);
     }
-    currentContext = parentContext ? Object.create(parentContext) : {};
-    if (context) {
-      currentContext = extend(currentContext, context);
-    }
-    if (localContext) {
-      currentContext = extend(Object.create(currentContext), localContext);
-    }
-    currentContext = Object.create(currentContext);
-    return process(currentContext, node).then(function(result) {
-      var prop;
-      for (prop in currentContext) {
-        if (currentContext.hasOwnProperty(prop)) {
-          context[prop] = currentContext[prop];
-        }
-      }
-      return result;
-    });
+    scope = new Scope(ctx, locals, parentScope);
+    return process(scope, node);
   };
-  renderInPlace = function(node, localContext, context, parentContext) {
-    return render(node, localContext, context, parentContext, false);
+  renderInPlace = function(node, ctx, locals, parentScope) {
+    return render(node, ctx, locals, parentScope, false);
   };
-  process = function(context, node) {
+  process = function(scope, node) {
     if (node.seen) {
       return promise(node);
     } else {
       node.seen = true;
     }
-    return processAttributes(context, node).then(function(pragmas) {
+    return processAttributes(scope, node).then(function(pragmas) {
       if (pragmas.skip) {
         return promise();
       } else if (pragmas.remove) {
         node.parentNode.removeChild(node);
         return promise();
       } else {
-        return processNode(context, node);
+        return processNode(scope, node);
       }
     });
   };
-  processNode = function(context, node) {
+  processNode = function(scope, node) {
     var n, spec;
     if (node.nodeType === Node.TEXT_NODE) {
-      return processTextNode(context, node).then(function(nodes) {
+      return processTextNode(scope, node).then(function(nodes) {
         if (nodes) {
           node = replaceChild.apply(null, [node].concat(__slice.call(nodes)));
         }
@@ -344,7 +380,7 @@ var __slice = [].slice,
       spec = node.attributes.name.value;
       node.removeAttribute('name');
       return instantiateView({
-        context: context,
+        scope: scope,
         spec: spec,
         node: node,
         useNode: false
@@ -361,7 +397,7 @@ var __slice = [].slice,
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           n = _ref[_i];
-          _results.push(process(context, n));
+          _results.push(process(scope, n));
         }
         return _results;
       })()).then(function() {
@@ -370,7 +406,7 @@ var __slice = [].slice,
     }
   };
   textNodeSplitRe = /({{)|(}})/;
-  processTextNode = function(context, node) {
+  processTextNode = function(scope, node) {
     var data, nodes, part, parts, val;
     if (!textNodeSplitRe.test(node.data)) {
       return promise();
@@ -387,7 +423,7 @@ var __slice = [].slice,
       for (_i = 0, _len = parts.length; _i < _len; _i++) {
         part = parts[_i];
         if (part[0] === '\uF001') {
-          val = getByPath(context, part.slice(1).trim(), true).attr;
+          val = scope.get(part.slice(1).trim(), true).attr;
           if (val == null) {
             val = '';
           }
@@ -401,13 +437,13 @@ var __slice = [].slice,
     return join(nodes);
   };
   processAttrRe = /^attr-/;
-  processAttributes = function(context, node) {
+  processAttributes = function(scope, node) {
     var attr, name, show, spec, value, _i, _len, _ref, _ref1, _ref2, _ref3, _ref4;
     if (node.nodeType !== Node.ELEMENT_NODE) {
       return promise({});
     }
     if ((_ref = node.attributes) != null ? _ref["if"] : void 0) {
-      show = getByPath(context, node.attributes["if"].value, true).attr;
+      show = scope.get(node.attributes["if"].value, true).attr;
       node.removeAttribute('if');
       if (!show) {
         return promise({
@@ -416,7 +452,7 @@ var __slice = [].slice,
       }
     }
     if ((_ref1 = node.attributes) != null ? _ref1['element-id'] : void 0) {
-      context[(_ref2 = node.attributes) != null ? _ref2['element-id'].value : void 0] = $(node);
+      scope.ctx[(_ref2 = node.attributes) != null ? _ref2['element-id'].value : void 0] = $(node);
       node.removeAttribute('element-id');
     }
     _ref3 = node.attributes;
@@ -426,7 +462,7 @@ var __slice = [].slice,
         continue;
       }
       name = attr.name.substring(5);
-      value = getByPath(context, attr.value, true).attr;
+      value = scope.get(attr.value, true).attr;
       if (isBoolean(value)) {
         if (value) {
           node.setAttribute(name, '');
@@ -440,7 +476,7 @@ var __slice = [].slice,
       spec = node.attributes.view.value;
       node.removeAttribute('view');
       return instantiateView({
-        context: context,
+        scope: scope,
         spec: spec,
         node: node,
         useNode: true
@@ -458,23 +494,23 @@ var __slice = [].slice,
     }
   };
   instantiateView = function(options) {
-    return getBySpec(options.spec, options.context).then(function(viewCls) {
+    return getBySpec(options.spec, options.scope).then(function(viewCls) {
       var c, fromViewTag, p, partial, prefix, view, viewId, viewParams, _ref;
       if (viewCls === void 0) {
         throw new Error("can't find a view by '" + options.spec + "' spec");
       }
       fromViewTag = options.node.tagName === 'VIEW';
       prefix = fromViewTag ? void 0 : 'view-';
-      _ref = consumeViewParams(options.context, options.node, prefix), viewParams = _ref.viewParams, viewId = _ref.viewId;
+      _ref = consumeViewParams(options.scope, options.node, prefix), viewParams = _ref.viewParams, viewId = _ref.viewId;
       view = jQuery.isFunction(viewCls) ? (options.useNode ? viewParams.el = options.node : void 0, new viewCls(viewParams)) : (options.useNode ? viewCls.setElement(options.node) : void 0, viewCls);
       if (fromViewTag && options.node.attributes['class']) {
         view.$el.addClass(options.node.attributes['class'].value);
       }
-      if (view.setParentContext) {
-        view.setParentContext(options.context);
+      if (view.setParentScope) {
+        view.setParentScope(options.scope);
       }
-      if (options.context.addView) {
-        options.context.addView(view, viewId);
+      if (options.scope.ctx.addView) {
+        options.scope.ctx.addView(view, viewId);
       }
       p = view.parameterizable ? (partial = $((function() {
         var _i, _len, _ref1, _results;
@@ -491,7 +527,7 @@ var __slice = [].slice,
       });
     });
   };
-  consumeViewParams = function(context, node, prefix) {
+  consumeViewParams = function(scope, node, prefix) {
     var a, attrName, viewId, viewParams, _i, _len, _ref;
     viewParams = {};
     viewId = void 0;
@@ -508,7 +544,7 @@ var __slice = [].slice,
         node.removeAttribute(a.name);
         continue;
       }
-      viewParams[attrName] = getByPath(context, a.value, true).attr || a.value;
+      viewParams[attrName] = scope.get(a.value, true).attr || a.value;
     }
     return {
       viewParams: viewParams,
@@ -521,17 +557,15 @@ var __slice = [].slice,
 
     View.prototype.template = void 0;
 
-    View.prototype.templateCached = void 0;
-
     View.prototype.parameterizable = false;
 
-    View.from = function(template, localContext) {
+    View.from = function(template, locals) {
       var node, view;
       node = wrapTemplate(template, true);
       view = new this({
         el: node
       });
-      return render(node, localContext, view, void 0, false).then(function() {
+      return render(node, view, locals, void 0, false).then(function() {
         view.render();
         return view;
       });
@@ -542,20 +576,12 @@ var __slice = [].slice,
       this.views = [];
     }
 
-    View.prototype.renderTemplate = function(template, localContext) {
-      return render(template, localContext, this, this.parentContext);
+    View.prototype.renderTemplate = function(template, locals) {
+      return render(template, this, locals, this.parentScope);
     };
 
-    View.prototype.renderDOM = function(template, localContext) {
-      var _this = this;
-      return this.renderTemplate(template, localContext).then(function(node) {
-        _this.$el.append(node);
-        return _this;
-      });
-    };
-
-    View.prototype.setParentContext = function(parentContext) {
-      return this.parentContext = parentContext;
+    View.prototype.setParentScope = function(parentScope) {
+      return this.parentScope = parentScope;
     };
 
     View.prototype.addView = function(view, viewId) {
@@ -565,18 +591,11 @@ var __slice = [].slice,
       }
     };
 
-    View.prototype.render = function(localContext) {
-      if (!this.template) {
+    View.prototype.render = function(locals) {
+      if (this.template == null) {
         return;
       }
-      if (this.hasOwnProperty('template')) {
-        return this.renderDOM(this.template, localContext);
-      } else {
-        if (this.constructor.prototype.templateCached === void 0) {
-          this.constructor.prototype.templateCached = wrapTemplate(this.constructor.prototype.template);
-        }
-        return this.renderDOM(this.constructor.prototype.templateCached, localContext);
-      }
+      return this.renderTemplate(this.template, locals).appendTo(this.$el);
     };
 
     View.prototype.remove = function() {
@@ -604,14 +623,14 @@ var __slice = [].slice,
 
     ParameterizableView.prototype.parameterizable = true;
 
-    ParameterizableView.prototype.render = function(partial, localContext) {
+    ParameterizableView.prototype.render = function(partial, locals) {
       if (this.template) {
-        localContext = extend({}, localContext, {
+        locals = extend({}, locals, {
           partial: this.renderTemplate(partial)
         });
-        return ParameterizableView.__super__.render.call(this, localContext);
+        return ParameterizableView.__super__.render.call(this, locals);
       } else {
-        return this.renderDOM(partial);
+        return this.renderTemplate(partial).appendTo(this.$el);
       }
     };
 

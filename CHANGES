@@ -1,0 +1,4 @@
+# 0.9
+
+* removed `View.renderDOM(...)`, use `View.renderTemplate(..).appendTo(this.el)`
+  instead.

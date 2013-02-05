@@ -31,9 +31,9 @@ define(function(require) {
     ParametrizedView.prototype.template = "<div class=\"decor\">{{node}}</div>\n<span class=\"author\">by {{options.localName}}</span>";
 
     ParametrizedView.prototype.render = function(partial) {
-      return this.renderDOM(this.template, {
+      return this.renderTemplate(this.template, {
         node: this.renderTemplate(partial)
-      });
+      }).appendTo(this.$el);
     };
 
     return ParametrizedView;
@@ -117,7 +117,7 @@ define(function(require) {
           }
 
           MyView.prototype.render = function() {
-            return this.renderDOM('Hello');
+            return this.renderTemplate('Hello').appendTo(this.$el);
           };
 
           return MyView;
@@ -140,7 +140,7 @@ define(function(require) {
           }
 
           MyView.prototype.render = function() {
-            return this.renderDOM("<div class=\"some-class\">Hello</div>");
+            return this.renderTemplate("<div class=\"some-class\">Hello</div>").appendTo(this.$el);
           };
 
           return MyView;
@@ -168,7 +168,7 @@ define(function(require) {
           }
 
           MyView.prototype.render = function() {
-            return this.renderDOM("<div class=\"some-class\">Hello</div>\n<div class=\"another-class\">Hello2</div>");
+            return this.renderTemplate("<div class=\"some-class\">Hello</div>\n<div class=\"another-class\">Hello2</div>").appendTo(this.$el);
           };
 
           return MyView;
@@ -195,7 +195,7 @@ define(function(require) {
           }
 
           MyView.prototype.render = function() {
-            return this.renderDOM(document.createElement('div'));
+            return this.renderTemplate(document.createElement('div')).appendTo(this.$el);
           };
 
           return MyView;
@@ -219,7 +219,7 @@ define(function(require) {
           }
 
           MyView.prototype.render = function() {
-            return this.renderDOM($('<div>Hello</div>'));
+            return this.renderTemplate($('<div>Hello</div>')).appendTo(this.$el);
           };
 
           return MyView;
@@ -253,11 +253,9 @@ define(function(require) {
 
         })(View);
         view = new MyView();
-        expect(view.templateCached).to.be.equal(void 0);
         return view.render().then(function() {
           expect(view.$el.children().length).to.be.equal(1);
           expect(view.$el.text()).to.be.equal('Hello');
-          expect(view.templateCached).to.not.be.equal(void 0);
           return done();
         }).done();
       });
@@ -353,7 +351,7 @@ define(function(require) {
             };
 
             MyView.prototype.render = function() {
-              return this.renderDOM("<div class=\"some-class\">\n  <div\n    view=\"SomeView\"\n    view-id=\"someView\"\n    view-some-param=\"methodParam\"\n    view-another-param=\"propParam\"\n    view-absent-param=\"some string\"\n    >Some View</div>\n</div>");
+              return this.renderTemplate("<div class=\"some-class\">\n  <div\n    view=\"SomeView\"\n    view-id=\"someView\"\n    view-some-param=\"methodParam\"\n    view-another-param=\"propParam\"\n    view-absent-param=\"some string\"\n    >Some View</div>\n</div>").appendTo(this.$el);
             };
 
             return MyView;
@@ -388,7 +386,7 @@ define(function(require) {
             MyView.prototype.viewClass = window.SomeView;
 
             MyView.prototype.render = function() {
-              return this.renderDOM("<div class=\"some-class\">\n  <div\n    view=\"@viewClass\"\n    view-id=\"someView\"\n    >Some View</div>\n</div>");
+              return this.renderTemplate("<div class=\"some-class\">\n  <div\n    view=\"@viewClass\"\n    view-id=\"someView\"\n    >Some View</div>\n</div>").appendTo(this.$el);
             };
 
             return MyView;
@@ -422,7 +420,7 @@ define(function(require) {
             };
 
             MyView.prototype.render = function() {
-              return this.renderDOM("<div class=\"some-class\">\n  <div view=\"@someView\">Some View</div>\n</div>");
+              return this.renderTemplate("<div class=\"some-class\">\n  <div view=\"@someView\">Some View</div>\n</div>").appendTo(this.$el);
             };
 
             return MyView;
@@ -521,7 +519,7 @@ define(function(require) {
             };
 
             MyView.prototype.render = function() {
-              return this.renderDOM("<div class=\"some-class\">\n  <view\n    name=\"SomeView\"\n    id=\"someView\"\n    some-param=\"methodParam\"\n    another-param=\"propParam\"\n    absent-param=\"some string\"\n    />\n</div>");
+              return this.renderTemplate("<div class=\"some-class\">\n  <view\n    name=\"SomeView\"\n    id=\"someView\"\n    some-param=\"methodParam\"\n    another-param=\"propParam\"\n    absent-param=\"some string\"\n    />\n</div>").appendTo(this.$el);
             };
 
             return MyView;
@@ -558,7 +556,7 @@ define(function(require) {
             };
 
             MyView.prototype.render = function() {
-              return this.renderDOM("<div class=\"some-class\">\n  <view name=\"@someView\" />\n</div>");
+              return this.renderTemplate("<div class=\"some-class\">\n  <view name=\"@someView\" />\n</div>").appendTo(this.$el);
             };
 
             return MyView;
@@ -625,7 +623,7 @@ define(function(require) {
           };
 
           MyView.prototype.render = function() {
-            return this.renderDOM("<div>\n  <div if=\"show1\" class=\"show1\"></div>\n  <div if=\"show2\" class=\"show2\"></div>\n</div>");
+            return this.renderTemplate("<div>\n  <div if=\"show1\" class=\"show1\"></div>\n  <div if=\"show2\" class=\"show2\"></div>\n</div>").appendTo(this.$el);
           };
 
           return MyView;
@@ -659,7 +657,7 @@ define(function(require) {
           };
 
           MyView.prototype.render = function() {
-            return this.renderDOM("<div>\n  <div if=\"obj.show1\" class=\"show1\"></div>\n  <div if=\"obj.show2\" class=\"show2\"></div>\n</div>");
+            return this.renderTemplate("<div>\n  <div if=\"obj.show1\" class=\"show1\"></div>\n  <div if=\"obj.show2\" class=\"show2\"></div>\n</div>").appendTo(this.$el);
           };
 
           return MyView;
@@ -699,7 +697,7 @@ define(function(require) {
           };
 
           MyView.prototype.render = function() {
-            return this.renderDOM("<div>\n  <div if=\"show1\" class=\"show1\"></div>\n  <div if=\"show2\" class=\"show2\"></div>\n</div>");
+            return this.renderTemplate("<div>\n  <div if=\"show1\" class=\"show1\"></div>\n  <div if=\"show2\" class=\"show2\"></div>\n</div>").appendTo(this.$el);
           };
 
           return MyView;
@@ -747,7 +745,7 @@ define(function(require) {
           };
 
           MyView.prototype.render = function() {
-            return this.renderDOM("<div>\n  <div if=\"obj.show1\" class=\"show1\"></div>\n  <div if=\"obj.show2\" class=\"show2\"></div>\n</div>");
+            return this.renderTemplate("<div>\n  <div if=\"obj.show1\" class=\"show1\"></div>\n  <div if=\"obj.show2\" class=\"show2\"></div>\n</div>").appendTo(this.$el);
           };
 
           return MyView;
@@ -780,7 +778,7 @@ define(function(require) {
           };
 
           MyView.prototype.render = function() {
-            return this.renderDOM("Hello, {{name}}!");
+            return this.renderTemplate("Hello, {{name}}!").appendTo(this.$el);
           };
 
           return MyView;
@@ -805,7 +803,7 @@ define(function(require) {
           }
 
           MyView.prototype.render = function() {
-            return this.renderDOM("Hello, {{name}}!");
+            return this.renderTemplate("Hello, {{name}}!").appendTo(this.$el);
           };
 
           return MyView;
@@ -834,9 +832,9 @@ define(function(require) {
           };
 
           MyView.prototype.render = function() {
-            return this.renderDOM("Hello, {{name}}{{greetingEnd}}", {
+            return this.renderTemplate("Hello, {{name}}{{greetingEnd}}", {
               greetingEnd: '!!!'
-            });
+            }).appendTo(this.$el);
           };
 
           return MyView;
@@ -865,7 +863,7 @@ define(function(require) {
           };
 
           MyView.prototype.render = function() {
-            return this.renderDOM("<div>\n  Hello, <span class=\"name\">{{name}}</span>!\n</div>");
+            return this.renderTemplate("<div>\n  Hello, <span class=\"name\">{{name}}</span>!\n</div>").appendTo(this.$el);
           };
 
           return MyView;
@@ -894,7 +892,7 @@ define(function(require) {
           };
 
           MyView.prototype.render = function() {
-            return this.renderDOM("<div>\n  Hello, <span class=\"name\">{{name}}</span>!\n</div>");
+            return this.renderTemplate("<div>\n  Hello, <span class=\"name\">{{name}}</span>!\n</div>").appendTo(this.$el);
           };
 
           return MyView;
@@ -921,7 +919,7 @@ define(function(require) {
           };
 
           MyView.prototype.render = function() {
-            return this.renderDOM("<div>\n  Hello, <span class=\"name\">{{name}}</span>!\n</div>");
+            return this.renderTemplate("<div>\n  Hello, <span class=\"name\">{{name}}</span>!\n</div>").appendTo(this.$el);
           };
 
           return MyView;
@@ -948,7 +946,7 @@ define(function(require) {
           };
 
           MyView.prototype.render = function() {
-            return this.renderDOM("<div>\n  Hello, <span class=\"name\">{{name}}</span>!\n</div>");
+            return this.renderTemplate("<div>\n  Hello, <span class=\"name\">{{name}}</span>!\n</div>").appendTo(this.$el);
           };
 
           return MyView;
@@ -977,7 +975,7 @@ define(function(require) {
           };
 
           MyView.prototype.render = function() {
-            return this.renderDOM("Hello, {{obj.name}}!");
+            return this.renderTemplate("Hello, {{obj.name}}!").appendTo(this.$el);
           };
 
           return MyView;
@@ -1017,7 +1015,7 @@ define(function(require) {
           };
 
           MyView.prototype.render = function() {
-            return this.renderDOM("<div>\n  Hello, <span class=\"name\">{{obj.name}}</span>!\n</div>");
+            return this.renderTemplate("<div>\n  Hello, <span class=\"name\">{{obj.name}}</span>!\n</div>").appendTo(this.$el);
           };
 
           return MyView;
