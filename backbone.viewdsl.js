@@ -542,7 +542,9 @@ var __slice = [].slice,
       }
     }
     if ((_ref1 = node.attributes) != null ? _ref1['element-id'] : void 0) {
-      scope.ctx[(_ref2 = node.attributes) != null ? _ref2['element-id'].value : void 0] = $(node);
+      if (scope.ctx != null) {
+        scope.ctx[(_ref2 = node.attributes) != null ? _ref2['element-id'].value : void 0] = $(node);
+      }
       node.removeAttribute('element-id');
     }
     _ref3 = node.attributes;
