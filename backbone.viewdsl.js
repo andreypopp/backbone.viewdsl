@@ -12,7 +12,8 @@ var __slice = [].slice,
     return root.Backbone.ViewDSL = factory(root.jQuery, root.Backbone, root._);
   }
 })(this, function(jQuery, Backbone, _) {
-  var ParameterizableView, Promise, View, consumeViewParams, getByPath, getBySpec, hypensToCamelCase, insertBefore, instantiateView, isPromise, join, process, processAttrRe, processAttributes, processNode, processTextNode, promise, promiseRequire, render, renderInPlace, replaceChild, textNodeSplitRe, toArray, wrapInFragment, wrapTemplate;
+  var ParameterizableView, Promise, View, consumeViewParams, extend, getByPath, getBySpec, hypensToCamelCase, insertBefore, instantiateView, isArray, isBoolean, isPromise, join, process, processAttrRe, processAttributes, processNode, processTextNode, promise, promiseRequire, render, renderInPlace, replaceChild, textNodeSplitRe, toArray, wrapInFragment, wrapTemplate;
+  isArray = _.isArray, isBoolean = _.isBoolean, extend = _.extend, toArray = _.toArray;
   Promise = (function() {
     var invokeCallback, noop, reject, resolve;
 
@@ -115,7 +116,7 @@ var __slice = [].slice,
     return Promise;
 
   })();
-  _.extend(Promise.prototype, Backbone.Events);
+  extend(Promise.prototype, Backbone.Events);
   isPromise = function(o) {
     return typeof o.then === 'function';
   };
@@ -168,9 +169,6 @@ var __slice = [].slice,
       return p.resolve(module);
     });
     return p;
-  };
-  toArray = function(o) {
-    return Array.prototype.slice.call(o);
   };
   getByPath = function(o, p, callIfMethod) {
     var ctx, n, _i, _len, _ref;
@@ -230,7 +228,7 @@ var __slice = [].slice,
         _results.push(p.insertBefore(m, o));
       }
       return _results;
-    } else if (_.isArray(n)) {
+    } else if (isArray(n)) {
       _results1 = [];
       for (_j = 0, _len1 = n.length; _j < _len1; _j++) {
         m = n[_j];
@@ -294,10 +292,10 @@ var __slice = [].slice,
     }
     currentContext = parentContext ? Object.create(parentContext) : {};
     if (context) {
-      currentContext = _.extend(currentContext, context);
+      currentContext = extend(currentContext, context);
     }
     if (localContext) {
-      currentContext = _.extend(Object.create(currentContext), localContext);
+      currentContext = extend(Object.create(currentContext), localContext);
     }
     currentContext = Object.create(currentContext);
     return process(currentContext, node).then(function(result) {
@@ -429,7 +427,7 @@ var __slice = [].slice,
       }
       name = attr.name.substring(5);
       value = getByPath(context, attr.value, true).attr;
-      if (_.isBoolean(value)) {
+      if (isBoolean(value)) {
         if (value) {
           node.setAttribute(name, '');
         }
@@ -608,7 +606,7 @@ var __slice = [].slice,
 
     ParameterizableView.prototype.render = function(partial, localContext) {
       if (this.template) {
-        localContext = _.extend({}, localContext, {
+        localContext = extend({}, localContext, {
           partial: this.renderTemplate(partial)
         });
         return ParameterizableView.__super__.render.call(this, localContext);

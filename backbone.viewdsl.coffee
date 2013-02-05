@@ -6,6 +6,8 @@
     root.Backbone.ViewDSL = factory(root.jQuery, root.Backbone, root._)
 ) this, (jQuery, Backbone, _) ->
 
+  {isArray, isBoolean, extend, toArray} = _
+
   # Minimal promise implementation
   #
   # Promise.resolve() and Promise.reject() methods execute callbacks
@@ -82,7 +84,7 @@
       this.isDone = true
       throw this.rejectedValue if this.rejectedValue
 
-  _.extend(Promise.prototype, Backbone.Events)
+  extend(Promise.prototype, Backbone.Events)
 
   isPromise = (o) ->
     typeof o.then == 'function'
@@ -120,9 +122,6 @@
     p = new Promise()
     require [moduleName], (module) -> p.resolve(module)
     p
-
-  toArray = (o) ->
-    Array::slice.call(o)
 
   # Get attribute from `o` object by dotted path `p`
   #
@@ -163,7 +162,7 @@
       p.insertBefore(n, o)
     else if typeof n.item == 'function' and n.length or n.jquery
       p.insertBefore(m, o) for m in n
-    else if _.isArray(n)
+    else if isArray(n)
       insertBefore(o, m) for m in n
     else
       p.insertBefore(document.createTextNode(String(n)), o)
@@ -223,8 +222,8 @@
       node = node.cloneNode(true)
 
     currentContext = if parentContext then Object.create(parentContext) else {}
-    currentContext = _.extend(currentContext, context) if context
-    currentContext = _.extend(Object.create(currentContext), localContext) if localContext
+    currentContext = extend(currentContext, context) if context
+    currentContext = extend(Object.create(currentContext), localContext) if localContext
     currentContext = Object.create(currentContext)
 
     process(currentContext, node).then (result) ->
@@ -274,7 +273,7 @@
       spec = node.attributes.name.value
       node.removeAttribute('name')
       instantiateView(context: context, spec: spec, node: node, useNode: false)
-        .then (view) -> 
+        .then (view) ->
           p = node.parentNode
           nodes = replaceChild(node, view.el)
           nodes
@@ -327,7 +326,7 @@
       name = attr.name.substring(5)
       value = getByPath(context, attr.value, true).attr
 
-      if _.isBoolean(value)
+      if isBoolean(value)
         node.setAttribute(name, '') if value
       else
         node.setAttribute(name, value)
@@ -462,7 +461,7 @@
 
     render: (partial, localContext) ->
       if this.template
-        localContext = _.extend({}, localContext, {partial: this.renderTemplate(partial)})
+        localContext = extend({}, localContext, {partial: this.renderTemplate(partial)})
         super(localContext)
       else
         this.renderDOM(partial)
