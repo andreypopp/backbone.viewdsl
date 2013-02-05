@@ -8,14 +8,16 @@
 
   {isArray, isBoolean, extend, toArray} = _
 
-  # Minimal promise implementation
-  #
-  # Promise.resolve() and Promise.reject() methods execute callbacks
-  # immediatelly if a result is already available. This is done mostly because
-  # of performance reasons and to minimize possible UI flicks.
-  #
-  # To prevent uncatched and unlogged exception it is always useful to call
-  # Promise.done() method at the end of the chain.
+  ###
+    Minimal promise implementation
+
+    Promise.resolve() and Promise.reject() methods execute callbacks
+    immediatelly if a result is already available. This is done mostly because
+    of performance reasons and to minimize possible UI flicks.
+
+    To prevent uncatched and unlogged exception it is always useful to call
+    Promise.done() method at the end of the chain.
+  ###
   class Promise
     extend this.prototype, Backbone.Events
 
@@ -101,8 +103,10 @@
     p.resolve(value)
     p
 
-  # Join several `promises` into one which resolves only when all `promises` are
-  # resolved or fail fast.
+  ###
+    Join several `promises` into one which resolves only when all `promises` are
+    resolved or fail fast.
+  ###
   join = (promises) ->
     p = new Promise()
     results = []
@@ -123,12 +127,17 @@
       p.resolve(results)
     p
 
-  # Promise-based version of AMD require() call.
+  ###
+    Promise-based version of AMD require() call.
+  ###
   promiseRequire = (moduleName) ->
     p = new Promise()
     require [moduleName], (module) -> p.resolve(module)
     p
 
+  ###
+    Scope
+  ###
   class Scope
 
     constructor: (ctx, locals, parent) ->
@@ -148,10 +157,12 @@
 
       {attr: undefined, attrCtx: undefined}
 
-  # Get attribute from `o` object by dotted path `p`
-  #
-  # If `callIfMethod` argument is true and path points to a function then call
-  # it preserving right scope and use returned value as a result
+  ###
+    Get attribute from `o` object by dotted path `p`
+
+    If `callIfMethod` argument is true and path points to a function then call
+    it preserving right scope and use returned value as a result
+  ###
   getByPath = (o, p, callIfMethod = false) ->
     if p.trim().length == 0
       return [o, window]
@@ -163,12 +174,14 @@
         o = o.call(ctx)
     {attr: o, attrCtx: ctx}
 
-  # Resolve spec
-  #
-  # Specs can be:
-  # * `some/module:some.obj` resolves `some.obj` against `some/module` module
-  # * `some.obj` resolves `some.obj` against `window`
-  # * `@some.obj` resolves `some.obj` against `scope` argument
+  ###
+    Resolve spec
+
+    Specs can be:
+    * `some/module:some.obj` resolves `some.obj` against `some/module` module
+    * `some.obj` resolves `some.obj` against `window`
+    * `@some.obj` resolves `some.obj` against `scope` argument
+  ###
   getBySpec = (spec, scope = window) ->
     if /:/.test spec
       [module, path] = spec.split(':', 2)
@@ -192,7 +205,9 @@
     else
       p.insertBefore(document.createTextNode(String(n)), o)
 
-  # Replace `o` DOM node with a list `ns` of DOM nodes
+  ###
+    Replace `o` DOM node with a list `ns` of DOM nodes
+  ###
   replaceChild = (o, ns...) ->
     if not o.parentNode
       if ns.length == 1
@@ -205,11 +220,13 @@
     o.parentNode.removeChild(o)
     ns
 
-  # Prepare `template` to be processed
-  #
-  # Argument `template` can be a DOM node, a jQuery element or just a string
-  # with HTML markup. If `requireSingleNode` is true then it's required from
-  # `template` to represent just a single DOM node.
+  ###
+    Prepare `template` to be processed
+
+    Argument `template` can be a DOM node, a jQuery element or just a string
+    with HTML markup. If `requireSingleNode` is true then it's required from
+    `template` to represent just a single DOM node.
+  ###
   wrapTemplate = (template, requireSingleNode = false) ->
     nodes = if template.jquery
       template.clone()
@@ -230,16 +247,18 @@
     fragment.appendChild(node) for node in nodes
     fragment
 
-  # Render `node` in some scope.
-  #
-  # Rendering scope builds up from a `locals`, `scope` and a
-  # `parentScope`. `scope` is the "main" scope here, it provides data for
-  # rendering `node` and all writes ends-up there. `locals` works like an
-  # overlay for `scope` — you can submit additional and temporal values there.
-  # `parentScope` is a kind of a fallback for lookups which are missed from
-  # `scope`.
-  #
-  # If `forceClone` is false then `node` isn't cloned.
+  ###
+    Render `node` in some scope.
+
+    Rendering scope builds up from a `locals`, `scope` and a
+    `parentScope`. `scope` is the "main" scope here, it provides data for
+    rendering `node` and all writes ends-up there. `locals` works like an
+    overlay for `scope` — you can submit additional and temporal values there.
+    `parentScope` is a kind of a fallback for lookups which are missed from
+    `scope`.
+
+    If `forceClone` is false then `node` isn't cloned.
+  ###
   render = (node, ctx, locals, parentScope, forceClone = true) ->
     if not (typeof node.cloneNode == 'function')
       node = wrapTemplate(node)
@@ -249,13 +268,17 @@
     scope = new Scope(ctx, locals, parentScope)
     process(scope, node)
 
-  # The same as render, but only for those nodes are already in DOM.
-  #
-  # This can be useful if you want to define your app in original HTML.
+  ###
+    The same as render, but only for those nodes are already in DOM.
+
+    This can be useful if you want to define your app in original HTML.
+  ###
   renderInPlace = (node, ctx, locals, parentScope) ->
     render(node, ctx, locals, parentScope, false)
 
-  # Process single `node`.
+  ###
+    Process single `node`.
+  ###
   process = (scope, node) ->
 
     # check if we already seen the node
@@ -275,7 +298,9 @@
       else
         processNode(scope, node)
 
-  # Process `node` content.
+  ###
+    Process `node` content.
+  ###
   processNode = (scope, node) ->
 
     # text node interpolation
@@ -302,7 +327,9 @@
 
   textNodeSplitRe = /({{)|(}})/
 
-  # Process `TextNode`'s content to interpolate values.
+  ###
+    Process `TextNode`'s content to interpolate values.
+  ###
   processTextNode = (scope, node) ->
     return promise() unless textNodeSplitRe.test node.data
 
@@ -324,7 +351,9 @@
 
   processAttrRe = /^attr-/
 
-  # Process `node`'s attributes.
+  ###
+    Process `node`'s attributes.
+  ###
   processAttributes = (scope, node) ->
     if node.nodeType != Node.ELEMENT_NODE
       return promise {}
@@ -361,7 +390,9 @@
     else
       promise {}
 
-  # Instantiate view from `options`
+  ###
+    Instantiate view from `options`
+  ###
   instantiateView = (options) ->
     getBySpec(options.spec, options.scope).then (viewCls) ->
       if viewCls == undefined
@@ -401,7 +432,9 @@
 
       p.then -> view
 
-  # Read view params from `node` in `scope` using `prefix`
+  ###
+    Read view params from `node` in `scope` using `prefix`
+  ###
   consumeViewParams = (scope, node, prefix) ->
     viewParams = {}
     viewId = undefined
@@ -422,7 +455,9 @@
 
     {viewParams, viewId}
 
-  # View class adapter to be used with `render()` method.
+  ###
+    View which can render process DSL.
+  ###
   class View extends Backbone.View
 
     template: undefined
@@ -456,6 +491,9 @@
       for view in this.views
         view.remove()
 
+  ###
+    View parametrized with some template.
+  ###
   class ParameterizableView extends View
     parameterizable: true
 

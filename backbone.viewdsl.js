@@ -14,6 +14,17 @@ var __slice = [].slice,
 })(this, function(jQuery, Backbone, _) {
   var ParameterizableView, Promise, Scope, View, consumeViewParams, extend, getByPath, getBySpec, hypensToCamelCase, insertBefore, instantiateView, isArray, isBoolean, isPromise, join, process, processAttrRe, processAttributes, processNode, processTextNode, promise, promiseRequire, render, renderInPlace, replaceChild, textNodeSplitRe, toArray, wrapInFragment, wrapTemplate;
   isArray = _.isArray, isBoolean = _.isBoolean, extend = _.extend, toArray = _.toArray;
+  /*
+      Minimal promise implementation
+  
+      Promise.resolve() and Promise.reject() methods execute callbacks
+      immediatelly if a result is already available. This is done mostly because
+      of performance reasons and to minimize possible UI flicks.
+  
+      To prevent uncatched and unlogged exception it is always useful to call
+      Promise.done() method at the end of the chain.
+  */
+
   Promise = (function() {
     var invokeCallback, noop, reject, resolve;
 
@@ -142,6 +153,11 @@ var __slice = [].slice,
     p.resolve(value);
     return p;
   };
+  /*
+      Join several `promises` into one which resolves only when all `promises` are
+      resolved or fail fast.
+  */
+
   join = function(promises) {
     var idx, p, pr, results, resultsToGo, _fn, _i, _len,
       _this = this;
@@ -175,6 +191,10 @@ var __slice = [].slice,
     }
     return p;
   };
+  /*
+      Promise-based version of AMD require() call.
+  */
+
   promiseRequire = function(moduleName) {
     var p;
     p = new Promise();
@@ -183,6 +203,10 @@ var __slice = [].slice,
     });
     return p;
   };
+  /*
+      Scope
+  */
+
   Scope = (function() {
 
     function Scope(ctx, locals, parent) {
@@ -221,6 +245,13 @@ var __slice = [].slice,
     return Scope;
 
   })();
+  /*
+      Get attribute from `o` object by dotted path `p`
+  
+      If `callIfMethod` argument is true and path points to a function then call
+      it preserving right scope and use returned value as a result
+  */
+
   getByPath = function(o, p, callIfMethod) {
     var ctx, n, _i, _len, _ref;
     if (callIfMethod == null) {
@@ -246,6 +277,15 @@ var __slice = [].slice,
       attrCtx: ctx
     };
   };
+  /*
+      Resolve spec
+  
+      Specs can be:
+      * `some/module:some.obj` resolves `some.obj` against `some/module` module
+      * `some.obj` resolves `some.obj` against `window`
+      * `@some.obj` resolves `some.obj` against `scope` argument
+  */
+
   getBySpec = function(spec, scope) {
     var module, path, _ref;
     if (scope == null) {
@@ -290,6 +330,10 @@ var __slice = [].slice,
       return p.insertBefore(document.createTextNode(String(n)), o);
     }
   };
+  /*
+      Replace `o` DOM node with a list `ns` of DOM nodes
+  */
+
   replaceChild = function() {
     var n, ns, o, _i, _len;
     o = arguments[0], ns = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
@@ -307,6 +351,14 @@ var __slice = [].slice,
     o.parentNode.removeChild(o);
     return ns;
   };
+  /*
+      Prepare `template` to be processed
+  
+      Argument `template` can be a DOM node, a jQuery element or just a string
+      with HTML markup. If `requireSingleNode` is true then it's required from
+      `template` to represent just a single DOM node.
+  */
+
   wrapTemplate = function(template, requireSingleNode) {
     var nodes;
     if (requireSingleNode == null) {
@@ -331,6 +383,19 @@ var __slice = [].slice,
     }
     return fragment;
   };
+  /*
+      Render `node` in some scope.
+  
+      Rendering scope builds up from a `locals`, `scope` and a
+      `parentScope`. `scope` is the "main" scope here, it provides data for
+      rendering `node` and all writes ends-up there. `locals` works like an
+      overlay for `scope` — you can submit additional and temporal values there.
+      `parentScope` is a kind of a fallback for lookups which are missed from
+      `scope`.
+  
+      If `forceClone` is false then `node` isn't cloned.
+  */
+
   render = function(node, ctx, locals, parentScope, forceClone) {
     var scope;
     if (forceClone == null) {
@@ -344,9 +409,19 @@ var __slice = [].slice,
     scope = new Scope(ctx, locals, parentScope);
     return process(scope, node);
   };
+  /*
+      The same as render, but only for those nodes are already in DOM.
+  
+      This can be useful if you want to define your app in original HTML.
+  */
+
   renderInPlace = function(node, ctx, locals, parentScope) {
     return render(node, ctx, locals, parentScope, false);
   };
+  /*
+      Process single `node`.
+  */
+
   process = function(scope, node) {
     if (node.seen) {
       return promise(node);
@@ -364,6 +439,10 @@ var __slice = [].slice,
       }
     });
   };
+  /*
+      Process `node` content.
+  */
+
   processNode = function(scope, node) {
     var n, spec;
     if (node.nodeType === Node.TEXT_NODE) {
@@ -406,6 +485,10 @@ var __slice = [].slice,
     }
   };
   textNodeSplitRe = /({{)|(}})/;
+  /*
+      Process `TextNode`'s content to interpolate values.
+  */
+
   processTextNode = function(scope, node) {
     var data, nodes, part, parts, val;
     if (!textNodeSplitRe.test(node.data)) {
@@ -437,6 +520,10 @@ var __slice = [].slice,
     return join(nodes);
   };
   processAttrRe = /^attr-/;
+  /*
+      Process `node`'s attributes.
+  */
+
   processAttributes = function(scope, node) {
     var attr, name, show, spec, value, _i, _len, _ref, _ref1, _ref2, _ref3, _ref4;
     if (node.nodeType !== Node.ELEMENT_NODE) {
@@ -493,6 +580,10 @@ var __slice = [].slice,
       return promise({});
     }
   };
+  /*
+      Instantiate view from `options`
+  */
+
   instantiateView = function(options) {
     return getBySpec(options.spec, options.scope).then(function(viewCls) {
       var c, fromViewTag, p, partial, prefix, view, viewId, viewParams, _ref;
@@ -525,6 +616,10 @@ var __slice = [].slice,
       });
     });
   };
+  /*
+      Read view params from `node` in `scope` using `prefix`
+  */
+
   consumeViewParams = function(scope, node, prefix) {
     var a, attrName, viewId, viewParams, _i, _len, _ref;
     viewParams = {};
@@ -549,6 +644,10 @@ var __slice = [].slice,
       viewId: viewId
     };
   };
+  /*
+      View which can render process DSL.
+  */
+
   View = (function(_super) {
 
     __extends(View, _super);
@@ -576,15 +675,15 @@ var __slice = [].slice,
       this.views = [];
     }
 
-    View.prototype.renderTemplate = function(template, locals) {
-      return render(template, this, locals, this.parentScope);
-    };
-
     View.prototype.addView = function(view, viewId) {
       this.views.push(view);
       if (viewId) {
         return this[viewId] = view;
       }
+    };
+
+    View.prototype.renderTemplate = function(template, locals) {
+      return render(template, this, locals, this.parentScope);
     };
 
     View.prototype.render = function(locals) {
@@ -609,6 +708,10 @@ var __slice = [].slice,
     return View;
 
   })(Backbone.View);
+  /*
+      View parametrized with some template.
+  */
+
   ParameterizableView = (function(_super) {
 
     __extends(ParameterizableView, _super);
