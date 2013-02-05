@@ -386,7 +386,7 @@
         view.$el.addClass(options.node.attributes['class'].value)
 
       # notify view about being a part of a view hierarchy
-      view.setParentScope(options.scope) if view.setParentScope
+      view.parentScope = options.scope
       options.scope.ctx.addView(view, viewId) if options.scope.ctx.addView
 
       p = if view.parameterizable
@@ -427,6 +427,7 @@
 
     template: undefined
     parameterizable: false
+    parentScope: undefined
 
     @from: (template, locals) ->
       node = wrapTemplate(template, true)
@@ -442,9 +443,6 @@
     # Render `template` in a scope of a view, optionally with `locals`.
     renderTemplate: (template, locals) ->
       render(template, this, locals, this.parentScope)
-
-    setParentScope: (parentScope) ->
-      this.parentScope = parentScope
 
     addView: (view, viewId) ->
       this.views.push(view)

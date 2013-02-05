@@ -506,9 +506,7 @@ var __slice = [].slice,
       if (fromViewTag && options.node.attributes['class']) {
         view.$el.addClass(options.node.attributes['class'].value);
       }
-      if (view.setParentScope) {
-        view.setParentScope(options.scope);
-      }
+      view.parentScope = options.scope;
       if (options.scope.ctx.addView) {
         options.scope.ctx.addView(view, viewId);
       }
@@ -559,6 +557,8 @@ var __slice = [].slice,
 
     View.prototype.parameterizable = false;
 
+    View.prototype.parentScope = void 0;
+
     View.from = function(template, locals) {
       var node, view;
       node = wrapTemplate(template, true);
@@ -578,10 +578,6 @@ var __slice = [].slice,
 
     View.prototype.renderTemplate = function(template, locals) {
       return render(template, this, locals, this.parentScope);
-    };
-
-    View.prototype.setParentScope = function(parentScope) {
-      return this.parentScope = parentScope;
     };
 
     View.prototype.addView = function(view, viewId) {
