@@ -259,13 +259,13 @@
 
     If `forceClone` is false then `node` isn't cloned.
   ###
-  render = (node, ctx, locals, parentScope, forceClone = true) ->
+  render = (node, ctx, locals, parentScope, forceClone = true, scopeClass = Scope) ->
     if not (typeof node.cloneNode == 'function')
       node = wrapTemplate(node)
     else if forceClone
       node = node.cloneNode(true)
 
-    scope = new Scope(ctx, locals, parentScope)
+    scope = new scopeClass(ctx, locals, parentScope)
     process(scope, node)
 
   ###

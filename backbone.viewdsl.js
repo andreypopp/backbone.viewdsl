@@ -396,17 +396,20 @@ var __slice = [].slice,
       If `forceClone` is false then `node` isn't cloned.
   */
 
-  render = function(node, ctx, locals, parentScope, forceClone) {
+  render = function(node, ctx, locals, parentScope, forceClone, scopeClass) {
     var scope;
     if (forceClone == null) {
       forceClone = true;
+    }
+    if (scopeClass == null) {
+      scopeClass = Scope;
     }
     if (!(typeof node.cloneNode === 'function')) {
       node = wrapTemplate(node);
     } else if (forceClone) {
       node = node.cloneNode(true);
     }
-    scope = new Scope(ctx, locals, parentScope);
+    scope = new scopeClass(ctx, locals, parentScope);
     return process(scope, node);
   };
   /*
