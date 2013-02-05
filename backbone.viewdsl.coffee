@@ -483,7 +483,7 @@
       render(template, this, locals, this.parentScope)
 
     render: (locals) ->
-      return unless this.template?
+      return promise(this) unless this.template?
       this
         .renderTemplate(this.template, locals)
         .appendTo(this.$el)

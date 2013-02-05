@@ -689,7 +689,7 @@ var __slice = [].slice,
     View.prototype.render = function(locals) {
       var _this = this;
       if (this.template == null) {
-        return;
+        return promise(this);
       }
       return this.renderTemplate(this.template, locals).appendTo(this.$el).then(function() {
         return _this;
