@@ -440,17 +440,13 @@
       super
       this.views = []
 
-    # Render `template` in a scope of a view, optionally with `locals`.
-    renderTemplate: (template, locals) ->
-      render(template, this, locals, this.parentScope)
-
     addView: (view, viewId) ->
       this.views.push(view)
       this[viewId] = view if viewId
 
-    # Default implementation of `render()` method which tries to render template
-    # stored in `template` attribute of a view. If `template` is stored into
-    # prototype then it caches it.
+    renderTemplate: (template, locals) ->
+      render(template, this, locals, this.parentScope)
+
     render: (locals) ->
       return unless this.template?
       this.renderTemplate(this.template, locals).appendTo(this.$el)
