@@ -687,10 +687,13 @@ var __slice = [].slice,
     };
 
     View.prototype.render = function(locals) {
+      var _this = this;
       if (this.template == null) {
         return;
       }
-      return this.renderTemplate(this.template, locals).appendTo(this.$el);
+      return this.renderTemplate(this.template, locals).appendTo(this.$el).then(function() {
+        return _this;
+      });
     };
 
     View.prototype.remove = function() {

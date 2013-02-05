@@ -484,7 +484,10 @@
 
     render: (locals) ->
       return unless this.template?
-      this.renderTemplate(this.template, locals).appendTo(this.$el)
+      this
+        .renderTemplate(this.template, locals)
+        .appendTo(this.$el)
+        .then => this
 
     remove: ->
       super
