@@ -743,7 +743,6 @@ var __slice = [].slice,
     View: View,
     ParameterizableView: ParameterizableView,
     render: render,
-    renderInPlace: renderInPlace,
-    wrapTemplate: wrapTemplate
+    renderInPlace: renderInPlace
   };
 });

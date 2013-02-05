@@ -507,4 +507,4 @@
       else
         this.renderTemplate(partial).appendTo(this.$el)
 
-  {View, ParameterizableView, render, renderInPlace, wrapTemplate}
+  {View, ParameterizableView, render, renderInPlace}
