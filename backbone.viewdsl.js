@@ -589,7 +589,7 @@ var __slice = [].slice,
 
   instantiateView = function(options) {
     return getBySpec(options.spec, options.scope).then(function(viewCls) {
-      var c, fromViewTag, p, partial, prefix, view, viewId, viewParams, _ref;
+      var c, fromViewTag, p, partial, prefix, view, viewId, viewParams, _ref, _ref1;
       if (viewCls === void 0) {
         throw new Error("can't find a view by '" + options.spec + "' spec");
       }
@@ -601,15 +601,15 @@ var __slice = [].slice,
         view.$el.addClass(options.node.attributes['class'].value);
       }
       view.parentScope = options.scope;
-      if (options.scope.ctx.addView) {
+      if (((_ref1 = options.scope.ctx) != null ? _ref1.addView : void 0) != null) {
         options.scope.ctx.addView(view, viewId);
       }
       p = view.parameterizable ? (partial = $((function() {
-        var _i, _len, _ref1, _results;
-        _ref1 = toArray(options.node.childNodes);
+        var _i, _len, _ref2, _results;
+        _ref2 = toArray(options.node.childNodes);
         _results = [];
-        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-          c = _ref1[_i];
+        for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+          c = _ref2[_i];
           _results.push(options.node.removeChild(c));
         }
         return _results;

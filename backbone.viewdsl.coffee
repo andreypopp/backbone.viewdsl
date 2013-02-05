@@ -418,7 +418,7 @@
 
       # notify view about being a part of a view hierarchy
       view.parentScope = options.scope
-      options.scope.ctx.addView(view, viewId) if options.scope.ctx.addView
+      options.scope.ctx.addView(view, viewId) if options.scope.ctx?.addView?
 
       p = if view.parameterizable
         # if view is parameterizable we need to pass all DOM element inside
