@@ -288,9 +288,6 @@ var __slice = [].slice,
 
   getBySpec = function(spec, scope) {
     var module, path, _ref;
-    if (scope == null) {
-      scope = window;
-    }
     if (/:/.test(spec)) {
       _ref = spec.split(':', 2), module = _ref[0], path = _ref[1];
       return promiseRequire(module).then(function(module) {

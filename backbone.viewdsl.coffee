@@ -182,7 +182,7 @@
     * `some.obj` resolves `some.obj` against `window`
     * `@some.obj` resolves `some.obj` against `scope` argument
   ###
-  getBySpec = (spec, scope = window) ->
+  getBySpec = (spec, scope) ->
     if /:/.test spec
       [module, path] = spec.split(':', 2)
       promiseRequire(module).then (module) -> getByPath(module, path).attr
