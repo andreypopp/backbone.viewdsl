@@ -165,7 +165,7 @@
   ###
   getByPath = (o, p, callIfMethod = false) ->
     if p.trim().length == 0
-      return [o, window]
+      return {attr: o, attrCtx: undefined}
     for n in p.split('.')
       ctx = o
       o = ctx[n]

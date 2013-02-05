@@ -258,7 +258,10 @@ var __slice = [].slice,
       callIfMethod = false;
     }
     if (p.trim().length === 0) {
-      return [o, window];
+      return {
+        attr: o,
+        attrCtx: void 0
+      };
     }
     _ref = p.split('.');
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
