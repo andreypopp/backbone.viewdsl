@@ -211,7 +211,7 @@ define (require) ->
         promise
           .then (view) ->
             el = view.$el
-            expect(view.$el.attr('enabled')).to.be.equal undefined
+            expect(view.$el.prop('enabled')).to.be.equal false
             expect(view.$el.attr('attr-enabled')).to.be.equal undefined
             done()
           .done()
