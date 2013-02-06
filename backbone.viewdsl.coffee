@@ -147,15 +147,13 @@
 
     get: (path, callIfMethod = false) ->
       result = getByPath(this.locals, path, callIfMethod) if this.locals?
-      return result if result?.attr?
+      return result if result?
 
       result = getByPath(this.ctx, path, callIfMethod)
-      return result if result?.attr?
+      return result if result?
 
       result = this.parent.get(path, callIfMethod) if this.parent?
-      return result if result?.attr?
-
-      {attr: undefined, attrCtx: undefined}
+      return result if result?
 
   ###
     Get attribute from `o` object by dotted path `p`
@@ -164,15 +162,15 @@
     it preserving right scope and use returned value as a result
   ###
   getByPath = (o, p, callIfMethod = false) ->
-    if p.trim().length == 0
-      return {attr: o, attrCtx: undefined}
+    p = p.trim()
+    return o if p.trim().length == 0
     for n in p.split('.')
       ctx = o
       o = ctx[n]
       break if o == undefined
       if callIfMethod and jQuery.isFunction(o)
         o = o.call(ctx)
-    {attr: o, attrCtx: ctx}
+    o
 
   ###
     Resolve spec
@@ -185,11 +183,11 @@
   getBySpec = (spec, scope) ->
     if /:/.test spec
       [module, path] = spec.split(':', 2)
-      promiseRequire(module).then (module) -> getByPath(module, path).attr
+      promiseRequire(module).then (module) -> getByPath(module, path)
     else if spec and spec[0] == '@'
-      promise scope.get(spec.slice(1)).attr
+      promise scope.get(spec.slice(1))
     else
-      promise getByPath(window, spec).attr
+      promise getByPath(window, spec)
 
   hypensToCamelCase = (o) ->
     o.replace /-([a-z])/g, (g) -> g[1].toUpperCase()
@@ -341,7 +339,7 @@
 
     nodes = for part in parts
       if part[0] == '\uF001'
-        val = scope.get(part.slice(1).trim(), true).attr
+        val = scope.get(part.slice(1).trim(), true)
         val = '' unless val?
         val
       else
@@ -360,7 +358,7 @@
 
     # conditional exclusion
     if node.attributes?.if
-      show = scope.get(node.attributes.if.value, true).attr
+      show = scope.get(node.attributes.if.value, true)
       node.removeAttribute('if')
       return promise {remove: true} unless show
 
@@ -372,7 +370,7 @@
 
     for attr in node.attributes when processAttrRe.test attr.name
       name = attr.name.substring(5)
-      value = scope.get(attr.value, true).attr
+      value = scope.get(attr.value, true)
 
       if isBoolean(value)
         node.setAttribute(name, '') if value
@@ -453,7 +451,7 @@
         node.removeAttribute(a.name)
         continue
 
-      viewParams[attrName] = scope.get(a.value, true).attr or a.value
+      viewParams[attrName] = scope.get(a.value, true) or a.value
 
     {viewParams, viewId}
 

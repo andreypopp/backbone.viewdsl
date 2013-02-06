@@ -223,23 +223,19 @@ var __slice = [].slice,
       if (this.locals != null) {
         result = getByPath(this.locals, path, callIfMethod);
       }
-      if ((result != null ? result.attr : void 0) != null) {
+      if (result != null) {
         return result;
       }
       result = getByPath(this.ctx, path, callIfMethod);
-      if ((result != null ? result.attr : void 0) != null) {
+      if (result != null) {
         return result;
       }
       if (this.parent != null) {
         result = this.parent.get(path, callIfMethod);
       }
-      if ((result != null ? result.attr : void 0) != null) {
+      if (result != null) {
         return result;
       }
-      return {
-        attr: void 0,
-        attrCtx: void 0
-      };
     };
 
     return Scope;
@@ -257,11 +253,9 @@ var __slice = [].slice,
     if (callIfMethod == null) {
       callIfMethod = false;
     }
+    p = p.trim();
     if (p.trim().length === 0) {
-      return {
-        attr: o,
-        attrCtx: void 0
-      };
+      return o;
     }
     _ref = p.split('.');
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -275,10 +269,7 @@ var __slice = [].slice,
         o = o.call(ctx);
       }
     }
-    return {
-      attr: o,
-      attrCtx: ctx
-    };
+    return o;
   };
   /*
       Resolve spec
@@ -294,12 +285,12 @@ var __slice = [].slice,
     if (/:/.test(spec)) {
       _ref = spec.split(':', 2), module = _ref[0], path = _ref[1];
       return promiseRequire(module).then(function(module) {
-        return getByPath(module, path).attr;
+        return getByPath(module, path);
       });
     } else if (spec && spec[0] === '@') {
-      return promise(scope.get(spec.slice(1)).attr);
+      return promise(scope.get(spec.slice(1)));
     } else {
-      return promise(getByPath(window, spec).attr);
+      return promise(getByPath(window, spec));
     }
   };
   hypensToCamelCase = function(o) {
@@ -509,7 +500,7 @@ var __slice = [].slice,
       for (_i = 0, _len = parts.length; _i < _len; _i++) {
         part = parts[_i];
         if (part[0] === '\uF001') {
-          val = scope.get(part.slice(1).trim(), true).attr;
+          val = scope.get(part.slice(1).trim(), true);
           if (val == null) {
             val = '';
           }
@@ -533,7 +524,7 @@ var __slice = [].slice,
       return promise({});
     }
     if ((_ref = node.attributes) != null ? _ref["if"] : void 0) {
-      show = scope.get(node.attributes["if"].value, true).attr;
+      show = scope.get(node.attributes["if"].value, true);
       node.removeAttribute('if');
       if (!show) {
         return promise({
@@ -554,7 +545,7 @@ var __slice = [].slice,
         continue;
       }
       name = attr.name.substring(5);
-      value = scope.get(attr.value, true).attr;
+      value = scope.get(attr.value, true);
       if (isBoolean(value)) {
         if (value) {
           node.setAttribute(name, '');
@@ -642,7 +633,7 @@ var __slice = [].slice,
         node.removeAttribute(a.name);
         continue;
       }
-      viewParams[attrName] = scope.get(a.value, true).attr || a.value;
+      viewParams[attrName] = scope.get(a.value, true) || a.value;
     }
     return {
       viewParams: viewParams,
