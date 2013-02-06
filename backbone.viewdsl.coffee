@@ -210,8 +210,10 @@
       if clone then node.clone() else node
     else if typeof node.cloneNode == 'function'
       [if clone then node.cloneNode(true) else node]
+    else if isArray(node)
+      [wrapInFragment(node)]
     else
-      jQuery.parseHTML(node.toString())
+      jQuery.parseHTML(String(node))
 
     if requireSingleNode and nodes.length != 1
       throw new Error('templates only of single element are allowed')
@@ -327,7 +329,8 @@
     processInterpolation: (path) ->
       node = this.scope.get(path, true)
       return if not node? or node == ''
-      promise(node).then (node) -> asNode(node)
+      promise(node).then (node) ->
+        asNode(node)
 
     processAttributes: (node) ->
       if node.nodeType != Node.ELEMENT_NODE
@@ -347,14 +350,7 @@
 
       for attr in node.attributes when attr? and this.processAttrRe.test(attr.name)
         name = attr.name.substring(5)
-        value = this.scope.get(attr.value, true)
-
-        if isBoolean(value)
-          $(node).prop(name, value)
-        else
-          $(node).attr(name, value)
-
-        node.removeAttribute(attr.name)
+        this.processAttrInterpolation(node, attr, name)
 
       # view instantiation via view attribute
       if node.attributes?.view
@@ -365,6 +361,16 @@
 
       else
         promise {}
+
+    processAttrInterpolation: (node, attr, attrName) ->
+      value = this.scope.get(attr.value, true)
+
+      if isBoolean(value)
+        $(node).prop(attrName, value)
+      else
+        $(node).attr(attrName, value)
+
+      node.removeAttribute(attr.name)
 
     instantiateView: (options) ->
       getBySpec(options.spec, this.scope).then (viewCls) =>
@@ -488,6 +494,12 @@
 
     constructor: ->
       super
+      if this.ctx?
+        for k, v of this.ctx when this.ctx.hasOwnProperty(k)
+          if (v instanceof Backbone.Model)
+            v.on 'change', => this.digest()
+          else if (v instanceof Backbone.Collection)
+            v.on 'change add remove reset sort', => this.digest()
       this.observe = {}
 
     get: (path, callIfMethod = false) ->
@@ -499,7 +511,7 @@
       updates = {}
 
       for path, value of this.observe
-        newValue = this.get(path)
+        newValue = this.get(path, true)
         updates[path] = newValue unless isEqual(newValue, value)
 
       extend this.observe, updates
@@ -511,10 +523,22 @@
     @scope: ObservableScope
 
     processInterpolation: (path) ->
-      super.then (node) ->
-        this.scope.on "change:#{path}", (value) ->
-          node.replaceWith(asNode(value))
+      super.then (node) =>
+        if this.scope?
+          this.scope.on "change:#{path}", (value) ->
+            $(node).replaceWith(asNode(value))
         node
+
+    processAttrInterpolation: (node, attr, attrName) ->
+      super
+      if this.scope?
+        this.scope.on "change:#{attr.value}", (value) =>
+          if isBoolean(value)
+            $(node).prop(attrName, value)
+          else
+            $(node).attr(attrName, value)
+
+          node.removeAttribute(attr.name)
 
   class ActiveView extends View
     @interpreter: BindingInterpreter

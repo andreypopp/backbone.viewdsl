@@ -320,7 +320,7 @@ var __slice = [].slice,
     if (clone == null) {
       clone = true;
     }
-    nodes = node.jquery ? clone ? node.clone() : node : typeof node.cloneNode === 'function' ? [clone ? node.cloneNode(true) : node] : jQuery.parseHTML(node.toString());
+    nodes = node.jquery ? clone ? node.clone() : node : typeof node.cloneNode === 'function' ? [clone ? node.cloneNode(true) : node] : isArray(node) ? [wrapInFragment(node)] : jQuery.parseHTML(String(node));
     if (requireSingleNode && nodes.length !== 1) {
       throw new Error('templates only of single element are allowed');
     }
@@ -509,7 +509,7 @@ var __slice = [].slice,
     };
 
     Interpreter.prototype.processAttributes = function(node) {
-      var attr, name, show, spec, value, _i, _len, _ref, _ref1, _ref2, _ref3, _ref4;
+      var attr, name, show, spec, _i, _len, _ref, _ref1, _ref2, _ref3, _ref4;
       if (node.nodeType !== Node.ELEMENT_NODE) {
         return promise({});
       }
@@ -535,13 +535,7 @@ var __slice = [].slice,
           continue;
         }
         name = attr.name.substring(5);
-        value = this.scope.get(attr.value, true);
-        if (isBoolean(value)) {
-          $(node).prop(name, value);
-        } else {
-          $(node).attr(name, value);
-        }
-        node.removeAttribute(attr.name);
+        this.processAttrInterpolation(node, attr, name);
       }
       if ((_ref4 = node.attributes) != null ? _ref4.view : void 0) {
         spec = node.attributes.view.value;
@@ -562,6 +556,17 @@ var __slice = [].slice,
       } else {
         return promise({});
       }
+    };
+
+    Interpreter.prototype.processAttrInterpolation = function(node, attr, attrName) {
+      var value;
+      value = this.scope.get(attr.value, true);
+      if (isBoolean(value)) {
+        $(node).prop(attrName, value);
+      } else {
+        $(node).attr(attrName, value);
+      }
+      return node.removeAttribute(attr.name);
     };
 
     Interpreter.prototype.instantiateView = function(options) {
@@ -735,7 +740,26 @@ var __slice = [].slice,
     extend(ObservableScope.prototype, Backbone.Events);
 
     function ObservableScope() {
+      var k, v, _ref,
+        _this = this;
       ObservableScope.__super__.constructor.apply(this, arguments);
+      if (this.ctx != null) {
+        _ref = this.ctx;
+        for (k in _ref) {
+          v = _ref[k];
+          if (this.ctx.hasOwnProperty(k)) {
+            if (v instanceof Backbone.Model) {
+              v.on('change', function() {
+                return _this.digest();
+              });
+            } else if (v instanceof Backbone.Collection) {
+              v.on('change add remove reset sort', function() {
+                return _this.digest();
+              });
+            }
+          }
+        }
+      }
       this.observe = {};
     }
 
@@ -755,7 +779,7 @@ var __slice = [].slice,
       _ref = this.observe;
       for (path in _ref) {
         value = _ref[path];
-        newValue = this.get(path);
+        newValue = this.get(path, true);
         if (!isEqual(newValue, value)) {
           updates[path] = newValue;
         }
@@ -783,12 +807,30 @@ var __slice = [].slice,
     BindingInterpreter.scope = ObservableScope;
 
     BindingInterpreter.prototype.processInterpolation = function(path) {
+      var _this = this;
       return BindingInterpreter.__super__.processInterpolation.apply(this, arguments).then(function(node) {
-        this.scope.on("change:" + path, function(value) {
-          return node.replaceWith(asNode(value));
-        });
+        if (_this.scope != null) {
+          _this.scope.on("change:" + path, function(value) {
+            return $(node).replaceWith(asNode(value));
+          });
+        }
         return node;
       });
+    };
+
+    BindingInterpreter.prototype.processAttrInterpolation = function(node, attr, attrName) {
+      var _this = this;
+      BindingInterpreter.__super__.processAttrInterpolation.apply(this, arguments);
+      if (this.scope != null) {
+        return this.scope.on("change:" + attr.value, function(value) {
+          if (isBoolean(value)) {
+            $(node).prop(attrName, value);
+          } else {
+            $(node).attr(attrName, value);
+          }
+          return node.removeAttribute(attr.name);
+        });
+      }
     };
 
     return BindingInterpreter;
