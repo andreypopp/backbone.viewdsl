@@ -1,5 +1,0 @@
-# 0.9
-
-* remove `View.renderDOM(...)` method, use
-  `View.renderTemplate(..).appendTo(this.el)` instead.
-* remove semi-private `View.setParentScope(scope)` method
