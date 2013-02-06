@@ -520,11 +520,9 @@ var __slice = [].slice,
         name = attr.name.substring(5);
         value = this.scope.get(attr.value, true);
         if (isBoolean(value)) {
-          if (value) {
-            node.setAttribute(name, '');
-          }
+          $(node).prop(name, value);
         } else {
-          node.setAttribute(name, value);
+          $(node).attr(name, value);
         }
         node.removeAttribute(attr.name);
       }

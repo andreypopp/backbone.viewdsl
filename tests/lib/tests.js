@@ -282,7 +282,7 @@ define(function(require) {
         return promise.then(function(view) {
           var el;
           el = view.$el;
-          expect(view.$el.attr('enabled')).to.be.equal('');
+          expect(view.$el.prop('enabled')).to.be.equal(true);
           expect(view.$el.attr('attr-enabled')).to.be.equal(void 0);
           return done();
         }).done();

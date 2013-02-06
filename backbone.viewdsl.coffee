@@ -343,9 +343,9 @@
         value = this.scope.get(attr.value, true)
 
         if isBoolean(value)
-          node.setAttribute(name, '') if value
+          $(node).prop(name, value)
         else
-          node.setAttribute(name, value)
+          $(node).attr(name, value)
 
         node.removeAttribute(attr.name)
 
