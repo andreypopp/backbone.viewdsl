@@ -6,7 +6,7 @@
     root.Backbone.ViewDSL = factory(root.jQuery, root.Backbone, root._)
 ) this, (jQuery, Backbone, _) ->
 
-  {isString, isArray, isBoolean, extend, toArray} = _
+  {isString, isArray, isBoolean, isEqual, extend, toArray} = _
 
   ###
     Minimal promise implementation
@@ -211,7 +211,7 @@
     else if typeof node.cloneNode == 'function'
       [if clone then node.cloneNode(true) else node]
     else
-      jQuery.parseHTML(node)
+      jQuery.parseHTML(node.toString())
 
     if requireSingleNode and nodes.length != 1
       throw new Error('templates only of single element are allowed')
@@ -325,13 +325,9 @@
       join(nodes)
 
     processInterpolation: (path) ->
-      val = this.scope.get(path, true)
-      return if not val? or val == ''
-      if isPromise(val)
-        val.then (node) ->
-          asNode(node)
-      else
-        asNode(val)
+      node = this.scope.get(path, true)
+      return if not node? or node == ''
+      promise(node).then (node) -> asNode(node)
 
     processAttributes: (node) ->
       if node.nodeType != Node.ELEMENT_NODE
@@ -346,10 +342,10 @@
       # DOM element references
       if node.attributes?['element-id']
         if this.scope.ctx?
-          scope.ctx[node.attributes?['element-id'].value] = $(node)
+          this.scope.ctx[node.attributes?['element-id'].value] = $(node)
         node.removeAttribute('element-id')
 
-      for attr in node.attributes when this.processAttrRe.test attr.name
+      for attr in node.attributes when attr? and this.processAttrRe.test(attr.name)
         name = attr.name.substring(5)
         value = this.scope.get(attr.value, true)
 
@@ -487,4 +483,40 @@
       else
         this.renderTemplate(partial).appendTo(this.$el)
 
-  {View, ParameterizableView}
+  class ObservableScope extends Scope
+    extend this.prototype, Backbone.Events
+
+    constructor: ->
+      super
+      this.observe = {}
+
+    get: (path, callIfMethod = false) ->
+      result = super
+      this.observe[path] = result
+      result
+
+    digest: ->
+      updates = {}
+
+      for path, value of this.observe
+        newValue = this.get(path)
+        updates[path] = newValue unless isEqual(newValue, value)
+
+      extend this.observe, updates
+
+      for path, value of updates
+        this.trigger("change:#{path}", value)
+
+  class BindingInterpreter extends Interpreter
+    @scope: ObservableScope
+
+    processInterpolation: (path) ->
+      super.then (node) ->
+        this.scope.on "change:#{path}", (value) ->
+          node.replaceWith(asNode(value))
+        node
+
+  class ActiveView extends View
+    @interpreter: BindingInterpreter
+
+  {View, ParameterizableView, ActiveView}

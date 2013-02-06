@@ -12,8 +12,8 @@ var __slice = [].slice,
     return root.Backbone.ViewDSL = factory(root.jQuery, root.Backbone, root._);
   }
 })(this, function(jQuery, Backbone, _) {
-  var Interpreter, ParameterizableView, Promise, Scope, View, asNode, extend, getByPath, getBySpec, hypensToCamelCase, insertBefore, isArray, isBoolean, isPromise, isString, join, promise, promiseRequire, replaceChild, toArray, wrapInFragment;
-  isString = _.isString, isArray = _.isArray, isBoolean = _.isBoolean, extend = _.extend, toArray = _.toArray;
+  var ActiveView, BindingInterpreter, Interpreter, ObservableScope, ParameterizableView, Promise, Scope, View, asNode, extend, getByPath, getBySpec, hypensToCamelCase, insertBefore, isArray, isBoolean, isEqual, isPromise, isString, join, promise, promiseRequire, replaceChild, toArray, wrapInFragment;
+  isString = _.isString, isArray = _.isArray, isBoolean = _.isBoolean, isEqual = _.isEqual, extend = _.extend, toArray = _.toArray;
   /*
       Minimal promise implementation
   
@@ -320,7 +320,7 @@ var __slice = [].slice,
     if (clone == null) {
       clone = true;
     }
-    nodes = node.jquery ? clone ? node.clone() : node : typeof node.cloneNode === 'function' ? [clone ? node.cloneNode(true) : node] : jQuery.parseHTML(node);
+    nodes = node.jquery ? clone ? node.clone() : node : typeof node.cloneNode === 'function' ? [clone ? node.cloneNode(true) : node] : jQuery.parseHTML(node.toString());
     if (requireSingleNode && nodes.length !== 1) {
       throw new Error('templates only of single element are allowed');
     }
@@ -498,18 +498,14 @@ var __slice = [].slice,
     };
 
     Interpreter.prototype.processInterpolation = function(path) {
-      var val;
-      val = this.scope.get(path, true);
-      if (!(val != null) || val === '') {
+      var node;
+      node = this.scope.get(path, true);
+      if (!(node != null) || node === '') {
         return;
       }
-      if (isPromise(val)) {
-        return val.then(function(node) {
-          return asNode(node);
-        });
-      } else {
-        return asNode(val);
-      }
+      return promise(node).then(function(node) {
+        return asNode(node);
+      });
     };
 
     Interpreter.prototype.processAttributes = function(node) {
@@ -528,14 +524,14 @@ var __slice = [].slice,
       }
       if ((_ref1 = node.attributes) != null ? _ref1['element-id'] : void 0) {
         if (this.scope.ctx != null) {
-          scope.ctx[(_ref2 = node.attributes) != null ? _ref2['element-id'].value : void 0] = $(node);
+          this.scope.ctx[(_ref2 = node.attributes) != null ? _ref2['element-id'].value : void 0] = $(node);
         }
         node.removeAttribute('element-id');
       }
       _ref3 = node.attributes;
       for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
         attr = _ref3[_i];
-        if (!(this.processAttrRe.test(attr.name))) {
+        if (!((attr != null) && this.processAttrRe.test(attr.name))) {
           continue;
         }
         name = attr.name.substring(5);
@@ -732,8 +728,88 @@ var __slice = [].slice,
     return ParameterizableView;
 
   })(View);
+  ObservableScope = (function(_super) {
+
+    __extends(ObservableScope, _super);
+
+    extend(ObservableScope.prototype, Backbone.Events);
+
+    function ObservableScope() {
+      ObservableScope.__super__.constructor.apply(this, arguments);
+      this.observe = {};
+    }
+
+    ObservableScope.prototype.get = function(path, callIfMethod) {
+      var result;
+      if (callIfMethod == null) {
+        callIfMethod = false;
+      }
+      result = ObservableScope.__super__.get.apply(this, arguments);
+      this.observe[path] = result;
+      return result;
+    };
+
+    ObservableScope.prototype.digest = function() {
+      var newValue, path, updates, value, _ref, _results;
+      updates = {};
+      _ref = this.observe;
+      for (path in _ref) {
+        value = _ref[path];
+        newValue = this.get(path);
+        if (!isEqual(newValue, value)) {
+          updates[path] = newValue;
+        }
+      }
+      extend(this.observe, updates);
+      _results = [];
+      for (path in updates) {
+        value = updates[path];
+        _results.push(this.trigger("change:" + path, value));
+      }
+      return _results;
+    };
+
+    return ObservableScope;
+
+  })(Scope);
+  BindingInterpreter = (function(_super) {
+
+    __extends(BindingInterpreter, _super);
+
+    function BindingInterpreter() {
+      return BindingInterpreter.__super__.constructor.apply(this, arguments);
+    }
+
+    BindingInterpreter.scope = ObservableScope;
+
+    BindingInterpreter.prototype.processInterpolation = function(path) {
+      return BindingInterpreter.__super__.processInterpolation.apply(this, arguments).then(function(node) {
+        this.scope.on("change:" + path, function(value) {
+          return node.replaceWith(asNode(value));
+        });
+        return node;
+      });
+    };
+
+    return BindingInterpreter;
+
+  })(Interpreter);
+  ActiveView = (function(_super) {
+
+    __extends(ActiveView, _super);
+
+    function ActiveView() {
+      return ActiveView.__super__.constructor.apply(this, arguments);
+    }
+
+    ActiveView.interpreter = BindingInterpreter;
+
+    return ActiveView;
+
+  })(View);
   return {
     View: View,
-    ParameterizableView: ParameterizableView
+    ParameterizableView: ParameterizableView,
+    ActiveView: ActiveView
   };
 });
