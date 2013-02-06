@@ -464,7 +464,7 @@ var __slice = [].slice,
     };
 
     Interpreter.prototype.processTextNode = function(node) {
-      var data, nodes, part, parts, val;
+      var data, nodes, part, parts, path;
       if (!this.textNodeSplitRe.test(node.data)) {
         return promise();
       }
@@ -480,17 +480,12 @@ var __slice = [].slice,
         for (_i = 0, _len = parts.length; _i < _len; _i++) {
           part = parts[_i];
           if (part[0] === '\uF001') {
-            val = this.scope.get(part.slice(1).trim(), true);
-            if (!(val != null) || val === '') {
+            path = part.slice(1).trim();
+            node = this.processInterpolation(path);
+            if (node == null) {
               continue;
             }
-            if (isPromise(val)) {
-              _results.push(val.then(function(node) {
-                return asNode(node);
-              }));
-            } else {
-              _results.push(asNode(val));
-            }
+            _results.push(node);
           } else {
             _results.push(part);
           }
@@ -498,6 +493,21 @@ var __slice = [].slice,
         return _results;
       }).call(this);
       return join(nodes);
+    };
+
+    Interpreter.prototype.processInterpolation = function(path) {
+      var val;
+      val = this.scope.get(path, true);
+      if (!(val != null) || val === '') {
+        return;
+      }
+      if (isPromise(val)) {
+        return val.then(function(node) {
+          return asNode(node);
+        });
+      } else {
+        return asNode(val);
+      }
     };
 
     Interpreter.prototype.processAttributes = function(node) {

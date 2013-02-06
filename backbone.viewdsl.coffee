@@ -314,16 +314,23 @@
 
       nodes = for part in parts
         if part[0] == '\uF001'
-          val = this.scope.get(part.slice(1).trim(), true)
-          continue if not val? or val == ''
-          if isPromise(val)
-            val.then (node) -> asNode(node)
-          else
-            asNode(val)
+          path = part.slice(1).trim()
+          node = this.processInterpolation(path)
+          continue unless node?
+          node
         else
           part
 
       join(nodes)
+
+    processInterpolation: (path) ->
+      val = this.scope.get(path, true)
+      return if not val? or val == ''
+      if isPromise(val)
+        val.then (node) ->
+          asNode(node)
+      else
+        asNode(val)
 
     processAttributes: (node) ->
       if node.nodeType != Node.ELEMENT_NODE
