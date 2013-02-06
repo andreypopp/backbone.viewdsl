@@ -461,13 +461,13 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Interpreter.prototype.processAttributes = function($node) {
-      var attr, name, node, show, spec, _i, _len, _ref, _ref1, _ref2, _ref3, _ref4;
+      var attr, name, node, show, spec, _i, _len, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
       node = $node[0];
       if (node.nodeType !== Node.ELEMENT_NODE) {
         return promise({});
       }
-      if ((_ref = node.attributes) != null ? _ref["if"] : void 0) {
-        show = this.scope.get(node.attributes["if"].value, true);
+      if ((_ref = node.attributes) != null ? _ref['if'] : void 0) {
+        show = this.scope.get(node.attributes['if'].value, true);
         $node.removeAttr('if');
         if (!show) {
           return promise({
@@ -475,15 +475,19 @@ var __hasProp = {}.hasOwnProperty,
           });
         }
       }
-      if ((_ref1 = node.attributes) != null ? _ref1['element-id'] : void 0) {
+      if ((_ref1 = node.attributes) != null ? _ref1['visible-if'] : void 0) {
+        this.processVisibility($node, node.attributes['visible-if'].value);
+        $node.removeAttr('visible-if');
+      }
+      if ((_ref2 = node.attributes) != null ? _ref2['element-id'] : void 0) {
         if (this.scope.ctx != null) {
-          this.scope.ctx[(_ref2 = node.attributes) != null ? _ref2['element-id'].value : void 0] = $($node);
+          this.scope.ctx[(_ref3 = node.attributes) != null ? _ref3['element-id'].value : void 0] = $($node);
         }
         $node.removeAttr('element-id');
       }
-      _ref3 = node.attributes;
-      for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
-        attr = _ref3[_i];
+      _ref4 = node.attributes;
+      for (_i = 0, _len = _ref4.length; _i < _len; _i++) {
+        attr = _ref4[_i];
         if (attr != null) {
           if (this.processAttrRe.test(attr.name)) {
             name = attr.name.substring(5);
@@ -500,8 +504,8 @@ var __hasProp = {}.hasOwnProperty,
           }
         }
       }
-      if ((_ref4 = node.attributes) != null ? _ref4.view : void 0) {
-        spec = node.attributes.view.value;
+      if ((_ref5 = node.attributes) != null ? _ref5['view'] : void 0) {
+        spec = node.attributes['view'].value;
         $node.removeAttr('view');
         return this.instantiateView($node, {
           spec: spec,
@@ -517,6 +521,14 @@ var __hasProp = {}.hasOwnProperty,
         });
       } else {
         return promise({});
+      }
+    };
+
+    Interpreter.prototype.processVisibility = function($node, path) {
+      if (this.scope.get(path, true)) {
+        return $node.show();
+      } else {
+        return $node.hide();
       }
     };
 
@@ -819,6 +831,20 @@ var __hasProp = {}.hasOwnProperty,
             $node.removeClass(className);
           }
           return $node.removeAttr(attr.name);
+        });
+      }
+    };
+
+    BindingInterpreter.prototype.processVisibility = function($node, path) {
+      var _this = this;
+      BindingInterpreter.__super__.processVisibility.apply(this, arguments);
+      if (this.scope != null) {
+        return this.scope.on("change:" + path, function(value) {
+          if (value) {
+            return $node.show();
+          } else {
+            return $node.hide();
+          }
         });
       }
     };

@@ -308,10 +308,14 @@
         return promise {}
 
       # conditional exclusion
-      if node.attributes?.if
-        show = this.scope.get(node.attributes.if.value, true)
+      if node.attributes?['if']
+        show = this.scope.get(node.attributes['if'].value, true)
         $node.removeAttr('if')
         return promise {remove: true} unless show
+
+      if node.attributes?['visible-if']
+        this.processVisibility($node, node.attributes['visible-if'].value)
+        $node.removeAttr('visible-if')
 
       # DOM element references
       if node.attributes?['element-id']
@@ -328,8 +332,8 @@
           this.processClassInterpolation($node, {name: attr.name, value: attr.value}, name)
 
       # view instantiation via view attribute
-      if node.attributes?.view
-        spec = node.attributes.view.value
+      if node.attributes?['view']
+        spec = node.attributes['view'].value
         $node.removeAttr('view')
         this.instantiateView($node, {spec: spec, useNode: true})
           .then (view) ->
@@ -337,6 +341,12 @@
 
       else
         promise {}
+
+    processVisibility: ($node, path) ->
+      if this.scope.get(path, true)
+        $node.show()
+      else
+        $node.hide()
 
     processAttrInterpolation: ($node, attr, attrName) ->
       value = this.scope.get(attr.value, true)
@@ -542,6 +552,15 @@
             $node.removeClass(className)
 
           $node.removeAttr(attr.name)
+
+    processVisibility: ($node, path) ->
+      super
+      if this.scope?
+        this.scope.on "change:#{path}", (value) =>
+          if value
+            $node.show()
+          else
+            $node.hide()
 
   class ActiveView extends View
     @interpreter: BindingInterpreter
