@@ -136,26 +136,6 @@
     p
 
   ###
-    Scope
-  ###
-  class Scope
-
-    constructor: (ctx, locals, parent) ->
-      this.ctx = ctx
-      this.locals = locals
-      this.parent = parent
-
-    get: (path, callIfMethod = false) ->
-      result = getByPath(this.locals, path, callIfMethod) if this.locals?
-      return result if result?
-
-      result = getByPath(this.ctx, path, callIfMethod)
-      return result if result?
-
-      result = this.parent.get(path, callIfMethod) if this.parent?
-      return result if result?
-
-  ###
     Get attribute from `o` object by dotted path `p`
 
     If `callIfMethod` argument is true and path points to a function then call
@@ -246,214 +226,202 @@
     fragment
 
   ###
-    Render `node` in some scope.
-
-    Rendering scope builds up from a `locals`, `scope` and a
-    `parentScope`. `scope` is the "main" scope here, it provides data for
-    rendering `node` and all writes ends-up there. `locals` works like an
-    overlay for `scope` — you can submit additional and temporal values there.
-    `parentScope` is a kind of a fallback for lookups which are missed from
-    `scope`.
-
-    If `forceClone` is false then `node` isn't cloned.
+    Scope
   ###
-  render = (node, ctx, locals, parentScope, forceClone = true, scopeClass = Scope) ->
-    if not (typeof node.cloneNode == 'function')
-      node = wrapTemplate(node)
-    else if forceClone
-      node = node.cloneNode(true)
+  class Scope
 
-    scope = new scopeClass(ctx, locals, parentScope)
-    process(scope, node)
+    constructor: (ctx, locals, parent) ->
+      this.ctx = ctx
+      this.locals = locals
+      this.parent = parent
 
-  ###
-    The same as render, but only for those nodes are already in DOM.
+    get: (path, callIfMethod = false) ->
+      result = getByPath(this.locals, path, callIfMethod) if this.locals?
+      return result if result?
 
-    This can be useful if you want to define your app in original HTML.
-  ###
-  renderInPlace = (node, ctx, locals, parentScope) ->
-    render(node, ctx, locals, parentScope, false)
+      result = getByPath(this.ctx, path, callIfMethod)
+      return result if result?
+
+      result = this.parent.get(path, callIfMethod) if this.parent?
+      return result if result?
 
   ###
-    Process single `node`.
+    Interpreter which interprets markup constructs and perform actions.
   ###
-  process = (scope, node) ->
+  class Interpreter
 
-    # check if we already seen the node
-    if node.seen
-      return promise(node)
-    else
+    textNodeSplitRe: /({{)|(}})/
+    processAttrRe: /^attr-/
+
+    constructor: (scope) ->
+      this.scope = scope
+
+    render: (node, clone = true) ->
+      if not (typeof node.cloneNode == 'function')
+        node = wrapTemplate(node)
+      else if clone
+        node = node.cloneNode(true)
+
+      this.process(node)
+
+    process: (node) ->
+      return promise(node) if node.seen
+
       node.seen = true
 
-    processAttributes(scope, node).then (pragmas) ->
-      if pragmas.skip
-        promise()
+      this.processAttributes(node).then (pragmas) =>
+        if pragmas.skip
+          promise()
 
-      else if pragmas.remove
-        node.parentNode.removeChild(node)
-        promise()
+        else if pragmas.remove
+          node.parentNode.removeChild(node)
+          promise()
+
+        else
+          this.processNode(node)
+
+    processNode: (node) ->
+      # text node interpolation
+      if node.nodeType == Node.TEXT_NODE
+        this.processTextNode(node).then (nodes) =>
+          node = replaceChild(node, nodes...) if nodes
+          node
+
+      # view instantiation view <view /> tag
+      else if node.tagName == 'VIEW'
+        if not node.attributes.name
+          throw new Error('<view> element should have a name attribute')
+        spec = node.attributes.name.value
+        node.removeAttribute('name')
+        this.instantiateView(spec: spec, node: node, useNode: false)
+          .then (view) =>
+            p = node.parentNode
+            nodes = replaceChild(node, view.el)
+            nodes
+
+      # recursively traverse children
+      else
+        join(this.process(n) for n in toArray(node.childNodes)).then => node
+
+    processTextNode: (node) ->
+      return promise() unless this.textNodeSplitRe.test node.data
+
+      data = node.data
+      data = data.replace(/{{/g, '{{\uF001')
+
+      parts = data.split(this.textNodeSplitRe)
+      parts = parts.filter (e) -> e and e != '{{' and e != '}}'
+
+      nodes = for part in parts
+        if part[0] == '\uF001'
+          val = this.scope.get(part.slice(1).trim(), true)
+          val = '' unless val?
+          val
+        else
+          part
+
+      join(nodes)
+
+    processAttributes: (node) ->
+      if node.nodeType != Node.ELEMENT_NODE
+        return promise {}
+
+      # conditional exclusion
+      if node.attributes?.if
+        show = this.scope.get(node.attributes.if.value, true)
+        node.removeAttribute('if')
+        return promise {remove: true} unless show
+
+      # DOM element references
+      if node.attributes?['element-id']
+        if this.scope.ctx?
+          scope.ctx[node.attributes?['element-id'].value] = $(node)
+        node.removeAttribute('element-id')
+
+      for attr in node.attributes when this.processAttrRe.test attr.name
+        name = attr.name.substring(5)
+        value = this.scope.get(attr.value, true)
+
+        if isBoolean(value)
+          node.setAttribute(name, '') if value
+        else
+          node.setAttribute(name, value)
+
+        node.removeAttribute(attr.name)
+
+      # view instantiation via view attribute
+      if node.attributes?.view
+        spec = node.attributes.view.value
+        node.removeAttribute('view')
+        this.instantiateView(spec: spec, node: node, useNode: true)
+          .then (view) -> if view.parameterizable then {skip: true} else {}
 
       else
-        processNode(scope, node)
+        promise {}
 
-  ###
-    Process `node` content.
-  ###
-  processNode = (scope, node) ->
+    instantiateView: (options) ->
+      getBySpec(options.spec, this.scope).then (viewCls) =>
+        if viewCls == undefined
+          throw new Error("can't find a view by '#{options.spec}' spec")
 
-    # text node interpolation
-    if node.nodeType == Node.TEXT_NODE
-      processTextNode(scope, node).then (nodes) ->
-        node = replaceChild(node, nodes...) if nodes
-        node
+        fromViewTag = options.node.tagName == 'VIEW'
 
-    # view instantiation view <view /> tag
-    else if node.tagName == 'VIEW'
-      if not node.attributes.name
-        throw new Error('<view> element should have a name attribute')
-      spec = node.attributes.name.value
-      node.removeAttribute('name')
-      instantiateView(scope: scope, spec: spec, node: node, useNode: false)
-        .then (view) ->
-          p = node.parentNode
-          nodes = replaceChild(node, view.el)
-          nodes
+        # read view params from node's attributes
+        prefix = if fromViewTag then undefined else 'view-'
+        {viewParams, viewId} = this.consumeViewParams(options.node, prefix)
 
-    # recursively traverse children
-    else
-      join(process(scope, n) for n in toArray(node.childNodes)).then -> node
+        # create or init view
+        view = if jQuery.isFunction(viewCls)
+          viewParams.el = options.node if options.useNode
+          new viewCls(viewParams)
+        else
+          viewCls.setElement(options.node) if options.useNode
+          viewCls
 
-  textNodeSplitRe = /({{)|(}})/
+        # set class on a view if view was instantiated from a <view> tag
+        if fromViewTag and options.node.attributes['class']
+          view.$el.addClass(options.node.attributes['class'].value)
 
-  ###
-    Process `TextNode`'s content to interpolate values.
-  ###
-  processTextNode = (scope, node) ->
-    return promise() unless textNodeSplitRe.test node.data
+        # notify view about being a part of a view hierarchy
+        view.parentScope = this.scope
+        if this.scope.ctx?.addView?
+          this.scope.ctx.addView(view, viewId)
 
-    data = node.data
-    data = data.replace(/{{/g, '{{\uF001')
+        p = if view.parameterizable
+          # if view is parameterizable we need to pass all DOM element inside
+          # `node` to view's `render()` method so view can decide by its own what
+          # to do next
+          partial = $(options.node.removeChild(c) for c in toArray(options.node.childNodes))
+          partial = wrapTemplate(partial)
+          promise view.render(partial)
+        else
+          promise view.render()
 
-    parts = data.split(textNodeSplitRe)
-    parts = parts.filter (e) -> e and e != '{{' and e != '}}'
+        p.then -> view
 
-    nodes = for part in parts
-      if part[0] == '\uF001'
-        val = scope.get(part.slice(1).trim(), true)
-        val = '' unless val?
-        val
-      else
-        part
+    consumeViewParams: (node, prefix) ->
+      viewParams = {}
+      viewId = undefined
 
-    join(nodes)
+      for a in toArray(node.attributes)
+        if not (prefix and a.name.slice(0, prefix.length) == prefix or not prefix)
+          continue
 
-  processAttrRe = /^attr-/
+        attrName = if prefix then a.name.slice(prefix.length) else a.name
+        attrName = hypensToCamelCase(attrName)
 
-  ###
-    Process `node`'s attributes.
-  ###
-  processAttributes = (scope, node) ->
-    if node.nodeType != Node.ELEMENT_NODE
-      return promise {}
+        if attrName == 'id'
+          viewId = a.value
+          node.removeAttribute(a.name)
+          continue
 
-    # conditional exclusion
-    if node.attributes?.if
-      show = scope.get(node.attributes.if.value, true)
-      node.removeAttribute('if')
-      return promise {remove: true} unless show
+        viewParams[attrName] = this.scope.get(a.value, true) or a.value
 
-    # DOM element references
-    if node.attributes?['element-id']
-      if scope.ctx?
-        scope.ctx[node.attributes?['element-id'].value] = $(node)
-      node.removeAttribute('element-id')
+      {viewParams, viewId}
 
-    for attr in node.attributes when processAttrRe.test attr.name
-      name = attr.name.substring(5)
-      value = scope.get(attr.value, true)
-
-      if isBoolean(value)
-        node.setAttribute(name, '') if value
-      else
-        node.setAttribute(name, value)
-
-      node.removeAttribute(attr.name)
-
-    # view instantiation via view attribute
-    if node.attributes?.view
-      spec = node.attributes.view.value
-      node.removeAttribute('view')
-      instantiateView(scope: scope, spec: spec, node: node, useNode: true)
-        .then (view) -> if view.parameterizable then {skip: true} else {}
-
-    else
-      promise {}
-
-  ###
-    Instantiate view from `options`
-  ###
-  instantiateView = (options) ->
-    getBySpec(options.spec, options.scope).then (viewCls) ->
-      if viewCls == undefined
-        throw new Error("can't find a view by '#{options.spec}' spec")
-
-      fromViewTag = options.node.tagName == 'VIEW'
-
-      # read view params from node's attributes
-      prefix = if fromViewTag then undefined else 'view-'
-      {viewParams, viewId} = consumeViewParams(options.scope, options.node, prefix)
-
-      # create or init view
-      view = if jQuery.isFunction(viewCls)
-        viewParams.el = options.node if options.useNode
-        new viewCls(viewParams)
-      else
-        viewCls.setElement(options.node) if options.useNode
-        viewCls
-
-      # set class on a view if view was instantiated from a <view> tag
-      if fromViewTag and options.node.attributes['class']
-        view.$el.addClass(options.node.attributes['class'].value)
-
-      # notify view about being a part of a view hierarchy
-      view.parentScope = options.scope
-      if options.scope.ctx?.addView?
-        options.scope.ctx.addView(view, viewId)
-
-      p = if view.parameterizable
-        # if view is parameterizable we need to pass all DOM element inside
-        # `node` to view's `render()` method so view can decide by its own what
-        # to do next
-        partial = $(options.node.removeChild(c) for c in toArray(options.node.childNodes))
-        partial = wrapTemplate(partial)
-        promise view.render(partial)
-      else
-        promise view.render()
-
-      p.then -> view
-
-  ###
-    Read view params from `node` in `scope` using `prefix`
-  ###
-  consumeViewParams = (scope, node, prefix) ->
-    viewParams = {}
-    viewId = undefined
-
-    for a in toArray(node.attributes)
-      if not (prefix and a.name.slice(0, prefix.length) == prefix or not prefix)
-        continue
-
-      attrName = if prefix then a.name.slice(prefix.length) else a.name
-      attrName = hypensToCamelCase(attrName)
-
-      if attrName == 'id'
-        viewId = a.value
-        node.removeAttribute(a.name)
-        continue
-
-      viewParams[attrName] = scope.get(a.value, true) or a.value
-
-    {viewParams, viewId}
+  render = (scope, template, clone = true, interpreterCls = Interpreter) ->
+    interpreter = new interpreterCls(scope)
+    interpreter.render(template, clone)
 
   ###
     View which can render process DSL.
@@ -464,10 +432,11 @@
     parameterizable: false
     parentScope: undefined
 
-    @from: (template, locals) ->
-      node = wrapTemplate(template, true)
+    @from: (node, locals) ->
+      node = wrapTemplate(node, true)
       view = new this(el: node)
-      render(node, view, locals, undefined, false).then ->
+      scope = new Scope(view, locals)
+      render(scope, node, false).then ->
         view.render()
         view
 
@@ -480,7 +449,8 @@
       this[viewId] = view if viewId
 
     renderTemplate: (template, locals) ->
-      render(template, this, locals, this.parentScope)
+      scope = new Scope(this, locals, this.parentScope)
+      render(scope, template)
 
     render: (locals) ->
       return promise(this) unless this.template?
@@ -507,4 +477,4 @@
       else
         this.renderTemplate(partial).appendTo(this.$el)
 
-  {View, ParameterizableView, render, renderInPlace}
+  {View, ParameterizableView}
