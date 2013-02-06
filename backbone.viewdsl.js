@@ -376,9 +376,6 @@ var __hasProp = {}.hasOwnProperty,
     Interpreter.prototype.processNode = function($node) {
       var n, node, spec,
         _this = this;
-      if ($node.length !== 1) {
-        throw new Error('assert $node.length == 1');
-      }
       node = $node[0];
       if (node.nodeType === Node.TEXT_NODE) {
         return this.processTextNode($node).then(function(nodes) {
@@ -418,9 +415,6 @@ var __hasProp = {}.hasOwnProperty,
 
     Interpreter.prototype.processTextNode = function($node) {
       var data, node, nodes, part, parts, path;
-      if ($node.length !== 1) {
-        throw new Error('assert $node.length == 1');
-      }
       if (!this.textNodeSplitRe.test($node.data)) {
         return promise();
       }
@@ -466,9 +460,6 @@ var __hasProp = {}.hasOwnProperty,
 
     Interpreter.prototype.processAttributes = function($node) {
       var attr, name, node, show, spec, _i, _len, _ref, _ref1, _ref2, _ref3, _ref4;
-      if ($node.length !== 1) {
-        throw new Error('assert $node.length == 1');
-      }
       node = $node[0];
       if (node.nodeType !== Node.ELEMENT_NODE) {
         return promise({});
@@ -522,9 +513,6 @@ var __hasProp = {}.hasOwnProperty,
 
     Interpreter.prototype.processAttrInterpolation = function($node, attr, attrName) {
       var value;
-      if ($node.length !== 1) {
-        throw new Error('assert $node.length == 1');
-      }
       value = this.scope.get(attr.value, true);
       if (isBoolean(value)) {
         $node.prop(attrName, value);
@@ -537,9 +525,6 @@ var __hasProp = {}.hasOwnProperty,
     Interpreter.prototype.instantiateView = function($node, options) {
       var node,
         _this = this;
-      if ($node.length !== 1) {
-        throw new Error('assert $node.length == 1');
-      }
       node = $node[0];
       return getBySpec(options.spec, this.scope).then(function(viewCls) {
         var fromViewTag, p, partial, prefix, view, viewId, viewParams, _ref, _ref1;
@@ -566,9 +551,6 @@ var __hasProp = {}.hasOwnProperty,
 
     Interpreter.prototype.consumeViewParams = function($node, prefix) {
       var a, attrName, node, viewId, viewParams, _i, _len, _ref;
-      if ($node.length !== 1) {
-        throw new Error('assert $node.length == 1');
-      }
       node = $node[0];
       viewParams = {};
       viewId = void 0;

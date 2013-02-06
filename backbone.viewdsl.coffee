@@ -250,7 +250,6 @@
           this.processNode($node)
 
     processNode: ($node) ->
-      throw new Error('assert $node.length == 1') if $node.length != 1
       node = $node[0]
 
       # text node interpolation
@@ -275,7 +274,6 @@
         join(this.process($ n) for n in toArray(node.childNodes)).then => $node
 
     processTextNode: ($node) ->
-      throw new Error('assert $node.length == 1') if $node.length != 1
       return promise() unless this.textNodeSplitRe.test $node.data
 
       data = $node.text()
@@ -303,7 +301,6 @@
         asNode(node)
 
     processAttributes: ($node) ->
-      throw new Error('assert $node.length == 1') if $node.length != 1
       node = $node[0]
 
       if node.nodeType != Node.ELEMENT_NODE
@@ -337,7 +334,6 @@
         promise {}
 
     processAttrInterpolation: ($node, attr, attrName) ->
-      throw new Error('assert $node.length == 1') if $node.length != 1
       value = this.scope.get(attr.value, true)
 
       if isBoolean(value)
@@ -348,7 +344,6 @@
       $node.removeAttr(attr.name)
 
     instantiateView: ($node, options) ->
-      throw new Error('assert $node.length == 1') if $node.length != 1
       node = $node[0]
       getBySpec(options.spec, this.scope).then (viewCls) =>
         if viewCls == undefined
@@ -389,7 +384,6 @@
         p.then -> view
 
     consumeViewParams: ($node, prefix) ->
-      throw new Error('assert $node.length == 1') if $node.length != 1
       node = $node[0]
       viewParams = {}
       viewId = undefined
