@@ -6,7 +6,7 @@
     root.Backbone.ViewDSL = factory(root.jQuery, root.Backbone, root._)
 ) this, (jQuery, Backbone, _) ->
 
-  {isArray, isBoolean, extend, toArray} = _
+  {isString, isArray, isBoolean, extend, toArray} = _
 
   ###
     Minimal promise implementation
@@ -205,13 +205,13 @@
     with HTML markup. If `requireSingleNode` is true then it's required from
     `template` to represent just a single DOM node.
   ###
-  wrapTemplate = (template, requireSingleNode = false) ->
-    nodes = if template.jquery
-      template.clone()
-    else if typeof template.cloneNode == 'function'
-      [template.cloneNode(true)]
+  asNode = (node, requireSingleNode = false, clone = true) ->
+    nodes = if node.jquery
+      if clone then node.clone() else node
+    else if typeof node.cloneNode == 'function'
+      [if clone then node.cloneNode(true) else node]
     else
-      jQuery.parseHTML(template)
+      jQuery.parseHTML(node)
 
     if requireSingleNode and nodes.length != 1
       throw new Error('templates only of single element are allowed')
@@ -258,7 +258,7 @@
 
     render: (node, clone = true) ->
       if not (typeof node.cloneNode == 'function')
-        node = wrapTemplate(node)
+        node = asNode(node)
       else if clone
         node = node.cloneNode(true)
 
@@ -315,8 +315,11 @@
       nodes = for part in parts
         if part[0] == '\uF001'
           val = this.scope.get(part.slice(1).trim(), true)
-          val = '' unless val?
-          val
+          continue if not val? or val == ''
+          if isPromise(val)
+            val.then (node) -> asNode(node)
+          else
+            asNode(val)
         else
           part
 
@@ -392,7 +395,7 @@
           # `node` to view's `render()` method so view can decide by its own what
           # to do next
           partial = $(options.node.removeChild(c) for c in toArray(options.node.childNodes))
-          partial = wrapTemplate(partial)
+          partial = asNode(partial)
           promise view.render(partial)
         else
           promise view.render()
@@ -433,7 +436,7 @@
     parentScope: undefined
 
     @from: (node, locals) ->
-      node = wrapTemplate(node, true)
+      node = asNode(node, true)
       view = new this(el: node)
       scope = new Scope(view, locals)
       render(scope, node, false).then ->

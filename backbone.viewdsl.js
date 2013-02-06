@@ -12,8 +12,8 @@ var __slice = [].slice,
     return root.Backbone.ViewDSL = factory(root.jQuery, root.Backbone, root._);
   }
 })(this, function(jQuery, Backbone, _) {
-  var Interpreter, ParameterizableView, Promise, Scope, View, extend, getByPath, getBySpec, hypensToCamelCase, insertBefore, isArray, isBoolean, isPromise, join, promise, promiseRequire, render, replaceChild, toArray, wrapInFragment, wrapTemplate;
-  isArray = _.isArray, isBoolean = _.isBoolean, extend = _.extend, toArray = _.toArray;
+  var Interpreter, ParameterizableView, Promise, Scope, View, asNode, extend, getByPath, getBySpec, hypensToCamelCase, insertBefore, isArray, isBoolean, isPromise, isString, join, promise, promiseRequire, render, replaceChild, toArray, wrapInFragment;
+  isString = _.isString, isArray = _.isArray, isBoolean = _.isBoolean, extend = _.extend, toArray = _.toArray;
   /*
       Minimal promise implementation
   
@@ -312,12 +312,15 @@ var __slice = [].slice,
       `template` to represent just a single DOM node.
   */
 
-  wrapTemplate = function(template, requireSingleNode) {
+  asNode = function(node, requireSingleNode, clone) {
     var nodes;
     if (requireSingleNode == null) {
       requireSingleNode = false;
     }
-    nodes = template.jquery ? template.clone() : typeof template.cloneNode === 'function' ? [template.cloneNode(true)] : jQuery.parseHTML(template);
+    if (clone == null) {
+      clone = true;
+    }
+    nodes = node.jquery ? clone ? node.clone() : node : typeof node.cloneNode === 'function' ? [clone ? node.cloneNode(true) : node] : jQuery.parseHTML(node);
     if (requireSingleNode && nodes.length !== 1) {
       throw new Error('templates only of single element are allowed');
     }
@@ -393,7 +396,7 @@ var __slice = [].slice,
         clone = true;
       }
       if (!(typeof node.cloneNode === 'function')) {
-        node = wrapTemplate(node);
+        node = asNode(node);
       } else if (clone) {
         node = node.cloneNode(true);
       }
@@ -478,10 +481,16 @@ var __slice = [].slice,
           part = parts[_i];
           if (part[0] === '\uF001') {
             val = this.scope.get(part.slice(1).trim(), true);
-            if (val == null) {
-              val = '';
+            if (!(val != null) || val === '') {
+              continue;
             }
-            _results.push(val);
+            if (isPromise(val)) {
+              _results.push(val.then(function(node) {
+                return asNode(node);
+              }));
+            } else {
+              _results.push(asNode(val));
+            }
           } else {
             _results.push(part);
           }
@@ -574,7 +583,7 @@ var __slice = [].slice,
             _results.push(options.node.removeChild(c));
           }
           return _results;
-        })()), partial = wrapTemplate(partial), promise(view.render(partial))) : promise(view.render());
+        })()), partial = asNode(partial), promise(view.render(partial))) : promise(view.render());
         return p.then(function() {
           return view;
         });
@@ -636,7 +645,7 @@ var __slice = [].slice,
 
     View.from = function(node, locals) {
       var scope, view;
-      node = wrapTemplate(node, true);
+      node = asNode(node, true);
       view = new this({
         el: node
       });
