@@ -334,6 +334,8 @@ var __hasProp = {}.hasOwnProperty,
 
     Interpreter.prototype.processAttrRe = /^attr-/;
 
+    Interpreter.prototype.processClassRe = /^class-/;
+
     function Interpreter(scope) {
       this.scope = scope;
     }
@@ -482,14 +484,21 @@ var __hasProp = {}.hasOwnProperty,
       _ref3 = node.attributes;
       for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
         attr = _ref3[_i];
-        if (!((attr != null) && this.processAttrRe.test(attr.name))) {
-          continue;
+        if (attr != null) {
+          if (this.processAttrRe.test(attr.name)) {
+            name = attr.name.substring(5);
+            this.processAttrInterpolation($node, {
+              name: attr.name,
+              value: attr.value
+            }, name);
+          } else if (this.processClassRe.test(attr.name)) {
+            name = attr.name.substring(6);
+            this.processClassInterpolation($node, {
+              name: attr.name,
+              value: attr.value
+            }, name);
+          }
         }
-        name = attr.name.substring(5);
-        this.processAttrInterpolation($node, {
-          name: attr.name,
-          value: attr.value
-        }, name);
       }
       if ((_ref4 = node.attributes) != null ? _ref4.view : void 0) {
         spec = node.attributes.view.value;
@@ -518,6 +527,17 @@ var __hasProp = {}.hasOwnProperty,
         $node.prop(attrName, value);
       } else {
         $node.attr(attrName, value);
+      }
+      return $node.removeAttr(attr.name);
+    };
+
+    Interpreter.prototype.processClassInterpolation = function($node, attr, className) {
+      var value;
+      value = this.scope.get(attr.value, true);
+      if (value) {
+        $node.addClass(className);
+      } else {
+        $node.removeClass(className);
       }
       return $node.removeAttr(attr.name);
     };
@@ -782,6 +802,21 @@ var __hasProp = {}.hasOwnProperty,
             $node.prop(attrName, value);
           } else {
             $node.attr(attrName, value);
+          }
+          return $node.removeAttr(attr.name);
+        });
+      }
+    };
+
+    BindingInterpreter.prototype.processClassInterpolation = function($node, attr, className) {
+      var _this = this;
+      BindingInterpreter.__super__.processClassInterpolation.apply(this, arguments);
+      if (this.scope != null) {
+        return this.scope.on("change:" + attr.value, function(value) {
+          if (value) {
+            $node.addClass(className);
+          } else {
+            $node.removeClass(className);
           }
           return $node.removeAttr(attr.name);
         });

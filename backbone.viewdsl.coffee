@@ -225,6 +225,7 @@
 
     textNodeSplitRe: /({{)|(}})/
     processAttrRe: /^attr-/
+    processClassRe: /^class-/
 
     constructor: (scope) ->
       this.scope = scope
@@ -318,9 +319,13 @@
           this.scope.ctx[node.attributes?['element-id'].value] = $($node)
         $node.removeAttr('element-id')
 
-      for attr in node.attributes when attr? and this.processAttrRe.test(attr.name)
-        name = attr.name.substring(5)
-        this.processAttrInterpolation($node, {name: attr.name, value: attr.value}, name)
+      for attr in node.attributes when attr?
+        if this.processAttrRe.test(attr.name)
+          name = attr.name.substring(5)
+          this.processAttrInterpolation($node, {name: attr.name, value: attr.value}, name)
+        else if this.processClassRe.test(attr.name)
+          name = attr.name.substring(6)
+          this.processClassInterpolation($node, {name: attr.name, value: attr.value}, name)
 
       # view instantiation via view attribute
       if node.attributes?.view
@@ -340,6 +345,16 @@
         $node.prop(attrName, value)
       else
         $node.attr(attrName, value)
+
+      $node.removeAttr(attr.name)
+
+    processClassInterpolation: ($node, attr, className) ->
+      value = this.scope.get(attr.value, true)
+
+      if value
+        $node.addClass(className)
+      else
+        $node.removeClass(className)
 
       $node.removeAttr(attr.name)
 
@@ -514,6 +529,17 @@
             $node.prop(attrName, value)
           else
             $node.attr(attrName, value)
+
+          $node.removeAttr(attr.name)
+
+    processClassInterpolation: ($node, attr, className) ->
+      super
+      if this.scope?
+        this.scope.on "change:#{attr.value}", (value) =>
+          if value
+            $node.addClass(className)
+          else
+            $node.removeClass(className)
 
           $node.removeAttr(attr.name)
 
