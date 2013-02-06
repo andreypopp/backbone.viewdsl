@@ -793,14 +793,12 @@ var __hasProp = {}.hasOwnProperty,
       return BindingInterpreter.__super__.processInterpolation.apply(this, arguments).then(function($node) {
         var $storedNode;
         $storedNode = $node;
-        if (_this.scope != null) {
-          _this.scope.on("change:" + path, function(value) {
-            var $newNode;
-            $newNode = asNode(value);
-            $storedNode.replaceWith($newNode);
-            return $storedNode = $newNode;
-          });
-        }
+        _this.scope.on("change:" + path, function(value) {
+          var $newNode;
+          $newNode = asNode(value);
+          $storedNode.replaceWith($newNode);
+          return $storedNode = $newNode;
+        });
         return $node;
       });
     };
@@ -808,45 +806,39 @@ var __hasProp = {}.hasOwnProperty,
     BindingInterpreter.prototype.processAttrInterpolation = function($node, attr, attrName) {
       var _this = this;
       BindingInterpreter.__super__.processAttrInterpolation.apply(this, arguments);
-      if (this.scope != null) {
-        return this.scope.on("change:" + attr.value, function(value) {
-          if (isBoolean(value)) {
-            $node.prop(attrName, value);
-          } else {
-            $node.attr(attrName, value);
-          }
-          return $node.removeAttr(attr.name);
-        });
-      }
+      return this.scope.on("change:" + attr.value, function(value) {
+        if (isBoolean(value)) {
+          $node.prop(attrName, value);
+        } else {
+          $node.attr(attrName, value);
+        }
+        return $node.removeAttr(attr.name);
+      });
     };
 
     BindingInterpreter.prototype.processClassInterpolation = function($node, attr, className) {
       var _this = this;
       BindingInterpreter.__super__.processClassInterpolation.apply(this, arguments);
-      if (this.scope != null) {
-        return this.scope.on("change:" + attr.value, function(value) {
-          if (value) {
-            $node.addClass(className);
-          } else {
-            $node.removeClass(className);
-          }
-          return $node.removeAttr(attr.name);
-        });
-      }
+      return this.scope.on("change:" + attr.value, function(value) {
+        if (value) {
+          $node.addClass(className);
+        } else {
+          $node.removeClass(className);
+        }
+        return $node.removeAttr(attr.name);
+      });
     };
 
     BindingInterpreter.prototype.processVisibility = function($node, path) {
       var _this = this;
       BindingInterpreter.__super__.processVisibility.apply(this, arguments);
-      if (this.scope != null) {
-        return this.scope.on("change:" + path, function(value) {
-          if (value) {
-            return $node.show();
-          } else {
-            return $node.hide();
-          }
-        });
-      }
+      return this.scope.on("change:" + path, function(value) {
+        if (value) {
+          return $node.show();
+        } else {
+          return $node.hide();
+        }
+      });
     };
 
     return BindingInterpreter;

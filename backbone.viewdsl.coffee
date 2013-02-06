@@ -524,43 +524,39 @@
     processInterpolation: (path) ->
       super.then ($node) =>
         $storedNode = $node
-        if this.scope?
-          this.scope.on "change:#{path}", (value) ->
-            $newNode = asNode(value)
-            $storedNode.replaceWith($newNode)
-            $storedNode = $newNode
+        this.scope.on "change:#{path}", (value) ->
+          $newNode = asNode(value)
+          $storedNode.replaceWith($newNode)
+          $storedNode = $newNode
         $node
 
     processAttrInterpolation: ($node, attr, attrName) ->
       super
-      if this.scope?
-        this.scope.on "change:#{attr.value}", (value) =>
-          if isBoolean(value)
-            $node.prop(attrName, value)
-          else
-            $node.attr(attrName, value)
+      this.scope.on "change:#{attr.value}", (value) =>
+        if isBoolean(value)
+          $node.prop(attrName, value)
+        else
+          $node.attr(attrName, value)
 
-          $node.removeAttr(attr.name)
+        $node.removeAttr(attr.name)
 
     processClassInterpolation: ($node, attr, className) ->
       super
-      if this.scope?
-        this.scope.on "change:#{attr.value}", (value) =>
-          if value
-            $node.addClass(className)
-          else
-            $node.removeClass(className)
+      this.scope.on "change:#{attr.value}", (value) =>
+        if value
+          $node.addClass(className)
+        else
+          $node.removeClass(className)
 
-          $node.removeAttr(attr.name)
+        $node.removeAttr(attr.name)
 
     processVisibility: ($node, path) ->
       super
-      if this.scope?
-        this.scope.on "change:#{path}", (value) =>
-          if value
-            $node.show()
-          else
-            $node.hide()
+      this.scope.on "change:#{path}", (value) =>
+        if value
+          $node.show()
+        else
+          $node.hide()
 
   class ActiveView extends View
     @interpreter: BindingInterpreter
