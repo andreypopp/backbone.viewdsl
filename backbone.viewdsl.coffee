@@ -249,6 +249,7 @@
     Interpreter which interprets markup constructs and perform actions.
   ###
   class Interpreter
+    @scope: Scope
 
     textNodeSplitRe: /({{)|(}})/
     processAttrRe: /^attr-/
@@ -429,14 +430,11 @@
 
       {viewParams, viewId}
 
-  render = (scope, template, clone = true, interpreterCls = Interpreter) ->
-    interpreter = new interpreterCls(scope)
-    interpreter.render(template, clone)
-
   ###
     View which can render process DSL.
   ###
   class View extends Backbone.View
+    @interpreter: Interpreter
 
     template: undefined
     parameterizable: false
@@ -445,8 +443,9 @@
     @from: (node, locals) ->
       node = asNode(node, true)
       view = new this(el: node)
-      scope = new Scope(view, locals)
-      render(scope, node, false).then ->
+      scope = new this.interpreter.scope(view, locals)
+      interpreter = new this.interpreter(scope)
+      interpreter.render(node, false).then ->
         view.render()
         view
 
@@ -459,8 +458,9 @@
       this[viewId] = view if viewId
 
     renderTemplate: (template, locals) ->
-      scope = new Scope(this, locals, this.parentScope)
-      render(scope, template)
+      scope = new this.constructor.interpreter.scope(this, locals, this.parentScope)
+      interpreter = new this.constructor.interpreter(scope)
+      interpreter.render(template)
 
     render: (locals) ->
       return promise(this) unless this.template?

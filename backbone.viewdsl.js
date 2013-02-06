@@ -12,7 +12,7 @@ var __slice = [].slice,
     return root.Backbone.ViewDSL = factory(root.jQuery, root.Backbone, root._);
   }
 })(this, function(jQuery, Backbone, _) {
-  var Interpreter, ParameterizableView, Promise, Scope, View, asNode, extend, getByPath, getBySpec, hypensToCamelCase, insertBefore, isArray, isBoolean, isPromise, isString, join, promise, promiseRequire, render, replaceChild, toArray, wrapInFragment;
+  var Interpreter, ParameterizableView, Promise, Scope, View, asNode, extend, getByPath, getBySpec, hypensToCamelCase, insertBefore, isArray, isBoolean, isPromise, isString, join, promise, promiseRequire, replaceChild, toArray, wrapInFragment;
   isString = _.isString, isArray = _.isArray, isBoolean = _.isBoolean, extend = _.extend, toArray = _.toArray;
   /*
       Minimal promise implementation
@@ -383,6 +383,8 @@ var __slice = [].slice,
 
   Interpreter = (function() {
 
+    Interpreter.scope = Scope;
+
     Interpreter.prototype.textNodeSplitRe = /({{)|(}})/;
 
     Interpreter.prototype.processAttrRe = /^attr-/;
@@ -628,17 +630,6 @@ var __slice = [].slice,
     return Interpreter;
 
   })();
-  render = function(scope, template, clone, interpreterCls) {
-    var interpreter;
-    if (clone == null) {
-      clone = true;
-    }
-    if (interpreterCls == null) {
-      interpreterCls = Interpreter;
-    }
-    interpreter = new interpreterCls(scope);
-    return interpreter.render(template, clone);
-  };
   /*
       View which can render process DSL.
   */
@@ -647,6 +638,8 @@ var __slice = [].slice,
 
     __extends(View, _super);
 
+    View.interpreter = Interpreter;
+
     View.prototype.template = void 0;
 
     View.prototype.parameterizable = false;
@@ -654,13 +647,14 @@ var __slice = [].slice,
     View.prototype.parentScope = void 0;
 
     View.from = function(node, locals) {
-      var scope, view;
+      var interpreter, scope, view;
       node = asNode(node, true);
       view = new this({
         el: node
       });
-      scope = new Scope(view, locals);
-      return render(scope, node, false).then(function() {
+      scope = new this.interpreter.scope(view, locals);
+      interpreter = new this.interpreter(scope);
+      return interpreter.render(node, false).then(function() {
         view.render();
         return view;
       });
@@ -679,9 +673,10 @@ var __slice = [].slice,
     };
 
     View.prototype.renderTemplate = function(template, locals) {
-      var scope;
-      scope = new Scope(this, locals, this.parentScope);
-      return render(scope, template);
+      var interpreter, scope;
+      scope = new this.constructor.interpreter.scope(this, locals, this.parentScope);
+      interpreter = new this.constructor.interpreter(scope);
+      return interpreter.render(template);
     };
 
     View.prototype.render = function(locals) {
