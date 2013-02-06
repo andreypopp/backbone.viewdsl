@@ -792,6 +792,35 @@ define(function(require) {
           return done();
         }).done();
       });
+      it('should interpolate non-string object by calling .toString()', function(done) {
+        var MyView, view;
+        MyView = (function(_super) {
+
+          __extends(MyView, _super);
+
+          function MyView() {
+            return MyView.__super__.constructor.apply(this, arguments);
+          }
+
+          MyView.prototype.initialize = function(options) {
+            return this.name = options.name;
+          };
+
+          MyView.prototype.render = function() {
+            return this.renderTemplate("Hello, {{name}}!").appendTo(this.$el);
+          };
+
+          return MyView;
+
+        })(View);
+        view = new MyView({
+          name: 999
+        });
+        return view.render().then(function() {
+          expect(view.$el.text()).to.be.equal('Hello, 999!');
+          return done();
+        }).done();
+      });
       it('should interpolate missing values to empty string', function(done) {
         var MyView, view;
         MyView = (function(_super) {

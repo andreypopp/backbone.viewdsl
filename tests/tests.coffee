@@ -632,6 +632,25 @@ define (require) ->
             done()
           .done()
 
+      it 'should interpolate non-string object by calling .toString()', (done) ->
+
+        class MyView extends View
+
+          initialize: (options) ->
+            this.name = options.name
+
+          render: ->
+            this.renderTemplate("""
+              Hello, {{name}}!
+              """).appendTo(this.$el)
+
+        view = new MyView(name: 999)
+        view.render()
+          .then ->
+            expect(view.$el.text()).to.be.equal 'Hello, 999!'
+            done()
+          .done()
+
       it 'should interpolate missing values to empty string', (done) ->
 
         class MyView extends View
