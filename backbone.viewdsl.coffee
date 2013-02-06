@@ -172,31 +172,11 @@
   hypensToCamelCase = (o) ->
     o.replace /-([a-z])/g, (g) -> g[1].toUpperCase()
 
-  insertBefore = (o, n) ->
-    p = o.parentNode
-    if typeof n.cloneNode == 'function'
-      p.insertBefore(n, o)
-    else if typeof n.item == 'function' and n.length or n.jquery
-      p.insertBefore(m, o) for m in n
-    else if isArray(n)
-      insertBefore(o, m) for m in n
-    else
-      p.insertBefore(document.createTextNode(String(n)), o)
-
-  ###
-    Replace `o` DOM node with a list `ns` of DOM nodes
-  ###
-  replaceChild = (o, ns...) ->
-    if not o.parentNode
-      if ns.length == 1
-        return ns[0]
-      else
-        return wrapInFragment(ns)
-
-    insertBefore(o, n) for n in ns
-
-    o.parentNode.removeChild(o)
-    ns
+  $fromArray = (nodes) ->
+    o = $()
+    for node in nodes
+      o = o.add(node)
+    o
 
   ###
     Prepare `template` to be processed
@@ -205,27 +185,17 @@
     with HTML markup. If `requireSingleNode` is true then it's required from
     `template` to represent just a single DOM node.
   ###
-  asNode = (node, requireSingleNode = false, clone = true) ->
+  asNode = (node, clone = true) ->
     nodes = if node.jquery
       if clone then node.clone() else node
     else if typeof node.cloneNode == 'function'
-      [if clone then node.cloneNode(true) else node]
+      $(if clone then node.cloneNode(true) else node)
     else if isArray(node)
-      [wrapInFragment(node)]
+      $fromArray(node)
     else
-      jQuery.parseHTML(String(node))
+      $fromArray($.parseHTML(String(node)))
 
-    if requireSingleNode and nodes.length != 1
-      throw new Error('templates only of single element are allowed')
-    if nodes.length > 1 or nodes[0].nodeType == Node.TEXT_NODE
-      wrapInFragment(nodes)
-    else
-      nodes[0]
-
-  wrapInFragment = (nodes) ->
-    fragment = document.createDocumentFragment()
-    fragment.appendChild(node) for node in nodes
-    fragment
+    nodes
 
   ###
     Scope
@@ -259,57 +229,56 @@
     constructor: (scope) ->
       this.scope = scope
 
-    render: (node, clone = true) ->
-      if not (typeof node.cloneNode == 'function')
-        node = asNode(node)
-      else if clone
-        node = node.cloneNode(true)
+    render: (template, clone = true) ->
+      $node = asNode(template, clone)
+      join(this.process($ n) for n in $node)
 
-      this.process(node)
+    process: ($node) ->
+      return promise($node) if $node.data('seen')
 
-    process: (node) ->
-      return promise(node) if node.seen
+      $node.data('seen', true)
 
-      node.seen = true
-
-      this.processAttributes(node).then (pragmas) =>
+      this.processAttributes($node).then (pragmas) =>
         if pragmas.skip
-          promise()
+          promise($node)
 
         else if pragmas.remove
-          node.parentNode.removeChild(node)
+          $node.remove()
           promise()
 
         else
-          this.processNode(node)
+          this.processNode($node)
 
-    processNode: (node) ->
+    processNode: ($node) ->
+      throw new Error('assert $node.length == 1') if $node.length != 1
+      node = $node[0]
+
       # text node interpolation
       if node.nodeType == Node.TEXT_NODE
-        this.processTextNode(node).then (nodes) =>
-          node = replaceChild(node, nodes...) if nodes
-          node
+        this.processTextNode($node).then (nodes) =>
+          nodes.replaceAll($node) if nodes?
+          nodes
 
       # view instantiation view <view /> tag
       else if node.tagName == 'VIEW'
-        if not node.attributes.name
+        spec = $node.attr('name')
+        if not spec?
           throw new Error('<view> element should have a name attribute')
-        spec = node.attributes.name.value
-        node.removeAttribute('name')
-        this.instantiateView(spec: spec, node: node, useNode: false)
+        $node.removeAttr('name')
+        this.instantiateView($node, {spec: spec, useNode: false})
           .then (view) =>
-            p = node.parentNode
-            nodes = replaceChild(node, view.el)
-            nodes
+            view.$el.replaceAll($node)
+            view.$el
 
       # recursively traverse children
       else
-        join(this.process(n) for n in toArray(node.childNodes)).then => node
+        join(this.process($ n) for n in toArray(node.childNodes)).then => $node
 
-    processTextNode: (node) ->
-      return promise() unless this.textNodeSplitRe.test node.data
+    processTextNode: ($node) ->
+      throw new Error('assert $node.length == 1') if $node.length != 1
+      return promise() unless this.textNodeSplitRe.test $node.data
 
-      data = node.data
+      data = $node.text()
       data = data.replace(/{{/g, '{{\uF001')
 
       parts = data.split(this.textNodeSplitRe)
@@ -322,9 +291,10 @@
           continue unless node?
           node
         else
-          part
+          document.createTextNode(part)
 
-      join(nodes)
+      join(nodes).then (nodes) ->
+        $fromArray(nodes)
 
     processInterpolation: (path) ->
       node = this.scope.get(path, true)
@@ -332,68 +302,75 @@
       promise(node).then (node) ->
         asNode(node)
 
-    processAttributes: (node) ->
+    processAttributes: ($node) ->
+      throw new Error('assert $node.length == 1') if $node.length != 1
+      node = $node[0]
+
       if node.nodeType != Node.ELEMENT_NODE
         return promise {}
 
       # conditional exclusion
       if node.attributes?.if
         show = this.scope.get(node.attributes.if.value, true)
-        node.removeAttribute('if')
+        $node.removeAttr('if')
         return promise {remove: true} unless show
 
       # DOM element references
       if node.attributes?['element-id']
         if this.scope.ctx?
-          this.scope.ctx[node.attributes?['element-id'].value] = $(node)
-        node.removeAttribute('element-id')
+          this.scope.ctx[node.attributes?['element-id'].value] = $($node)
+        $node.removeAttr('element-id')
 
       for attr in node.attributes when attr? and this.processAttrRe.test(attr.name)
         name = attr.name.substring(5)
-        this.processAttrInterpolation(node, attr, name)
+        this.processAttrInterpolation($node, {name: attr.name, value: attr.value}, name)
 
       # view instantiation via view attribute
       if node.attributes?.view
         spec = node.attributes.view.value
-        node.removeAttribute('view')
-        this.instantiateView(spec: spec, node: node, useNode: true)
-          .then (view) -> if view.parameterizable then {skip: true} else {}
+        $node.removeAttr('view')
+        this.instantiateView($node, {spec: spec, useNode: true})
+          .then (view) ->
+            if view.parameterizable then {skip: true} else {}
 
       else
         promise {}
 
-    processAttrInterpolation: (node, attr, attrName) ->
+    processAttrInterpolation: ($node, attr, attrName) ->
+      throw new Error('assert $node.length == 1') if $node.length != 1
       value = this.scope.get(attr.value, true)
 
       if isBoolean(value)
-        $(node).prop(attrName, value)
+        $node.prop(attrName, value)
       else
-        $(node).attr(attrName, value)
+        $node.attr(attrName, value)
 
-      node.removeAttribute(attr.name)
+      $node.removeAttr(attr.name)
 
-    instantiateView: (options) ->
+    instantiateView: ($node, options) ->
+      throw new Error('assert $node.length == 1') if $node.length != 1
+      node = $node[0]
       getBySpec(options.spec, this.scope).then (viewCls) =>
         if viewCls == undefined
           throw new Error("can't find a view by '#{options.spec}' spec")
 
-        fromViewTag = options.node.tagName == 'VIEW'
+        fromViewTag = node.tagName == 'VIEW'
 
         # read view params from node's attributes
         prefix = if fromViewTag then undefined else 'view-'
-        {viewParams, viewId} = this.consumeViewParams(options.node, prefix)
+        {viewParams, viewId} = this.consumeViewParams($node, prefix)
 
         # create or init view
         view = if jQuery.isFunction(viewCls)
-          viewParams.el = options.node if options.useNode
+          viewParams.el = $node if options.useNode
           new viewCls(viewParams)
         else
-          viewCls.setElement(options.node) if options.useNode
+          viewCls.setElement($node) if options.useNode
           viewCls
 
         # set class on a view if view was instantiated from a <view> tag
-        if fromViewTag and options.node.attributes['class']
-          view.$el.addClass(options.node.attributes['class'].value)
+        if fromViewTag and node.attributes['class']
+          view.$el.addClass(node.attributes['class'].value)
 
         # notify view about being a part of a view hierarchy
         view.parentScope = this.scope
@@ -404,15 +381,16 @@
           # if view is parameterizable we need to pass all DOM element inside
           # `node` to view's `render()` method so view can decide by its own what
           # to do next
-          partial = $(options.node.removeChild(c) for c in toArray(options.node.childNodes))
-          partial = asNode(partial)
+          partial = $(node.childNodes).remove()
           promise view.render(partial)
         else
           promise view.render()
 
         p.then -> view
 
-    consumeViewParams: (node, prefix) ->
+    consumeViewParams: ($node, prefix) ->
+      throw new Error('assert $node.length == 1') if $node.length != 1
+      node = $node[0]
       viewParams = {}
       viewId = undefined
 
@@ -442,12 +420,14 @@
     parameterizable: false
     parentScope: undefined
 
-    @from: (node, locals) ->
-      node = asNode(node, true)
-      view = new this(el: node)
+    @from: (template, locals) ->
+      $node = asNode(template)
+      if $node.length != 1
+        throw new Error('templates only of single element are allowed')
+      view = new this(el: $node)
       scope = new this.interpreter.scope(view, locals)
       interpreter = new this.interpreter(scope)
-      interpreter.render(node, false).then ->
+      interpreter.render($node, false).then ->
         view.render()
         view
 
@@ -523,22 +503,25 @@
     @scope: ObservableScope
 
     processInterpolation: (path) ->
-      super.then (node) =>
+      super.then ($node) =>
+        $storedNode = $node
         if this.scope?
           this.scope.on "change:#{path}", (value) ->
-            $(node).replaceWith(asNode(value))
-        node
+            $newNode = asNode(value)
+            $storedNode.replaceWith($newNode)
+            $storedNode = $newNode
+        $node
 
-    processAttrInterpolation: (node, attr, attrName) ->
+    processAttrInterpolation: ($node, attr, attrName) ->
       super
       if this.scope?
         this.scope.on "change:#{attr.value}", (value) =>
           if isBoolean(value)
-            $(node).prop(attrName, value)
+            $node.prop(attrName, value)
           else
-            $(node).attr(attrName, value)
+            $node.attr(attrName, value)
 
-          node.removeAttribute(attr.name)
+          $node.removeAttr(attr.name)
 
   class ActiveView extends View
     @interpreter: BindingInterpreter
