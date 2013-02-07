@@ -475,9 +475,9 @@ var __hasProp = {}.hasOwnProperty,
           });
         }
       }
-      if ((_ref1 = node.attributes) != null ? _ref1['visible-if'] : void 0) {
-        this.processVisibility($node, node.attributes['visible-if'].value);
-        $node.removeAttr('visible-if');
+      if ((_ref1 = node.attributes) != null ? _ref1['show-if'] : void 0) {
+        this.processVisibility($node, node.attributes['show-if'].value);
+        $node.removeAttr('show-if');
       }
       if ((_ref2 = node.attributes) != null ? _ref2['element-id'] : void 0) {
         if (this.scope.ctx != null) {

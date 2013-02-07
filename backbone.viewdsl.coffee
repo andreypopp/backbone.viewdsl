@@ -313,9 +313,9 @@
         $node.removeAttr('if')
         return promise {remove: true} unless show
 
-      if node.attributes?['visible-if']
-        this.processVisibility($node, node.attributes['visible-if'].value)
-        $node.removeAttr('visible-if')
+      if node.attributes?['show-if']
+        this.processVisibility($node, node.attributes['show-if'].value)
+        $node.removeAttr('show-if')
 
       # DOM element references
       if node.attributes?['element-id']
