@@ -326,10 +326,13 @@
       for attr in node.attributes when attr?
         if this.processAttrRe.test(attr.name)
           name = attr.name.substring(5)
-          this.processAttrInterpolation($node, {name: attr.name, value: attr.value}, name)
+          this.processAttrInterpolation($node, attr, name)
+          $node.removeAttr(attr.name)
+
         else if this.processClassRe.test(attr.name)
           name = attr.name.substring(6)
-          this.processClassInterpolation($node, {name: attr.name, value: attr.value}, name)
+          this.processClassInterpolation($node, attr, name)
+          $node.removeAttr(attr.name)
 
       # view instantiation via view attribute
       if node.attributes?['view']
@@ -356,8 +359,6 @@
       else
         $node.attr(attrName, value)
 
-      $node.removeAttr(attr.name)
-
     processClassInterpolation: ($node, attr, className) ->
       value = this.scope.get(attr.value, true)
 
@@ -365,8 +366,6 @@
         $node.addClass(className)
       else
         $node.removeClass(className)
-
-      $node.removeAttr(attr.name)
 
     instantiateView: ($node, options) ->
       node = $node[0]
@@ -538,8 +537,6 @@
         else
           $node.attr(attrName, value)
 
-        $node.removeAttr(attr.name)
-
     processClassInterpolation: ($node, attr, className) ->
       super
       this.scope.on "change:#{attr.value}", (value) =>
@@ -547,8 +544,6 @@
           $node.addClass(className)
         else
           $node.removeClass(className)
-
-        $node.removeAttr(attr.name)
 
     processVisibility: ($node, path) ->
       super

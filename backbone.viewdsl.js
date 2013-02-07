@@ -491,16 +491,12 @@ var __hasProp = {}.hasOwnProperty,
         if (attr != null) {
           if (this.processAttrRe.test(attr.name)) {
             name = attr.name.substring(5);
-            this.processAttrInterpolation($node, {
-              name: attr.name,
-              value: attr.value
-            }, name);
+            this.processAttrInterpolation($node, attr, name);
+            $node.removeAttr(attr.name);
           } else if (this.processClassRe.test(attr.name)) {
             name = attr.name.substring(6);
-            this.processClassInterpolation($node, {
-              name: attr.name,
-              value: attr.value
-            }, name);
+            this.processClassInterpolation($node, attr, name);
+            $node.removeAttr(attr.name);
           }
         }
       }
@@ -536,22 +532,20 @@ var __hasProp = {}.hasOwnProperty,
       var value;
       value = this.scope.get(attr.value, true);
       if (isBoolean(value)) {
-        $node.prop(attrName, value);
+        return $node.prop(attrName, value);
       } else {
-        $node.attr(attrName, value);
+        return $node.attr(attrName, value);
       }
-      return $node.removeAttr(attr.name);
     };
 
     Interpreter.prototype.processClassInterpolation = function($node, attr, className) {
       var value;
       value = this.scope.get(attr.value, true);
       if (value) {
-        $node.addClass(className);
+        return $node.addClass(className);
       } else {
-        $node.removeClass(className);
+        return $node.removeClass(className);
       }
-      return $node.removeAttr(attr.name);
     };
 
     Interpreter.prototype.instantiateView = function($node, options) {
@@ -808,11 +802,10 @@ var __hasProp = {}.hasOwnProperty,
       BindingInterpreter.__super__.processAttrInterpolation.apply(this, arguments);
       return this.scope.on("change:" + attr.value, function(value) {
         if (isBoolean(value)) {
-          $node.prop(attrName, value);
+          return $node.prop(attrName, value);
         } else {
-          $node.attr(attrName, value);
+          return $node.attr(attrName, value);
         }
-        return $node.removeAttr(attr.name);
       });
     };
 
@@ -821,11 +814,10 @@ var __hasProp = {}.hasOwnProperty,
       BindingInterpreter.__super__.processClassInterpolation.apply(this, arguments);
       return this.scope.on("change:" + attr.value, function(value) {
         if (value) {
-          $node.addClass(className);
+          return $node.addClass(className);
         } else {
-          $node.removeClass(className);
+          return $node.removeClass(className);
         }
-        return $node.removeAttr(attr.name);
       });
     };
 
