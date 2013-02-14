@@ -28,7 +28,7 @@ define(function(require) {
       expect(t.$node.data('hasActions')).to.be.ok;
       return expect(outerHTML(r)).to.be.equal('<div><span>Hello, world</span></div>');
     });
-    return it('should compile node w/ element directive', function() {
+    it('should compile node w/ element directive', function() {
       var c, r, t;
       c = new Compiler();
       c.hello = function($node, name, value) {
@@ -41,6 +41,32 @@ define(function(require) {
       r = t.render();
       expect(t.$node.data('hasActions')).to.be.ok;
       return expect(outerHTML(r)).to.be.equal('<div><div><span>Huh?!</span></div></div>');
+    });
+    return describe('built-in directives', function() {
+      var render;
+      render = function(t, s) {
+        var c;
+        c = new Compiler();
+        t = c.compile($(t));
+        return t.render(s);
+      };
+      it('should process attr-* directives', function() {
+        var r;
+        r = render('<div attr-c="c" attr-b="b"><span attr-a="a">a</span></div>', {
+          a: 'aa',
+          c: true,
+          b: false
+        });
+        return expect(outerHTML(r)).to.be.equal('<div c=""><span a="aa">a</span></div>');
+      });
+      return it('should process class-* directives', function() {
+        var r;
+        r = render('<div class-c="b"><span class-a="a">a</span></div>', {
+          a: false,
+          b: true
+        });
+        return expect(outerHTML(r)).to.be.equal('<div class="c"><span>a</span></div>');
+      });
     });
   });
 });

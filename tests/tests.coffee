@@ -37,3 +37,20 @@ define (require) ->
 
       expect(t.$node.data('hasActions')).to.be.ok
       expect(outerHTML(r)).to.be.equal '<div><div><span>Huh?!</span></div></div>'
+
+    describe 'built-in directives', ->
+
+      render = (t, s) ->
+        c = new Compiler()
+        t = c.compile $ t
+        t.render(s)
+
+      it 'should process attr-* directives', ->
+        r = render '<div attr-c="c" attr-b="b"><span attr-a="a">a</span></div>',
+          {a: 'aa', c: true, b: false}
+        expect(outerHTML(r)).to.be.equal '<div c=""><span a="aa">a</span></div>'
+
+      it 'should process class-* directives', ->
+        r = render '<div class-c="b"><span class-a="a">a</span></div>',
+          {a: false, b: true}
+        expect(outerHTML(r)).to.be.equal '<div class="c"><span>a</span></div>'

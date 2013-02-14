@@ -18,11 +18,12 @@
 ###
 define (require) ->
 
-  {some, extend, toArray} = require 'underscore'
-  {Events} = require 'backbone'
+  {some, extend, toArray, isBoolean} = require 'underscore'
+  Backbone = require 'backbone'
+
 
   class Promise
-    extend this.prototype, Events
+    extend this.prototype, Backbone.Events
 
     noop = ->
 
@@ -150,6 +151,31 @@ define (require) ->
       this.compileImpl($node)
       new Template($node)
 
+    attr: ($node, name, value) ->
+      attrName = name.substring(5)
+      $node.removeAttr(name)
+      (scope, $node) ->
+        got = scope[value]
+        if isBoolean(got)
+          $node.attr(attrName, '') if got
+        else
+          $node.attr(attrName, got)
+
+    class: ($node, name, value) ->
+      className = name.slice(6)
+      $node.removeAttr(name)
+      (scope, $node) ->
+        got = scope[value]
+        if got
+          $node.addClass(className)
+        else
+          $node.removeClass(className)
+
+    directiveFor: (name) ->
+      name = 'attr' if name.slice(0, 5) == 'attr-'
+      name = 'class' if name.slice(0, 6) == 'class-'
+      this[hypensToCamelCase(name)]
+
     compileImpl: ($node) ->
       node = $node[0]
       if node.nodeType == Node.TEXT_NODE
@@ -164,7 +190,7 @@ define (require) ->
     compileNode: ($node) ->
       node = $node[0]
 
-      directive = this[hypensToCamelCase(node.tagName.toLowerCase())]
+      directive = this.directiveFor(node.tagName.toLowerCase())
 
       actions = if directive
         [directive($node)]
@@ -172,7 +198,7 @@ define (require) ->
         []
 
       attrActions = for attr in toArray(node.attributes)
-        directive = this[hypensToCamelCase(attr.name)]
+        directive = this.directiveFor(attr.name)
         continue unless directive
         directive($node, attr.name, attr.value)
 
@@ -213,4 +239,21 @@ define (require) ->
 
       $node
 
-  {Compiler, Template}
+  standardCompiler = new Compiler()
+
+  class View extends Backbone.View
+    template: undefined
+    compiler: standardCompiler
+
+    renderTemplate: (template) ->
+      if not (template instanceof Template)
+        template = this.compiler.compile(template)
+      template.render(this)
+
+    render: ->
+      throw new Error('undefined template') unless this.template
+      if not (this.template instanceof Template)
+        this.template = this.compiler.compile(template)
+      this.$el.append(this.template.render(this))
+
+  {Compiler, Template, View}

@@ -17,14 +17,17 @@
   Promise.done() method at the end of the chain.
 */
 
+var __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
 define(function(require) {
-  var Compiler, Events, Promise, Template, extend, hypensToCamelCase, isPromise, join, promise, promiseRequire, some, toArray, _ref;
-  _ref = require('underscore'), some = _ref.some, extend = _ref.extend, toArray = _ref.toArray;
-  Events = require('backbone').Events;
+  var Backbone, Compiler, Promise, Template, View, extend, hypensToCamelCase, isBoolean, isPromise, join, promise, promiseRequire, some, standardCompiler, toArray, _ref;
+  _ref = require('underscore'), some = _ref.some, extend = _ref.extend, toArray = _ref.toArray, isBoolean = _ref.isBoolean;
+  Backbone = require('backbone');
   Promise = (function() {
     var invokeCallback, noop, reject, resolve;
 
-    extend(Promise.prototype, Events);
+    extend(Promise.prototype, Backbone.Events);
 
     noop = function() {};
 
@@ -217,6 +220,48 @@ define(function(require) {
       return new Template($node);
     };
 
+    Compiler.prototype.attr = function($node, name, value) {
+      var attrName;
+      attrName = name.substring(5);
+      $node.removeAttr(name);
+      return function(scope, $node) {
+        var got;
+        got = scope[value];
+        if (isBoolean(got)) {
+          if (got) {
+            return $node.attr(attrName, '');
+          }
+        } else {
+          return $node.attr(attrName, got);
+        }
+      };
+    };
+
+    Compiler.prototype["class"] = function($node, name, value) {
+      var className;
+      className = name.slice(6);
+      $node.removeAttr(name);
+      return function(scope, $node) {
+        var got;
+        got = scope[value];
+        if (got) {
+          return $node.addClass(className);
+        } else {
+          return $node.removeClass(className);
+        }
+      };
+    };
+
+    Compiler.prototype.directiveFor = function(name) {
+      if (name.slice(0, 5) === 'attr-') {
+        name = 'attr';
+      }
+      if (name.slice(0, 6) === 'class-') {
+        name = 'class';
+      }
+      return this[hypensToCamelCase(name)];
+    };
+
     Compiler.prototype.compileImpl = function($node) {
       var node;
       node = $node[0];
@@ -235,7 +280,7 @@ define(function(require) {
     Compiler.prototype.compileNode = function($node) {
       var actions, attr, attrActions, child, directive, hasActions, hasChildActions, node;
       node = $node[0];
-      directive = this[hypensToCamelCase(node.tagName.toLowerCase())];
+      directive = this.directiveFor(node.tagName.toLowerCase());
       actions = directive ? [directive($node)] : [];
       attrActions = (function() {
         var _i, _len, _ref1, _results;
@@ -243,7 +288,7 @@ define(function(require) {
         _results = [];
         for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
           attr = _ref1[_i];
-          directive = this[hypensToCamelCase(attr.name)];
+          directive = this.directiveFor(attr.name);
           if (!directive) {
             continue;
           }
@@ -318,8 +363,42 @@ define(function(require) {
     return Template;
 
   })();
+  standardCompiler = new Compiler();
+  View = (function(_super) {
+
+    __extends(View, _super);
+
+    function View() {
+      return View.__super__.constructor.apply(this, arguments);
+    }
+
+    View.prototype.template = void 0;
+
+    View.prototype.compiler = standardCompiler;
+
+    View.prototype.renderTemplate = function(template) {
+      if (!(template instanceof Template)) {
+        template = this.compiler.compile(template);
+      }
+      return template.render(this);
+    };
+
+    View.prototype.render = function() {
+      if (!this.template) {
+        throw new Error('undefined template');
+      }
+      if (!(this.template instanceof Template)) {
+        this.template = this.compiler.compile(template);
+      }
+      return this.$el.append(this.template.render(this));
+    };
+
+    return View;
+
+  })(Backbone.View);
   return {
     Compiler: Compiler,
-    Template: Template
+    Template: Template,
+    View: View
   };
 });
