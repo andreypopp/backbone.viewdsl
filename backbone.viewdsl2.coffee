@@ -142,6 +142,15 @@ define (require) ->
   hypensToCamelCase = (o) ->
     o.replace /-([a-z])/g, (g) -> g[1].toUpperCase()
 
+  knownTags = ///
+  ^(DIV|SPAN|BODY|HTML|HEAD|SECTION|HEADER|H1|H2|H3|H4|H5|H6|EM
+  |TR|TD|THEAD|TBODY|TABLE|INPUT|TEXTAREA)$
+  ///
+
+  knownAttrs = ///
+  ^(class|enabled|id)$
+  ///
+
   ###
     HTML compiler
   ###
@@ -173,16 +182,16 @@ define (require) ->
     compileNode: ($node) ->
       node = $node[0]
 
-      if node.tagName == undefined
-        console.log node, typeof node, node.nodeType
-      directive = this.directiveFor(node.tagName.toLowerCase())
-
-      actions = if directive
-        [directive($node)]
+      if not knownTags.test node.tagName
+        directive = this.directiveFor(node.tagName.toLowerCase())
       else
-        []
+        directive = undefined
+
+      actions = if directive then [directive($node)] else []
 
       attrActions = for attr in toArray(node.attributes)
+        if knownAttrs.test attr.name
+          continue
         directive = this.directiveFor(attr.name)
         continue unless directive
         directive($node, attr.name, attr.value)
@@ -232,6 +241,7 @@ define (require) ->
 
     constructor: ->
       super
+      this.views = []
       this.compiler = new this.compilerClass(this)
 
     renderTemplate: (template) ->
@@ -240,10 +250,19 @@ define (require) ->
       template.render(this)
 
     render: ->
-      throw new Error('undefined template') unless this.template
+      throw new Error("undefined template") unless this.template
       if not (this.template instanceof Template)
         this.template = this.compiler.compile($ this.template)
       this.$el.append(this.template.render(this))
+
+    remove: ->
+      super
+      for view in this.views
+        view.remove()
+
+    addView: (view, id) ->
+      this.views.push(view)
+      this[id] = view if id
 
     compileAttr: ($node, name, value) ->
       attrName = name.substring(5)
@@ -270,5 +289,34 @@ define (require) ->
       (scope, $node) ->
         got = scope[value]
         if got then $node.show() else $node.hide()
+
+    compileView: ($node, name, value) ->
+      element = not name?
+
+      viewClass = if element
+        spec = $node.attr('name')
+        throw new Error("provide view attr") unless spec
+        window[spec]
+      else
+        $node.removeAttr(name)
+        window[value]
+
+      viewId = if element
+        $node.attr('id')
+      else
+        viewId = $node.attr('view-id')
+        $node.removeAttr('view-id')
+        viewId
+
+      viewParams = {}
+
+      (scope, $node) ->
+        view = if element
+          new viewClass(viewParams)
+        else
+          new viewClass(extend {el: $node}, viewParams)
+        view.render()
+        $node.replaceWith(view.$el) if element
+        scope.addView(view, viewId)
 
   {Compiler, Template, View}

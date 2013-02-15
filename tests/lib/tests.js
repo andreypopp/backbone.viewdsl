@@ -91,7 +91,7 @@ define(function(require) {
       });
       return expect(v.$el.html()).to.be.equal('<div class="c"><span>a</span></div>');
     });
-    return it('should process show-if directive', function() {
+    it('should process show-if directive', function() {
       var v;
       v = render('<div><span show-if="a">a</span></div>', {
         a: false
@@ -101,6 +101,35 @@ define(function(require) {
         a: true
       });
       return expect(v.$el.html()).to.be.equal('<div><span style="display: inline;">a</span></div>');
+    });
+    return describe('view directive', function() {
+      window.Hello = (function(_super) {
+
+        __extends(Hello, _super);
+
+        function Hello() {
+          return Hello.__super__.constructor.apply(this, arguments);
+        }
+
+        Hello.prototype.template = "<span>hello</span>";
+
+        return Hello;
+
+      })(View);
+      it('should instantiate view from view element', function() {
+        var v;
+        v = render('<div><view name="Hello" id="v"></view></div>');
+        expect(v.$el.html()).to.be.equal('<div><div><span>hello</span></div></div>');
+        expect(v.views.length).to.be.equal(1);
+        return expect(v.v instanceof window.Hello).to.be.ok;
+      });
+      return it('should instantiate view from view attr', function() {
+        var v;
+        v = render('<div><div view-id="v" view="Hello"></view></div>');
+        expect(v.$el.html()).to.be.equal('<div><div><span>hello</span></div></div>');
+        expect(v.views.length).to.be.equal(1);
+        return expect(v.v instanceof window.Hello).to.be.ok;
+      });
     });
   });
 });

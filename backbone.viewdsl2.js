@@ -21,7 +21,7 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 define(function(require) {
-  var Backbone, Compiler, Promise, Template, View, extend, hypensToCamelCase, isBoolean, isPromise, join, promise, promiseRequire, some, standardCompiler, toArray, _ref;
+  var Backbone, Compiler, Promise, Template, View, extend, hypensToCamelCase, isBoolean, isPromise, join, knownAttrs, knownTags, promise, promiseRequire, some, standardCompiler, toArray, _ref;
   _ref = require('underscore'), some = _ref.some, extend = _ref.extend, toArray = _ref.toArray, isBoolean = _ref.isBoolean;
   Backbone = require('backbone');
   Promise = (function() {
@@ -207,6 +207,8 @@ define(function(require) {
       return g[1].toUpperCase();
     });
   };
+  knownTags = /^(DIV|SPAN|BODY|HTML|HEAD|SECTION|HEADER|H1|H2|H3|H4|H5|H6|EM|TR|TD|THEAD|TBODY|TABLE|INPUT|TEXTAREA)$/;
+  knownAttrs = /^(class|enabled|id)$/;
   /*
       HTML compiler
   */
@@ -253,10 +255,11 @@ define(function(require) {
     Compiler.prototype.compileNode = function($node) {
       var actions, attr, attrActions, child, directive, hasActions, hasChildActions, node;
       node = $node[0];
-      if (node.tagName === void 0) {
-        console.log(node, typeof node, node.nodeType);
+      if (!knownTags.test(node.tagName)) {
+        directive = this.directiveFor(node.tagName.toLowerCase());
+      } else {
+        directive = void 0;
       }
-      directive = this.directiveFor(node.tagName.toLowerCase());
       actions = directive ? [directive($node)] : [];
       attrActions = (function() {
         var _i, _len, _ref1, _results;
@@ -264,6 +267,9 @@ define(function(require) {
         _results = [];
         for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
           attr = _ref1[_i];
+          if (knownAttrs.test(attr.name)) {
+            continue;
+          }
           directive = this.directiveFor(attr.name);
           if (!directive) {
             continue;
@@ -350,6 +356,7 @@ define(function(require) {
 
     function View() {
       View.__super__.constructor.apply(this, arguments);
+      this.views = [];
       this.compiler = new this.compilerClass(this);
     }
 
@@ -362,12 +369,31 @@ define(function(require) {
 
     View.prototype.render = function() {
       if (!this.template) {
-        throw new Error('undefined template');
+        throw new Error("undefined template");
       }
       if (!(this.template instanceof Template)) {
         this.template = this.compiler.compile($(this.template));
       }
       return this.$el.append(this.template.render(this));
+    };
+
+    View.prototype.remove = function() {
+      var view, _i, _len, _ref1, _results;
+      View.__super__.remove.apply(this, arguments);
+      _ref1 = this.views;
+      _results = [];
+      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+        view = _ref1[_i];
+        _results.push(view.remove());
+      }
+      return _results;
+    };
+
+    View.prototype.addView = function(view, id) {
+      this.views.push(view);
+      if (id) {
+        return this[id] = view;
+      }
     };
 
     View.prototype.compileAttr = function($node, name, value) {
@@ -412,6 +438,36 @@ define(function(require) {
         } else {
           return $node.hide();
         }
+      };
+    };
+
+    View.prototype.compileView = function($node, name, value) {
+      var element, spec, viewClass, viewId, viewParams;
+      element = !(name != null);
+      viewClass = (function() {
+        if (element) {
+          spec = $node.attr('name');
+          if (!spec) {
+            throw new Error("provide view attr");
+          }
+          return window[spec];
+        } else {
+          $node.removeAttr(name);
+          return window[value];
+        }
+      })();
+      viewId = element ? $node.attr('id') : (viewId = $node.attr('view-id'), $node.removeAttr('view-id'), viewId);
+      viewParams = {};
+      return function(scope, $node) {
+        var view;
+        view = element ? new viewClass(viewParams) : new viewClass(extend({
+          el: $node
+        }, viewParams));
+        view.render();
+        if (element) {
+          $node.replaceWith(view.$el);
+        }
+        return scope.addView(view, viewId);
       };
     };
 

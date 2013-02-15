@@ -72,3 +72,20 @@ define (require) ->
       v = render '<div><span show-if="a">a</span></div>',
         {a: true}
       expect(v.$el.html()).to.be.equal '<div><span style="display: inline;">a</span></div>'
+
+    describe 'view directive', ->
+
+      class window.Hello extends View
+        template: "<span>hello</span>"
+
+      it 'should instantiate view from view element', ->
+        v = render '<div><view name="Hello" id="v"></view></div>'
+        expect(v.$el.html()).to.be.equal '<div><div><span>hello</span></div></div>'
+        expect(v.views.length).to.be.equal 1
+        expect(v.v instanceof window.Hello).to.be.ok
+
+      it 'should instantiate view from view attr', ->
+        v = render '<div><div view-id="v" view="Hello"></view></div>'
+        expect(v.$el.html()).to.be.equal '<div><div><span>hello</span></div></div>'
+        expect(v.views.length).to.be.equal 1
+        expect(v.v instanceof window.Hello).to.be.ok
