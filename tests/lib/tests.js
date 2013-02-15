@@ -118,17 +118,25 @@ define(function(require) {
       })(View);
       it('should instantiate view from view element', function() {
         var v;
-        v = render('<div><view name="Hello" id="v"></view></div>');
+        v = render('<div><view name="Hello" a="a" b="b" id="v"></view></div>', {
+          a: 42
+        });
         expect(v.$el.html()).to.be.equal('<div><div><span>hello</span></div></div>');
         expect(v.views.length).to.be.equal(1);
-        return expect(v.v instanceof window.Hello).to.be.ok;
+        expect(v.v instanceof window.Hello).to.be.ok;
+        expect(v.v.options.a).to.be.equal(42);
+        return expect(v.v.options.b).to.be.equal('b');
       });
       return it('should instantiate view from view attr', function() {
         var v;
-        v = render('<div><div view-id="v" view="Hello"></view></div>');
+        v = render('<div><div view-id="v" view="Hello" view-a="a" view-b="b"></view></div>', {
+          a: 42
+        });
         expect(v.$el.html()).to.be.equal('<div><div><span>hello</span></div></div>');
         expect(v.views.length).to.be.equal(1);
-        return expect(v.v instanceof window.Hello).to.be.ok;
+        expect(v.v instanceof window.Hello).to.be.ok;
+        expect(v.v.options.a).to.be.equal(42);
+        return expect(v.v.options.b).to.be.equal('b');
       });
     });
   });

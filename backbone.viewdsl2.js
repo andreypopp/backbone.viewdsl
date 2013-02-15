@@ -442,7 +442,8 @@ define(function(require) {
     };
 
     View.prototype.compileView = function($node, name, value) {
-      var element, spec, viewClass, viewId, viewParams;
+      var element, node, spec, viewClass, viewId, viewIdAttr;
+      node = $node[0];
       element = !(name != null);
       viewClass = (function() {
         if (element) {
@@ -456,13 +457,29 @@ define(function(require) {
           return window[value];
         }
       })();
-      viewId = element ? $node.attr('id') : (viewId = $node.attr('view-id'), $node.removeAttr('view-id'), viewId);
-      viewParams = {};
+      viewIdAttr = element ? 'id' : 'view-id';
+      viewId = $node.attr(viewIdAttr);
+      $node.removeAttr(viewIdAttr);
       return function(scope, $node) {
-        var view;
-        view = element ? new viewClass(viewParams) : new viewClass(extend({
-          el: $node
-        }, viewParams));
+        var a, attrName, view, viewParams, _i, _len, _ref1;
+        viewParams = {};
+        _ref1 = toArray(node.attributes);
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          a = _ref1[_i];
+          if (!element && a.name.slice(0, 5) !== 'view-') {
+            continue;
+          }
+          attrName = element ? a.name : a.name.slice(5);
+          attrName = hypensToCamelCase(attrName);
+          viewParams[attrName] = scope[a.value] || a.value;
+          if (!element) {
+            $node.removeAttr(a.name);
+          }
+        }
+        if (!element) {
+          viewParams.el = $node;
+        }
+        view = new viewClass(viewParams);
         view.render();
         if (element) {
           $node.replaceWith(view.$el);

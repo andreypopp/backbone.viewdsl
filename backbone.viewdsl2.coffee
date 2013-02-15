@@ -291,6 +291,7 @@ define (require) ->
         if got then $node.show() else $node.hide()
 
     compileView: ($node, name, value) ->
+      node = $node[0]
       element = not name?
 
       viewClass = if element
@@ -301,21 +302,30 @@ define (require) ->
         $node.removeAttr(name)
         window[value]
 
-      viewId = if element
-        $node.attr('id')
-      else
-        viewId = $node.attr('view-id')
-        $node.removeAttr('view-id')
-        viewId
-
-      viewParams = {}
+      viewIdAttr = if element then 'id' else 'view-id'
+      viewId = $node.attr(viewIdAttr)
+      $node.removeAttr(viewIdAttr)
 
       (scope, $node) ->
-        view = if element
-          new viewClass(viewParams)
-        else
-          new viewClass(extend {el: $node}, viewParams)
+
+        viewParams = {}
+
+        for a in toArray(node.attributes)
+          if not element and a.name.slice(0, 5) != 'view-'
+            continue
+
+          attrName = if element then a.name else a.name.slice(5)
+          attrName = hypensToCamelCase(attrName)
+
+          viewParams[attrName] = scope[a.value] or a.value
+
+          $node.removeAttr(a.name) if not element
+
+        viewParams.el = $node if not element
+
+        view = new viewClass(viewParams)
         view.render()
+
         $node.replaceWith(view.$el) if element
         scope.addView(view, viewId)
 

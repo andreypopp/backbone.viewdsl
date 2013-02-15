@@ -79,13 +79,19 @@ define (require) ->
         template: "<span>hello</span>"
 
       it 'should instantiate view from view element', ->
-        v = render '<div><view name="Hello" id="v"></view></div>'
+        v = render '<div><view name="Hello" a="a" b="b" id="v"></view></div>', {a: 42}
         expect(v.$el.html()).to.be.equal '<div><div><span>hello</span></div></div>'
         expect(v.views.length).to.be.equal 1
         expect(v.v instanceof window.Hello).to.be.ok
+        expect(v.v.options.a).to.be.equal 42
+        expect(v.v.options.b).to.be.equal 'b'
 
       it 'should instantiate view from view attr', ->
-        v = render '<div><div view-id="v" view="Hello"></view></div>'
+        v = render '''
+          <div><div view-id="v" view="Hello" view-a="a" view-b="b"></view></div>
+          ''', {a: 42}
         expect(v.$el.html()).to.be.equal '<div><div><span>hello</span></div></div>'
         expect(v.views.length).to.be.equal 1
         expect(v.v instanceof window.Hello).to.be.ok
+        expect(v.v.options.a).to.be.equal 42
+        expect(v.v.options.b).to.be.equal 'b'
