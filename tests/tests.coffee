@@ -64,3 +64,11 @@ define (require) ->
       v = render '<div class-c="b"><span class-a="a">a</span></div>',
         {a: false, b: true}
       expect(v.$el.html()).to.be.equal '<div class="c"><span>a</span></div>'
+
+    it 'should process show-if directive', ->
+      v = render '<div><span show-if="a">a</span></div>',
+        {a: false}
+      expect(v.$el.html()).to.be.equal '<div><span style="display: none;">a</span></div>'
+      v = render '<div><span show-if="a">a</span></div>',
+        {a: true}
+      expect(v.$el.html()).to.be.equal '<div><span style="display: inline;">a</span></div>'

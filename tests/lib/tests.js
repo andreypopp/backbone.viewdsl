@@ -83,13 +83,24 @@ define(function(require) {
       });
       return expect(v.$el.html()).to.be.equal('<div c=""><span a="aa">a</span></div>');
     });
-    return it('should process class-* directives', function() {
+    it('should process class-* directives', function() {
       var v;
       v = render('<div class-c="b"><span class-a="a">a</span></div>', {
         a: false,
         b: true
       });
       return expect(v.$el.html()).to.be.equal('<div class="c"><span>a</span></div>');
+    });
+    return it('should process show-if directive', function() {
+      var v;
+      v = render('<div><span show-if="a">a</span></div>', {
+        a: false
+      });
+      expect(v.$el.html()).to.be.equal('<div><span style="display: none;">a</span></div>');
+      v = render('<div><span show-if="a">a</span></div>', {
+        a: true
+      });
+      return expect(v.$el.html()).to.be.equal('<div><span style="display: inline;">a</span></div>');
     });
   });
 });

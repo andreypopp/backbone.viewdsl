@@ -402,6 +402,19 @@ define(function(require) {
       };
     };
 
+    View.prototype.compileShowIf = function($node, name, value) {
+      $node.removeAttr(name);
+      return function(scope, $node) {
+        var got;
+        got = scope[value];
+        if (got) {
+          return $node.show();
+        } else {
+          return $node.hide();
+        }
+      };
+    };
+
     return View;
 
   })(Backbone.View);

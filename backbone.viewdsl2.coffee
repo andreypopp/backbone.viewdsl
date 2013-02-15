@@ -265,5 +265,10 @@ define (require) ->
         else
           $node.removeClass(className)
 
+    compileShowIf: ($node, name, value) ->
+      $node.removeAttr(name)
+      (scope, $node) ->
+        got = scope[value]
+        if got then $node.show() else $node.hide()
 
   {Compiler, Template, View}
