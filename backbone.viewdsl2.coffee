@@ -18,7 +18,7 @@
 ###
 define (require) ->
 
-  {some, extend, toArray, isBoolean} = require 'underscore'
+  {some, extend, toArray, isBoolean, isString} = require 'underscore'
   Backbone = require 'backbone'
 
 
@@ -153,6 +153,14 @@ define (require) ->
   ^(class|enabled|id)$
   ///
 
+  textNodeSplitRe = /({{)|(}})/
+
+  $fromArray = (nodes) ->
+    o = $()
+    for node in nodes
+      o = o.add(node)
+    o
+
   ###
     HTML compiler
   ###
@@ -178,8 +186,27 @@ define (require) ->
         this.compileNode($node)
 
     compileTextNode: ($node) ->
-      $node
-      false
+      data = $node.text()
+      return false unless textNodeSplitRe.test data
+
+      data = data.replace(/{{/g, '{{\uF001')
+      parts = data.split(textNodeSplitRe)
+      parts = parts.filter (e) -> e and e != '{{' and e != '}}'
+
+      nodes = for part in parts
+        if part[0] == '\uF001'
+          path = part.slice(1).trim()
+          $part = $ document.createElement('span')
+          action = this.directives.compileInterpolation($part, path)
+          $part.data('hasActions', true)
+          $part.data('actions', [action])
+          $part
+        else
+          $ document.createTextNode(part)
+
+      $node.replaceWith $fromArray nodes
+
+      true
 
     compileNode: ($node) ->
       node = $node[0]
@@ -280,6 +307,12 @@ define (require) ->
         if jQuery.isFunction(o)
           o = o.call(ctx)
       o
+
+    compileInterpolation: ($node, path) ->
+      (scope, $node) ->
+        got = scope.get(path)
+        got = document.createTextNode(got) if isString(got)
+        $node.replaceWith(got)
 
     compileAttr: ($node, name, value) ->
       attrName = name.substring(5)

@@ -21,8 +21,8 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 define(function(require) {
-  var Backbone, Compiler, Promise, Template, View, extend, hypensToCamelCase, isBoolean, isPromise, join, knownAttrs, knownTags, promise, promiseRequire, some, toArray, _ref;
-  _ref = require('underscore'), some = _ref.some, extend = _ref.extend, toArray = _ref.toArray, isBoolean = _ref.isBoolean;
+  var $fromArray, Backbone, Compiler, Promise, Template, View, extend, hypensToCamelCase, isBoolean, isPromise, isString, join, knownAttrs, knownTags, promise, promiseRequire, some, textNodeSplitRe, toArray, _ref;
+  _ref = require('underscore'), some = _ref.some, extend = _ref.extend, toArray = _ref.toArray, isBoolean = _ref.isBoolean, isString = _ref.isString;
   Backbone = require('backbone');
   Promise = (function() {
     var invokeCallback, noop, reject, resolve;
@@ -209,6 +209,16 @@ define(function(require) {
   };
   knownTags = /^(DIV|SPAN|BODY|HTML|HEAD|SECTION|HEADER|H1|H2|H3|H4|H5|H6|EM|TR|TD|THEAD|TBODY|TABLE|INPUT|TEXTAREA|EMBED|FONT|DD|DT|DL|FORM|A|B|BIG|BR|HR|I|UL|LI|OL|META|OPTION|SELECT|SMALL|STRONG|TITLE|TT|U)$/;
   knownAttrs = /^(class|enabled|id)$/;
+  textNodeSplitRe = /({{)|(}})/;
+  $fromArray = function(nodes) {
+    var node, o, _i, _len;
+    o = $();
+    for (_i = 0, _len = nodes.length; _i < _len; _i++) {
+      node = nodes[_i];
+      o = o.add(node);
+    }
+    return o;
+  };
   /*
       HTML compiler
   */
@@ -248,8 +258,36 @@ define(function(require) {
     };
 
     Compiler.prototype.compileTextNode = function($node) {
-      $node;
-      return false;
+      var $part, action, data, nodes, part, parts, path;
+      data = $node.text();
+      if (!textNodeSplitRe.test(data)) {
+        return false;
+      }
+      data = data.replace(/{{/g, '{{\uF001');
+      parts = data.split(textNodeSplitRe);
+      parts = parts.filter(function(e) {
+        return e && e !== '{{' && e !== '}}';
+      });
+      nodes = (function() {
+        var _i, _len, _results;
+        _results = [];
+        for (_i = 0, _len = parts.length; _i < _len; _i++) {
+          part = parts[_i];
+          if (part[0] === '\uF001') {
+            path = part.slice(1).trim();
+            $part = $(document.createElement('span'));
+            action = this.directives.compileInterpolation($part, path);
+            $part.data('hasActions', true);
+            $part.data('actions', [action]);
+            _results.push($part);
+          } else {
+            _results.push($(document.createTextNode(part)));
+          }
+        }
+        return _results;
+      }).call(this);
+      $node.replaceWith($fromArray(nodes));
+      return true;
     };
 
     Compiler.prototype.compileNode = function($node) {
@@ -420,6 +458,17 @@ define(function(require) {
         }
       }
       return o;
+    };
+
+    View.prototype.compileInterpolation = function($node, path) {
+      return function(scope, $node) {
+        var got;
+        got = scope.get(path);
+        if (isString(got)) {
+          got = document.createTextNode(got);
+        }
+        return $node.replaceWith(got);
+      };
     };
 
     View.prototype.compileAttr = function($node, name, value) {

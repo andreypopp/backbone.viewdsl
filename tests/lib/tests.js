@@ -106,6 +106,38 @@ define(function(require) {
       });
       return expect(v.$el.html()).to.be.equal('<div><span style="display: inline;">a</span></div>');
     });
+    describe('interpolation', function() {
+      it('should interpolate string values', function() {
+        var v;
+        v = render('<div>Hello, {{name}}!</div>', {
+          name: 'World'
+        });
+        return expect(v.$el.html()).to.be.equal('<div>Hello, World!</div>');
+      });
+      it('should interpolate DOM values', function() {
+        var v;
+        v = render('<div>Hello, {{name}}!</div>', {
+          name: document.createTextNode('World')
+        });
+        return expect(v.$el.html()).to.be.equal('<div>Hello, World!</div>');
+      });
+      it('should interpolate jQuery values', function() {
+        var v;
+        v = render('<div>Hello, {{name}}!</div>', {
+          name: $('<span>World</span>')
+        });
+        return expect(v.$el.html()).to.be.equal('<div>Hello, <span>World</span>!</div>');
+      });
+      return it('should interpolate nested values', function() {
+        var v;
+        v = render('<div>Hello, {{my.name}}!</div>', {
+          my: {
+            name: 'World'
+          }
+        });
+        return expect(v.$el.html()).to.be.equal('<div>Hello, World!</div>');
+      });
+    });
     return describe('view directive', function() {
       window.Hello = (function(_super) {
 

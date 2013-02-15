@@ -73,6 +73,24 @@ define (require) ->
         {a: true}
       expect(v.$el.html()).to.be.equal '<div><span style="display: inline;">a</span></div>'
 
+    describe 'interpolation', ->
+
+      it 'should interpolate string values', ->
+        v = render '<div>Hello, {{name}}!</div>', {name: 'World'}
+        expect(v.$el.html()).to.be.equal '<div>Hello, World!</div>'
+
+      it 'should interpolate DOM values', ->
+        v = render '<div>Hello, {{name}}!</div>', {name: document.createTextNode('World')}
+        expect(v.$el.html()).to.be.equal '<div>Hello, World!</div>'
+
+      it 'should interpolate jQuery values', ->
+        v = render '<div>Hello, {{name}}!</div>', {name: $('<span>World</span>')}
+        expect(v.$el.html()).to.be.equal '<div>Hello, <span>World</span>!</div>'
+
+      it 'should interpolate nested values', ->
+        v = render '<div>Hello, {{my.name}}!</div>', {my: {name: 'World'}}
+        expect(v.$el.html()).to.be.equal '<div>Hello, World!</div>'
+
     describe 'view directive', ->
 
       class window.Hello extends View
