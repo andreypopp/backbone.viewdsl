@@ -207,7 +207,7 @@ define(function(require) {
       return g[1].toUpperCase();
     });
   };
-  knownTags = /^(DIV|SPAN|BODY|HTML|HEAD|SECTION|HEADER|H1|H2|H3|H4|H5|H6|EM|TR|TD|THEAD|TBODY|TABLE|INPUT|TEXTAREA)$/;
+  knownTags = /^(DIV|SPAN|BODY|HTML|HEAD|SECTION|HEADER|H1|H2|H3|H4|H5|H6|EM|TR|TD|THEAD|TBODY|TABLE|INPUT|TEXTAREA|EMBED|FONT|DD|DT|DL|FORM|A|B|BIG|BR|HR|I|UL|LI|OL|META|OPTION|SELECT|SMALL|STRONG|TITLE|TT|U)$/;
   knownAttrs = /^(class|enabled|id)$/;
   /*
       HTML compiler
