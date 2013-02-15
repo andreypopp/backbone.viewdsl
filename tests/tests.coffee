@@ -1,11 +1,12 @@
 define (require) ->
 
-  {Compiler} = require 'backbone.viewdsl2'
-
-  outerHTML = ($node) ->
-    $('<div></div>').append($node).html()
+  {extend} = require 'underscore'
+  {Compiler, View} = require 'backbone.viewdsl2'
 
   describe 'Compiler', ->
+
+    outerHTML = ($node) ->
+      $('<div></div>').append($node).html()
 
     it 'should compile node w/o any directives', ->
       c = new Compiler()
@@ -17,7 +18,7 @@ define (require) ->
 
     it 'should compile node w/ element directive', ->
       c = new Compiler()
-      c.hello = ($node) ->
+      c.directives.compileHello = ($node) ->
         (scope, $node) ->
           $node.replaceWith($ '<span>Hello, world</span>')
       t = c.compile $ '<div><hello></hello></div>'
@@ -28,7 +29,7 @@ define (require) ->
 
     it 'should compile node w/ element directive', ->
       c = new Compiler()
-      c.hello = ($node, name, value) ->
+      c.directives.compileHello = ($node, name, value) ->
         (scope, $node) ->
           $node.html($ "<span>#{value}</span>")
           $node.removeAttr(name)
@@ -38,19 +39,28 @@ define (require) ->
       expect(t.$node.data('hasActions')).to.be.ok
       expect(outerHTML(r)).to.be.equal '<div><div><span>Huh?!</span></div></div>'
 
-    describe 'built-in directives', ->
 
-      render = (t, s) ->
-        c = new Compiler()
-        t = c.compile $ t
-        t.render(s)
+  describe 'View', ->
 
-      it 'should process attr-* directives', ->
-        r = render '<div attr-c="c" attr-b="b"><span attr-a="a">a</span></div>',
-          {a: 'aa', c: true, b: false}
-        expect(outerHTML(r)).to.be.equal '<div c=""><span a="aa">a</span></div>'
+    render = (t, s) ->
+      class MyView extends View
+        template: t
+      v = new MyView()
+      extend v, s
+      v.render()
+      v
 
-      it 'should process class-* directives', ->
-        r = render '<div class-c="b"><span class-a="a">a</span></div>',
-          {a: false, b: true}
-        expect(outerHTML(r)).to.be.equal '<div class="c"><span>a</span></div>'
+    it 'should compile and render template', ->
+      v = render '<div></div>'
+      expect(v.$el.html()).to.be.equal '<div></div>'
+
+    it 'should process attr-* directives', ->
+
+      v = render '<div attr-c="c" attr-b="b"><span attr-a="a">a</span></div>',
+        {a: 'aa', c: true, b: false}
+      expect(v.$el.html()).to.be.equal '<div c=""><span a="aa">a</span></div>'
+
+    it 'should process class-* directives', ->
+      v = render '<div class-c="b"><span class-a="a">a</span></div>',
+        {a: false, b: true}
+      expect(v.$el.html()).to.be.equal '<div class="c"><span>a</span></div>'

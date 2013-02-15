@@ -213,43 +213,16 @@ define(function(require) {
 
   Compiler = (function() {
 
-    function Compiler() {}
+    function Compiler(directives) {
+      if (directives == null) {
+        directives = {};
+      }
+      this.directives = directives;
+    }
 
     Compiler.prototype.compile = function($node) {
       this.compileImpl($node);
       return new Template($node);
-    };
-
-    Compiler.prototype.attr = function($node, name, value) {
-      var attrName;
-      attrName = name.substring(5);
-      $node.removeAttr(name);
-      return function(scope, $node) {
-        var got;
-        got = scope[value];
-        if (isBoolean(got)) {
-          if (got) {
-            return $node.attr(attrName, '');
-          }
-        } else {
-          return $node.attr(attrName, got);
-        }
-      };
-    };
-
-    Compiler.prototype["class"] = function($node, name, value) {
-      var className;
-      className = name.slice(6);
-      $node.removeAttr(name);
-      return function(scope, $node) {
-        var got;
-        got = scope[value];
-        if (got) {
-          return $node.addClass(className);
-        } else {
-          return $node.removeClass(className);
-        }
-      };
     };
 
     Compiler.prototype.directiveFor = function(name) {
@@ -259,7 +232,7 @@ define(function(require) {
       if (name.slice(0, 6) === 'class-') {
         name = 'class';
       }
-      return this[hypensToCamelCase(name)];
+      return this.directives[hypensToCamelCase("compile-" + name)];
     };
 
     Compiler.prototype.compileImpl = function($node) {
@@ -280,6 +253,9 @@ define(function(require) {
     Compiler.prototype.compileNode = function($node) {
       var actions, attr, attrActions, child, directive, hasActions, hasChildActions, node;
       node = $node[0];
+      if (node.tagName === void 0) {
+        console.log(node, typeof node, node.nodeType);
+      }
       directive = this.directiveFor(node.tagName.toLowerCase());
       actions = directive ? [directive($node)] : [];
       attrActions = (function() {
@@ -368,17 +344,18 @@ define(function(require) {
 
     __extends(View, _super);
 
-    function View() {
-      return View.__super__.constructor.apply(this, arguments);
-    }
-
     View.prototype.template = void 0;
 
-    View.prototype.compiler = standardCompiler;
+    View.prototype.compilerClass = Compiler;
+
+    function View() {
+      View.__super__.constructor.apply(this, arguments);
+      this.compiler = new this.compilerClass(this);
+    }
 
     View.prototype.renderTemplate = function(template) {
       if (!(template instanceof Template)) {
-        template = this.compiler.compile(template);
+        template = this.compiler.compile($(template));
       }
       return template.render(this);
     };
@@ -388,9 +365,41 @@ define(function(require) {
         throw new Error('undefined template');
       }
       if (!(this.template instanceof Template)) {
-        this.template = this.compiler.compile(template);
+        this.template = this.compiler.compile($(this.template));
       }
       return this.$el.append(this.template.render(this));
+    };
+
+    View.prototype.compileAttr = function($node, name, value) {
+      var attrName;
+      attrName = name.substring(5);
+      $node.removeAttr(name);
+      return function(scope, $node) {
+        var got;
+        got = scope[value];
+        if (isBoolean(got)) {
+          if (got) {
+            return $node.attr(attrName, '');
+          }
+        } else {
+          return $node.attr(attrName, got);
+        }
+      };
+    };
+
+    View.prototype.compileClass = function($node, name, value) {
+      var className;
+      className = name.slice(6);
+      $node.removeAttr(name);
+      return function(scope, $node) {
+        var got;
+        got = scope[value];
+        if (got) {
+          return $node.addClass(className);
+        } else {
+          return $node.removeClass(className);
+        }
+      };
     };
 
     return View;

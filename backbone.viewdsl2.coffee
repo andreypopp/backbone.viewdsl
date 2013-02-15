@@ -147,34 +147,17 @@ define (require) ->
   ###
   class Compiler
 
+    constructor: (directives = {}) ->
+      this.directives = directives
+
     compile: ($node) ->
       this.compileImpl($node)
       new Template($node)
 
-    attr: ($node, name, value) ->
-      attrName = name.substring(5)
-      $node.removeAttr(name)
-      (scope, $node) ->
-        got = scope[value]
-        if isBoolean(got)
-          $node.attr(attrName, '') if got
-        else
-          $node.attr(attrName, got)
-
-    class: ($node, name, value) ->
-      className = name.slice(6)
-      $node.removeAttr(name)
-      (scope, $node) ->
-        got = scope[value]
-        if got
-          $node.addClass(className)
-        else
-          $node.removeClass(className)
-
     directiveFor: (name) ->
       name = 'attr' if name.slice(0, 5) == 'attr-'
       name = 'class' if name.slice(0, 6) == 'class-'
-      this[hypensToCamelCase(name)]
+      this.directives[hypensToCamelCase("compile-#{name}")]
 
     compileImpl: ($node) ->
       node = $node[0]
@@ -190,6 +173,8 @@ define (require) ->
     compileNode: ($node) ->
       node = $node[0]
 
+      if node.tagName == undefined
+        console.log node, typeof node, node.nodeType
       directive = this.directiveFor(node.tagName.toLowerCase())
 
       actions = if directive
@@ -243,17 +228,42 @@ define (require) ->
 
   class View extends Backbone.View
     template: undefined
-    compiler: standardCompiler
+    compilerClass: Compiler
+
+    constructor: ->
+      super
+      this.compiler = new this.compilerClass(this)
 
     renderTemplate: (template) ->
       if not (template instanceof Template)
-        template = this.compiler.compile(template)
+        template = this.compiler.compile($ template)
       template.render(this)
 
     render: ->
       throw new Error('undefined template') unless this.template
       if not (this.template instanceof Template)
-        this.template = this.compiler.compile(template)
+        this.template = this.compiler.compile($ this.template)
       this.$el.append(this.template.render(this))
+
+    compileAttr: ($node, name, value) ->
+      attrName = name.substring(5)
+      $node.removeAttr(name)
+      (scope, $node) ->
+        got = scope[value]
+        if isBoolean(got)
+          $node.attr(attrName, '') if got
+        else
+          $node.attr(attrName, got)
+
+    compileClass: ($node, name, value) ->
+      className = name.slice(6)
+      $node.removeAttr(name)
+      (scope, $node) ->
+        got = scope[value]
+        if got
+          $node.addClass(className)
+        else
+          $node.removeClass(className)
+
 
   {Compiler, Template, View}
