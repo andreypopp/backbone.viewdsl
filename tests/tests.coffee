@@ -1,7 +1,8 @@
 define (require) ->
 
   {extend} = require 'underscore'
-  {Compiler, View} = require 'backbone.viewdsl2'
+  {Model} = require 'backbone'
+  {Compiler, View, ActiveView} = require 'backbone.viewdsl2'
 
   describe 'Compiler', ->
 
@@ -39,6 +40,52 @@ define (require) ->
       expect(t.$node.data('hasActions')).to.be.ok
       expect(outerHTML(r)).to.be.equal '<div><div><span>Huh?!</span></div></div>'
 
+  describe 'ActiveView', ->
+    render = (t, s) ->
+      class MyView extends ActiveView
+        template: t
+      v = new MyView(model: new Backbone.Model())
+      v.model.set s
+      v.render()
+      v
+
+    it 'should process and observe attr-* directives', ->
+
+      v = render '''
+        <div attr-c="model.c" attr-b="bind:model.b"><span attr-a="model.a.a">a</span></div>
+        ''',
+        {a: {a: 'aa'}, c: true, b: false}
+      expect(v.$el.html()).to.be.equal '<div c=""><span a="aa">a</span></div>'
+      v.model.set 'b', true
+      expect(v.$el.html()).to.be.equal '<div c="" b=""><span a="aa">a</span></div>'
+      v.model.set 'b', 'bb'
+      expect(v.$el.html()).to.be.equal '<div c="" b="bb"><span a="aa">a</span></div>'
+
+    it 'should process and observe class-* directives', ->
+      v = render '<div class-c="model.b.b"><span class-a="bind:model.a">a</span></div>',
+        {a: false, b: {b: true}}
+      expect(v.$el.html()).to.be.equal '<div class="c"><span>a</span></div>'
+      v.model.set 'a', true
+      expect(v.$el.html()).to.be.equal '<div class="c"><span class="a">a</span></div>'
+
+    it 'should process show-if directive', ->
+      v = render '<div><span show-if="bind:model.a">a</span></div>',
+        {a: false}
+      expect(v.$el.html()).to.be.equal '<div><span style="display: none;">a</span></div>'
+      v.model.set 'a', true
+      expect(v.$el.html()).to.be.equal '<div><span style="display: inline;">a</span></div>'
+
+    describe 'interpolation', ->
+
+      it 'should interpolate values', ->
+        v = render '<div>Hello, {{model.name}}!</div>', {name: 'World'}
+        expect(v.$el.html()).to.be.equal '<div>Hello, World!</div>'
+
+      it 'should interpolate values and observe them', ->
+        v = render '<div>Hello, {{bind:model.name}}!</div>', {name: 'World'}
+        expect(v.$el.html()).to.be.equal '<div>Hello, World!</div>'
+        v.model.set 'name', 'Andrey'
+        expect(v.$el.html()).to.be.equal '<div>Hello, Andrey!</div>'
 
   describe 'View', ->
 

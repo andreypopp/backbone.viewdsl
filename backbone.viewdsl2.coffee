@@ -18,7 +18,7 @@
 ###
 define (require) ->
 
-  {some, extend, toArray, isBoolean, isString} = require 'underscore'
+  {some, extend, toArray, isEqual, isBoolean, isString} = require 'underscore'
   Backbone = require 'backbone'
 
 
@@ -293,16 +293,19 @@ define (require) ->
       this.views.push(view)
       this[id] = view if id
 
-    get: (p) ->
-      this.getOwn(p) or this.parent?.get(p)
+    get: (p, options) ->
+      this.getOwn(p, options) or this.parent?.get(p, options)
 
-    getOwn: (p) ->
+    getOwn: (p, options) ->
       p = p.trim()
       o = this
       return o if p.trim().length == 0
       for n in p.split('.')
         ctx = o
-        o = ctx[n]
+        o = if (ctx instanceof Backbone.Model)
+          ctx.get(n) or ctx[n]
+        else
+          ctx[n]
         break if o == undefined
         if jQuery.isFunction(o)
           o = o.call(ctx)
@@ -380,4 +383,103 @@ define (require) ->
         $node.replaceWith(view.$el) if element
         scope.addView(view, viewId)
 
-  {Compiler, Template, View}
+  class ActiveView extends View
+
+    constructor: ->
+      super
+      if this.model
+        this.listenTo this.model, 'change', =>
+          this.digest()
+      if this.collection
+        this.listenTo this.collection, 'change add remove reset sort', =>
+          this.digest()
+      this.observe = {}
+
+    digest: ->
+      updates = {}
+
+      for path, value of this.observe
+        newValue = this.get(path)
+        updates[path] = newValue unless isEqual(newValue, value)
+
+      extend this.observe, updates
+
+      for path, value of updates
+        this.trigger("change:#{path}", value)
+
+    get: (p, options) ->
+      value = super
+      this.observe[p] = value if options?.observe
+      value
+
+    remove: ->
+      super
+      this.observe = undefined
+
+    compileInterpolation: ($node, value) ->
+      observe = false
+      if value.substring(0, 5) == 'bind:'
+        value = value.substring(5)
+        observe = true
+      (scope, $node) ->
+        $point = $node
+        react = ->
+          got = scope.get(value, {observe})
+          got = $(document.createTextNode(got)) if isString(got)
+          $point.replaceWith(got)
+          $point = got
+        react()
+        if observe
+          scope.listenTo scope, "change:#{value}", react
+
+    compileAttr: ($node, name, value) ->
+      observe = false
+      if value.substring(0, 5) == 'bind:'
+        value = value.substring(5)
+        observe = true
+      attrName = name.substring(5)
+      $node.removeAttr(name)
+      (scope, $node) ->
+        react = ->
+          got = scope.get(value, {observe})
+          if isBoolean(got)
+            $node.attr(attrName, '') if got
+          else
+            $node.attr(attrName, got)
+        react()
+        if observe
+          scope.listenTo scope, "change:#{value}", react
+
+    compileClass: ($node, name, value) ->
+      observe = false
+      if value.substring(0, 5) == 'bind:'
+        value = value.substring(5)
+        observe = true
+      className = name.slice(6)
+      $node.removeAttr(name)
+      (scope, $node) ->
+        react = ->
+          got = scope.get(value, {observe})
+          if got
+            $node.addClass(className)
+          else
+            $node.removeClass(className)
+        react()
+        if observe
+          scope.listenTo scope, "change:#{value}", react
+
+    compileShowIf: ($node, name, value) ->
+      observe = false
+      if value.substring(0, 5) == 'bind:'
+        value = value.substring(5)
+        observe = true
+      $node.removeAttr(name)
+      (scope, $node) ->
+        react = ->
+          got = scope.get(value, {observe})
+          if got then $node.show() else $node.hide()
+        react()
+        if observe
+          scope.listenTo scope, "change:#{value}", react
+
+  {Compiler, Template, View, ActiveView}

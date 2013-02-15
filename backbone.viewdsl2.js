@@ -21,8 +21,8 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 define(function(require) {
-  var $fromArray, Backbone, Compiler, Promise, Template, View, extend, hypensToCamelCase, isBoolean, isPromise, isString, join, knownAttrs, knownTags, promise, promiseRequire, some, textNodeSplitRe, toArray, _ref;
-  _ref = require('underscore'), some = _ref.some, extend = _ref.extend, toArray = _ref.toArray, isBoolean = _ref.isBoolean, isString = _ref.isString;
+  var $fromArray, ActiveView, Backbone, Compiler, Promise, Template, View, extend, hypensToCamelCase, isBoolean, isEqual, isPromise, isString, join, knownAttrs, knownTags, promise, promiseRequire, some, textNodeSplitRe, toArray, _ref;
+  _ref = require('underscore'), some = _ref.some, extend = _ref.extend, toArray = _ref.toArray, isEqual = _ref.isEqual, isBoolean = _ref.isBoolean, isString = _ref.isString;
   Backbone = require('backbone');
   Promise = (function() {
     var invokeCallback, noop, reject, resolve;
@@ -433,12 +433,12 @@ define(function(require) {
       }
     };
 
-    View.prototype.get = function(p) {
+    View.prototype.get = function(p, options) {
       var _ref1;
-      return this.getOwn(p) || ((_ref1 = this.parent) != null ? _ref1.get(p) : void 0);
+      return this.getOwn(p, options) || ((_ref1 = this.parent) != null ? _ref1.get(p, options) : void 0);
     };
 
-    View.prototype.getOwn = function(p) {
+    View.prototype.getOwn = function(p, options) {
       var ctx, n, o, _i, _len, _ref1;
       p = p.trim();
       o = this;
@@ -449,7 +449,7 @@ define(function(require) {
       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
         n = _ref1[_i];
         ctx = o;
-        o = ctx[n];
+        o = ctx instanceof Backbone.Model ? ctx.get(n) || ctx[n] : ctx[n];
         if (o === void 0) {
           break;
         }
@@ -567,9 +567,183 @@ define(function(require) {
     return View;
 
   })(Backbone.View);
+  ActiveView = (function(_super) {
+
+    __extends(ActiveView, _super);
+
+    function ActiveView() {
+      var _this = this;
+      ActiveView.__super__.constructor.apply(this, arguments);
+      if (this.model) {
+        this.listenTo(this.model, 'change', function() {
+          return _this.digest();
+        });
+      }
+      if (this.collection) {
+        this.listenTo(this.collection, 'change add remove reset sort', function() {
+          return _this.digest();
+        });
+      }
+      this.observe = {};
+    }
+
+    ActiveView.prototype.digest = function() {
+      var newValue, path, updates, value, _ref1, _results;
+      updates = {};
+      _ref1 = this.observe;
+      for (path in _ref1) {
+        value = _ref1[path];
+        newValue = this.get(path);
+        if (!isEqual(newValue, value)) {
+          updates[path] = newValue;
+        }
+      }
+      extend(this.observe, updates);
+      _results = [];
+      for (path in updates) {
+        value = updates[path];
+        _results.push(this.trigger("change:" + path, value));
+      }
+      return _results;
+    };
+
+    ActiveView.prototype.get = function(p, options) {
+      var value;
+      value = ActiveView.__super__.get.apply(this, arguments);
+      if (options != null ? options.observe : void 0) {
+        this.observe[p] = value;
+      }
+      return value;
+    };
+
+    ActiveView.prototype.remove = function() {
+      ActiveView.__super__.remove.apply(this, arguments);
+      return this.observe = void 0;
+    };
+
+    ActiveView.prototype.compileInterpolation = function($node, value) {
+      var observe;
+      observe = false;
+      if (value.substring(0, 5) === 'bind:') {
+        value = value.substring(5);
+        observe = true;
+      }
+      return function(scope, $node) {
+        var $point, react;
+        $point = $node;
+        react = function() {
+          var got;
+          got = scope.get(value, {
+            observe: observe
+          });
+          if (isString(got)) {
+            got = $(document.createTextNode(got));
+          }
+          $point.replaceWith(got);
+          return $point = got;
+        };
+        react();
+        if (observe) {
+          return scope.listenTo(scope, "change:" + value, react);
+        }
+      };
+    };
+
+    ActiveView.prototype.compileAttr = function($node, name, value) {
+      var attrName, observe;
+      observe = false;
+      if (value.substring(0, 5) === 'bind:') {
+        value = value.substring(5);
+        observe = true;
+      }
+      attrName = name.substring(5);
+      $node.removeAttr(name);
+      return function(scope, $node) {
+        var react;
+        react = function() {
+          var got;
+          got = scope.get(value, {
+            observe: observe
+          });
+          if (isBoolean(got)) {
+            if (got) {
+              return $node.attr(attrName, '');
+            }
+          } else {
+            return $node.attr(attrName, got);
+          }
+        };
+        react();
+        if (observe) {
+          return scope.listenTo(scope, "change:" + value, react);
+        }
+      };
+    };
+
+    ActiveView.prototype.compileClass = function($node, name, value) {
+      var className, observe;
+      observe = false;
+      if (value.substring(0, 5) === 'bind:') {
+        value = value.substring(5);
+        observe = true;
+      }
+      className = name.slice(6);
+      $node.removeAttr(name);
+      return function(scope, $node) {
+        var react;
+        react = function() {
+          var got;
+          got = scope.get(value, {
+            observe: observe
+          });
+          if (got) {
+            return $node.addClass(className);
+          } else {
+            return $node.removeClass(className);
+          }
+        };
+        react();
+        if (observe) {
+          return scope.listenTo(scope, "change:" + value, react);
+        }
+      };
+    };
+
+    ActiveView.prototype.compileShowIf = function($node, name, value) {
+      var observe;
+      observe = false;
+      if (value.substring(0, 5) === 'bind:') {
+        value = value.substring(5);
+        observe = true;
+      }
+      $node.removeAttr(name);
+      return function(scope, $node) {
+        var react;
+        react = function() {
+          var got;
+          got = scope.get(value, {
+            observe: observe
+          });
+          if (got) {
+            return $node.show();
+          } else {
+            return $node.hide();
+          }
+        };
+        react();
+        if (observe) {
+          return scope.listenTo(scope, "change:" + value, react);
+        }
+      };
+    };
+
+    return ActiveView;
+
+  })(View);
   return {
     Compiler: Compiler,
     Template: Template,
-    View: View
+    View: View,
+    ActiveView: ActiveView
   };
 });

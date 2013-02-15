@@ -3,9 +3,10 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 define(function(require) {
-  var Compiler, View, extend, _ref;
+  var ActiveView, Compiler, Model, View, extend, _ref;
   extend = require('underscore').extend;
-  _ref = require('backbone.viewdsl2'), Compiler = _ref.Compiler, View = _ref.View;
+  Model = require('backbone').Model;
+  _ref = require('backbone.viewdsl2'), Compiler = _ref.Compiler, View = _ref.View, ActiveView = _ref.ActiveView;
   describe('Compiler', function() {
     var outerHTML;
     outerHTML = function($node) {
@@ -45,6 +46,85 @@ define(function(require) {
       r = t.render();
       expect(t.$node.data('hasActions')).to.be.ok;
       return expect(outerHTML(r)).to.be.equal('<div><div><span>Huh?!</span></div></div>');
+    });
+  });
+  describe('ActiveView', function() {
+    var render;
+    render = function(t, s) {
+      var MyView, v;
+      MyView = (function(_super) {
+
+        __extends(MyView, _super);
+
+        function MyView() {
+          return MyView.__super__.constructor.apply(this, arguments);
+        }
+
+        MyView.prototype.template = t;
+
+        return MyView;
+
+      })(ActiveView);
+      v = new MyView({
+        model: new Backbone.Model()
+      });
+      v.model.set(s);
+      v.render();
+      return v;
+    };
+    it('should process and observe attr-* directives', function() {
+      var v;
+      v = render('<div attr-c="model.c" attr-b="bind:model.b"><span attr-a="model.a.a">a</span></div>', {
+        a: {
+          a: 'aa'
+        },
+        c: true,
+        b: false
+      });
+      expect(v.$el.html()).to.be.equal('<div c=""><span a="aa">a</span></div>');
+      v.model.set('b', true);
+      expect(v.$el.html()).to.be.equal('<div c="" b=""><span a="aa">a</span></div>');
+      v.model.set('b', 'bb');
+      return expect(v.$el.html()).to.be.equal('<div c="" b="bb"><span a="aa">a</span></div>');
+    });
+    it('should process and observe class-* directives', function() {
+      var v;
+      v = render('<div class-c="model.b.b"><span class-a="bind:model.a">a</span></div>', {
+        a: false,
+        b: {
+          b: true
+        }
+      });
+      expect(v.$el.html()).to.be.equal('<div class="c"><span>a</span></div>');
+      v.model.set('a', true);
+      return expect(v.$el.html()).to.be.equal('<div class="c"><span class="a">a</span></div>');
+    });
+    it('should process show-if directive', function() {
+      var v;
+      v = render('<div><span show-if="bind:model.a">a</span></div>', {
+        a: false
+      });
+      expect(v.$el.html()).to.be.equal('<div><span style="display: none;">a</span></div>');
+      v.model.set('a', true);
+      return expect(v.$el.html()).to.be.equal('<div><span style="display: inline;">a</span></div>');
+    });
+    return describe('interpolation', function() {
+      it('should interpolate values', function() {
+        var v;
+        v = render('<div>Hello, {{model.name}}!</div>', {
+          name: 'World'
+        });
+        return expect(v.$el.html()).to.be.equal('<div>Hello, World!</div>');
+      });
+      return it('should interpolate values and observe them', function() {
+        var v;
+        v = render('<div>Hello, {{bind:model.name}}!</div>', {
+          name: 'World'
+        });
+        expect(v.$el.html()).to.be.equal('<div>Hello, World!</div>');
+        v.model.set('name', 'Andrey');
+        return expect(v.$el.html()).to.be.equal('<div>Hello, Andrey!</div>');
+      });
     });
   });
   return describe('View', function() {
