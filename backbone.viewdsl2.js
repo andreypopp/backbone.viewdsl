@@ -21,7 +21,7 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 define(function(require) {
-  var Backbone, Compiler, Promise, Template, View, extend, hypensToCamelCase, isBoolean, isPromise, join, knownAttrs, knownTags, promise, promiseRequire, some, standardCompiler, toArray, _ref;
+  var Backbone, Compiler, Promise, Template, View, extend, hypensToCamelCase, isBoolean, isPromise, join, knownAttrs, knownTags, promise, promiseRequire, some, toArray, _ref;
   _ref = require('underscore'), some = _ref.some, extend = _ref.extend, toArray = _ref.toArray, isBoolean = _ref.isBoolean;
   Backbone = require('backbone');
   Promise = (function() {
@@ -345,7 +345,6 @@ define(function(require) {
     return Template;
 
   })();
-  standardCompiler = new Compiler();
   View = (function(_super) {
 
     __extends(View, _super);
@@ -354,8 +353,9 @@ define(function(require) {
 
     View.prototype.compilerClass = Compiler;
 
-    function View() {
+    function View(options) {
       View.__super__.constructor.apply(this, arguments);
+      this.parent = options != null ? options.parent : void 0;
       this.views = [];
       this.compiler = new this.compilerClass(this);
     }
@@ -378,15 +378,14 @@ define(function(require) {
     };
 
     View.prototype.remove = function() {
-      var view, _i, _len, _ref1, _results;
+      var view, _i, _len, _ref1;
       View.__super__.remove.apply(this, arguments);
       _ref1 = this.views;
-      _results = [];
       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
         view = _ref1[_i];
-        _results.push(view.remove());
+        view.remove();
       }
-      return _results;
+      return this.parent = void 0;
     };
 
     View.prototype.addView = function(view, id) {
@@ -396,13 +395,40 @@ define(function(require) {
       }
     };
 
+    View.prototype.get = function(p) {
+      var _ref1;
+      return this.getOwn(p) || ((_ref1 = this.parent) != null ? _ref1.get(p) : void 0);
+    };
+
+    View.prototype.getOwn = function(p) {
+      var ctx, n, o, _i, _len, _ref1;
+      p = p.trim();
+      o = this;
+      if (p.trim().length === 0) {
+        return o;
+      }
+      _ref1 = p.split('.');
+      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+        n = _ref1[_i];
+        ctx = o;
+        o = ctx[n];
+        if (o === void 0) {
+          break;
+        }
+        if (jQuery.isFunction(o)) {
+          o = o.call(ctx);
+        }
+      }
+      return o;
+    };
+
     View.prototype.compileAttr = function($node, name, value) {
       var attrName;
       attrName = name.substring(5);
       $node.removeAttr(name);
       return function(scope, $node) {
         var got;
-        got = scope[value];
+        got = scope.get(value);
         if (isBoolean(got)) {
           if (got) {
             return $node.attr(attrName, '');
@@ -419,7 +445,7 @@ define(function(require) {
       $node.removeAttr(name);
       return function(scope, $node) {
         var got;
-        got = scope[value];
+        got = scope.get(value);
         if (got) {
           return $node.addClass(className);
         } else {
@@ -432,7 +458,7 @@ define(function(require) {
       $node.removeAttr(name);
       return function(scope, $node) {
         var got;
-        got = scope[value];
+        got = scope.get(value);
         if (got) {
           return $node.show();
         } else {
@@ -471,11 +497,12 @@ define(function(require) {
           }
           attrName = element ? a.name : a.name.slice(5);
           attrName = hypensToCamelCase(attrName);
-          viewParams[attrName] = scope[a.value] || a.value;
+          viewParams[attrName] = scope.get(a.value) || a.value;
           if (!element) {
             $node.removeAttr(a.name);
           }
         }
+        viewParams.parent = scope;
         if (!element) {
           viewParams.el = $node;
         }

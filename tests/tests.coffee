@@ -56,13 +56,13 @@ define (require) ->
 
     it 'should process attr-* directives', ->
 
-      v = render '<div attr-c="c" attr-b="b"><span attr-a="a">a</span></div>',
-        {a: 'aa', c: true, b: false}
+      v = render '<div attr-c="c" attr-b="b"><span attr-a="a.a">a</span></div>',
+        {a: {a: 'aa'}, c: true, b: false}
       expect(v.$el.html()).to.be.equal '<div c=""><span a="aa">a</span></div>'
 
     it 'should process class-* directives', ->
-      v = render '<div class-c="b"><span class-a="a">a</span></div>',
-        {a: false, b: true}
+      v = render '<div class-c="b.b"><span class-a="a">a</span></div>',
+        {a: false, b: {b: true}}
       expect(v.$el.html()).to.be.equal '<div class="c"><span>a</span></div>'
 
     it 'should process show-if directive', ->

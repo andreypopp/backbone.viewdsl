@@ -233,14 +233,13 @@ define (require) ->
 
       $node
 
-  standardCompiler = new Compiler()
-
   class View extends Backbone.View
     template: undefined
     compilerClass: Compiler
 
-    constructor: ->
+    constructor: (options) ->
       super
+      this.parent = options?.parent
       this.views = []
       this.compiler = new this.compilerClass(this)
 
@@ -259,16 +258,32 @@ define (require) ->
       super
       for view in this.views
         view.remove()
+      this.parent = undefined
 
     addView: (view, id) ->
       this.views.push(view)
       this[id] = view if id
 
+    get: (p) ->
+      this.getOwn(p) or this.parent?.get(p)
+
+    getOwn: (p) ->
+      p = p.trim()
+      o = this
+      return o if p.trim().length == 0
+      for n in p.split('.')
+        ctx = o
+        o = ctx[n]
+        break if o == undefined
+        if jQuery.isFunction(o)
+          o = o.call(ctx)
+      o
+
     compileAttr: ($node, name, value) ->
       attrName = name.substring(5)
       $node.removeAttr(name)
       (scope, $node) ->
-        got = scope[value]
+        got = scope.get(value)
         if isBoolean(got)
           $node.attr(attrName, '') if got
         else
@@ -278,7 +293,7 @@ define (require) ->
       className = name.slice(6)
       $node.removeAttr(name)
       (scope, $node) ->
-        got = scope[value]
+        got = scope.get(value)
         if got
           $node.addClass(className)
         else
@@ -287,7 +302,7 @@ define (require) ->
     compileShowIf: ($node, name, value) ->
       $node.removeAttr(name)
       (scope, $node) ->
-        got = scope[value]
+        got = scope.get(value)
         if got then $node.show() else $node.hide()
 
     compileView: ($node, name, value) ->
@@ -317,10 +332,11 @@ define (require) ->
           attrName = if element then a.name else a.name.slice(5)
           attrName = hypensToCamelCase(attrName)
 
-          viewParams[attrName] = scope[a.value] or a.value
+          viewParams[attrName] = scope.get(a.value) or a.value
 
           $node.removeAttr(a.name) if not element
 
+        viewParams.parent = scope
         viewParams.el = $node if not element
 
         view = new viewClass(viewParams)

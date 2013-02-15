@@ -76,8 +76,10 @@ define(function(require) {
     });
     it('should process attr-* directives', function() {
       var v;
-      v = render('<div attr-c="c" attr-b="b"><span attr-a="a">a</span></div>', {
-        a: 'aa',
+      v = render('<div attr-c="c" attr-b="b"><span attr-a="a.a">a</span></div>', {
+        a: {
+          a: 'aa'
+        },
         c: true,
         b: false
       });
@@ -85,9 +87,11 @@ define(function(require) {
     });
     it('should process class-* directives', function() {
       var v;
-      v = render('<div class-c="b"><span class-a="a">a</span></div>', {
+      v = render('<div class-c="b.b"><span class-a="a">a</span></div>', {
         a: false,
-        b: true
+        b: {
+          b: true
+        }
       });
       return expect(v.$el.html()).to.be.equal('<div class="c"><span>a</span></div>');
     });
