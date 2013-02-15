@@ -176,6 +176,8 @@ define (require) ->
         expect(v.v.options.a).to.be.equal 42
         expect(v.v.options.b).to.be.equal 'b'
 
+    describe 'view directive w/ parameterizable views', ->
+
       it 'should pass view innerHTML as arg to render() when rendered via elem', ->
         v = render '<view name="Hello2" id="v"><span>Hello</span></view>'
         expect(v.$el.html()).to.be.equal '<div><div><span>Hello</span></div></div>'

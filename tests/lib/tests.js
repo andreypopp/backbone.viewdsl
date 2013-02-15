@@ -226,7 +226,7 @@ define(function(require) {
         return expect(v.$el.html()).to.be.equal('<div>Hello, World!</div>');
       });
     });
-    return describe('view directive', function() {
+    describe('view directive', function() {
       window.Hello = (function(_super) {
 
         __extends(Hello, _super);
@@ -271,7 +271,7 @@ define(function(require) {
         expect(v.v.options.a).to.be.equal(42);
         return expect(v.v.options.b).to.be.equal('b');
       });
-      it('should instantiate view from view attr', function() {
+      return it('should instantiate view from view attr', function() {
         var v;
         v = render('<div><div view-id="v" view="Hello" view-a="a" view-b="b"></view></div>', {
           a: 42
@@ -282,6 +282,8 @@ define(function(require) {
         expect(v.v.options.a).to.be.equal(42);
         return expect(v.v.options.b).to.be.equal('b');
       });
+    });
+    return describe('view directive w/ parameterizable views', function() {
       it('should pass view innerHTML as arg to render() when rendered via elem', function() {
         var v;
         v = render('<view name="Hello2" id="v"><span>Hello</span></view>');

@@ -621,13 +621,18 @@ define(function(require) {
       return _results;
     };
 
-    ActiveView.prototype.get = function(p, options) {
+    ActiveView.prototype.reactOn = function(p, options) {
       var value;
-      value = ActiveView.__super__.get.apply(this, arguments);
+      value = this.get(p);
       if (options != null ? options.observe : void 0) {
         this.observe[p] = value;
       }
-      return value;
+      if (options != null ? options.react : void 0) {
+        options.react(value);
+        if (options.observe) {
+          return this.listenTo(this, "change:" + p, options.react);
+        }
+      }
     };
 
     ActiveView.prototype.remove = function() {
@@ -643,21 +648,18 @@ define(function(require) {
         observe = true;
       }
       return function(scope, $node) {
-        var $point, react;
+        var $point;
         $point = $node;
-        react = function(got) {
-          if (isString(got)) {
-            got = $(document.createTextNode(got));
+        return scope.reactOn(value, {
+          observe: observe,
+          react: function(got) {
+            if (isString(got)) {
+              got = $(document.createTextNode(got));
+            }
+            $point.replaceWith(got);
+            return $point = got;
           }
-          $point.replaceWith(got);
-          return $point = got;
-        };
-        react(scope.get(value, {
-          observe: observe
-        }));
-        if (observe) {
-          return scope.listenTo(scope, "change:" + value, react);
-        }
+        });
       };
     };
 
@@ -671,22 +673,18 @@ define(function(require) {
       attrName = name.substring(5);
       $node.removeAttr(name);
       return function(scope, $node) {
-        var react;
-        react = function(got) {
-          if (isBoolean(got)) {
-            if (got) {
-              return $node.attr(attrName, '');
+        return scope.reactOn(value, {
+          observe: observe,
+          react: function(got) {
+            if (isBoolean(got)) {
+              if (got) {
+                return $node.attr(attrName, '');
+              }
+            } else {
+              return $node.attr(attrName, got);
             }
-          } else {
-            return $node.attr(attrName, got);
           }
-        };
-        react(scope.get(value, {
-          observe: observe
-        }));
-        if (observe) {
-          return scope.listenTo(scope, "change:" + value, react);
-        }
+        });
       };
     };
 
@@ -700,20 +698,16 @@ define(function(require) {
       className = name.slice(6);
       $node.removeAttr(name);
       return function(scope, $node) {
-        var react;
-        react = function(got) {
-          if (got) {
-            return $node.addClass(className);
-          } else {
-            return $node.removeClass(className);
+        return scope.reactOn(value, {
+          observe: observe,
+          react: function(got) {
+            if (got) {
+              return $node.addClass(className);
+            } else {
+              return $node.removeClass(className);
+            }
           }
-        };
-        react(scope.get(value, {
-          observe: observe
-        }));
-        if (observe) {
-          return scope.listenTo(scope, "change:" + value, react);
-        }
+        });
       };
     };
 
@@ -726,20 +720,16 @@ define(function(require) {
       }
       $node.removeAttr(name);
       return function(scope, $node) {
-        var react;
-        react = function(got) {
-          if (got) {
-            return $node.show();
-          } else {
-            return $node.hide();
+        return scope.reactOn(value, {
+          observe: observe,
+          react: function(got) {
+            if (got) {
+              return $node.show();
+            } else {
+              return $node.hide();
+            }
           }
-        };
-        react(scope.get(value, {
-          observe: observe
-        }));
-        if (observe) {
-          return scope.listenTo(scope, "change:" + value, react);
-        }
+        });
       };
     };
 

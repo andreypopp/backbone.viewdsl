@@ -419,10 +419,14 @@ define (require) ->
       for path, value of updates
         this.trigger("change:#{path}", value)
 
-    get: (p, options) ->
-      value = super
-      this.observe[p] = value if options?.observe
-      value
+    reactOn: (p, options) ->
+      value = this.get(p)
+      if options?.observe
+        this.observe[p] = value
+      if options?.react
+        options.react(value)
+        if options.observe
+          this.listenTo this, "change:#{p}", options.react
 
     remove: ->
       super
@@ -435,13 +439,12 @@ define (require) ->
         observe = true
       (scope, $node) ->
         $point = $node
-        react = (got) ->
-          got = $(document.createTextNode(got)) if isString(got)
-          $point.replaceWith(got)
-          $point = got
-        react(scope.get(value, {observe}))
-        if observe
-          scope.listenTo scope, "change:#{value}", react
+        scope.reactOn value,
+          observe: observe
+          react: (got) ->
+            got = $(document.createTextNode(got)) if isString(got)
+            $point.replaceWith(got)
+            $point = got
 
     compileAttr: ($node, name, value) ->
       observe = false
@@ -451,14 +454,13 @@ define (require) ->
       attrName = name.substring(5)
       $node.removeAttr(name)
       (scope, $node) ->
-        react = (got) ->
-          if isBoolean(got)
-            $node.attr(attrName, '') if got
-          else
-            $node.attr(attrName, got)
-        react(scope.get(value, {observe}))
-        if observe
-          scope.listenTo scope, "change:#{value}", react
+        scope.reactOn value,
+          observe: observe
+          react: (got) ->
+            if isBoolean(got)
+              $node.attr(attrName, '') if got
+            else
+              $node.attr(attrName, got)
 
     compileClass: ($node, name, value) ->
       observe = false
@@ -468,14 +470,13 @@ define (require) ->
       className = name.slice(6)
       $node.removeAttr(name)
       (scope, $node) ->
-        react = (got) ->
-          if got
-            $node.addClass(className)
-          else
-            $node.removeClass(className)
-        react(scope.get(value, {observe}))
-        if observe
-          scope.listenTo scope, "change:#{value}", react
+        scope.reactOn value,
+          observe: observe
+          react: (got) ->
+            if got
+              $node.addClass(className)
+            else
+              $node.removeClass(className)
 
     compileShowIf: ($node, name, value) ->
       observe = false
@@ -484,10 +485,9 @@ define (require) ->
         observe = true
       $node.removeAttr(name)
       (scope, $node) ->
-        react = (got) ->
-          if got then $node.show() else $node.hide()
-        react(scope.get(value, {observe}))
-        if observe
-          scope.listenTo scope, "change:#{value}", react
+        scope.reactOn value,
+          observe: observe
+          react: (got) ->
+            if got then $node.show() else $node.hide()
 
   {Compiler, Template, View, ActiveView, $parseHTML}
