@@ -631,18 +631,16 @@ define(function(require) {
       return function(scope, $node) {
         var $point, react;
         $point = $node;
-        react = function() {
-          var got;
-          got = scope.get(value, {
-            observe: observe
-          });
+        react = function(got) {
           if (isString(got)) {
             got = $(document.createTextNode(got));
           }
           $point.replaceWith(got);
           return $point = got;
         };
-        react();
+        react(scope.get(value, {
+          observe: observe
+        }));
         if (observe) {
           return scope.listenTo(scope, "change:" + value, react);
         }
@@ -660,11 +658,7 @@ define(function(require) {
       $node.removeAttr(name);
       return function(scope, $node) {
         var react;
-        react = function() {
-          var got;
-          got = scope.get(value, {
-            observe: observe
-          });
+        react = function(got) {
           if (isBoolean(got)) {
             if (got) {
               return $node.attr(attrName, '');
@@ -673,7 +667,9 @@ define(function(require) {
             return $node.attr(attrName, got);
           }
         };
-        react();
+        react(scope.get(value, {
+          observe: observe
+        }));
         if (observe) {
           return scope.listenTo(scope, "change:" + value, react);
         }
@@ -691,18 +687,16 @@ define(function(require) {
       $node.removeAttr(name);
       return function(scope, $node) {
         var react;
-        react = function() {
-          var got;
-          got = scope.get(value, {
-            observe: observe
-          });
+        react = function(got) {
           if (got) {
             return $node.addClass(className);
           } else {
             return $node.removeClass(className);
           }
         };
-        react();
+        react(scope.get(value, {
+          observe: observe
+        }));
         if (observe) {
           return scope.listenTo(scope, "change:" + value, react);
         }
@@ -719,18 +713,16 @@ define(function(require) {
       $node.removeAttr(name);
       return function(scope, $node) {
         var react;
-        react = function() {
-          var got;
-          got = scope.get(value, {
-            observe: observe
-          });
+        react = function(got) {
           if (got) {
             return $node.show();
           } else {
             return $node.hide();
           }
         };
-        react();
+        react(scope.get(value, {
+          observe: observe
+        }));
         if (observe) {
           return scope.listenTo(scope, "change:" + value, react);
         }

@@ -423,12 +423,11 @@ define (require) ->
         observe = true
       (scope, $node) ->
         $point = $node
-        react = ->
-          got = scope.get(value, {observe})
+        react = (got) ->
           got = $(document.createTextNode(got)) if isString(got)
           $point.replaceWith(got)
           $point = got
-        react()
+        react(scope.get(value, {observe}))
         if observe
           scope.listenTo scope, "change:#{value}", react
 
@@ -440,13 +439,12 @@ define (require) ->
       attrName = name.substring(5)
       $node.removeAttr(name)
       (scope, $node) ->
-        react = ->
-          got = scope.get(value, {observe})
+        react = (got) ->
           if isBoolean(got)
             $node.attr(attrName, '') if got
           else
             $node.attr(attrName, got)
-        react()
+        react(scope.get(value, {observe}))
         if observe
           scope.listenTo scope, "change:#{value}", react
 
@@ -458,13 +456,12 @@ define (require) ->
       className = name.slice(6)
       $node.removeAttr(name)
       (scope, $node) ->
-        react = ->
-          got = scope.get(value, {observe})
+        react = (got) ->
           if got
             $node.addClass(className)
           else
             $node.removeClass(className)
-        react()
+        react(scope.get(value, {observe}))
         if observe
           scope.listenTo scope, "change:#{value}", react
 
@@ -475,10 +472,9 @@ define (require) ->
         observe = true
       $node.removeAttr(name)
       (scope, $node) ->
-        react = ->
-          got = scope.get(value, {observe})
+        react = (got) ->
           if got then $node.show() else $node.hide()
-        react()
+        react(scope.get(value, {observe}))
         if observe
           scope.listenTo scope, "change:#{value}", react
 
