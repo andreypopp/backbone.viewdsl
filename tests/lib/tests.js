@@ -3,10 +3,10 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 define(function(require) {
-  var ActiveView, Compiler, Model, View, extend, _ref;
+  var $parseHTML, ActiveView, Compiler, Model, View, extend, _ref;
   extend = require('underscore').extend;
   Model = require('backbone').Model;
-  _ref = require('backbone.viewdsl2'), Compiler = _ref.Compiler, View = _ref.View, ActiveView = _ref.ActiveView;
+  _ref = require('backbone.viewdsl2'), Compiler = _ref.Compiler, View = _ref.View, ActiveView = _ref.ActiveView, $parseHTML = _ref.$parseHTML;
   describe('Compiler', function() {
     var outerHTML;
     outerHTML = function($node) {
@@ -19,6 +19,14 @@ define(function(require) {
       r = t.render();
       expect(t.$node.data('hasActions')).not.to.be.ok;
       return expect(outerHTML(r)).to.be.equal('<div><span>a</span></div>');
+    });
+    it('should compile text only template', function() {
+      var c, r, t;
+      c = new Compiler();
+      t = c.compile($parseHTML('hello, world'));
+      r = t.render();
+      expect(t.$node.data('hasActions')).not.to.be.ok;
+      return expect(outerHTML(r)).to.be.equal('hello, world');
     });
     it('should compile node w/ element directive', function() {
       var c, r, t;
@@ -232,6 +240,26 @@ define(function(require) {
         return Hello;
 
       })(View);
+      window.Hello2 = (function(_super) {
+
+        __extends(Hello2, _super);
+
+        function Hello2() {
+          return Hello2.__super__.constructor.apply(this, arguments);
+        }
+
+        Hello2.parameterizable = true;
+
+        Hello2.prototype.render = function($template) {
+          var $wrap;
+          $wrap = $(document.createElement('div'));
+          $wrap.append(this.renderTemplate($template));
+          return this.$el.append($wrap);
+        };
+
+        return Hello2;
+
+      })(View);
       it('should instantiate view from view element', function() {
         var v;
         v = render('<div><view name="Hello" a="a" b="b" id="v"></view></div>', {
@@ -243,7 +271,7 @@ define(function(require) {
         expect(v.v.options.a).to.be.equal(42);
         return expect(v.v.options.b).to.be.equal('b');
       });
-      return it('should instantiate view from view attr', function() {
+      it('should instantiate view from view attr', function() {
         var v;
         v = render('<div><div view-id="v" view="Hello" view-a="a" view-b="b"></view></div>', {
           a: 42
@@ -253,6 +281,24 @@ define(function(require) {
         expect(v.v instanceof window.Hello).to.be.ok;
         expect(v.v.options.a).to.be.equal(42);
         return expect(v.v.options.b).to.be.equal('b');
+      });
+      it('should pass view innerHTML as arg to render() when rendered via elem', function() {
+        var v;
+        v = render('<view name="Hello2" id="v"><span>Hello</span></view>');
+        return expect(v.$el.html()).to.be.equal('<div><div><span>Hello</span></div></div>');
+      });
+      it('should pass view innerHTML as arg to render() when rendered via elem', function() {
+        var v;
+        v = render('<div view="Hello2" view-id="v"><span>Hello</span></div>');
+        return expect(v.$el.html()).to.be.equal('<div><div><span>Hello</span></div></div>');
+      });
+      return it('should handle context chaining', function() {
+        var v;
+        v = render('<view name="Hello2" b="c" id="v">{{a}} - {{options.b}}</view>', {
+          a: 'parent',
+          c: 'child'
+        });
+        return expect(v.$el.html()).to.be.equal('<div><div>parent - child</div></div>');
       });
     });
   });

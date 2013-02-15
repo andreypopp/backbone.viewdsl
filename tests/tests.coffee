@@ -2,7 +2,7 @@ define (require) ->
 
   {extend} = require 'underscore'
   {Model} = require 'backbone'
-  {Compiler, View, ActiveView} = require 'backbone.viewdsl2'
+  {Compiler, View, ActiveView, $parseHTML} = require 'backbone.viewdsl2'
 
   describe 'Compiler', ->
 
@@ -16,6 +16,14 @@ define (require) ->
 
       expect(t.$node.data('hasActions')).not.to.be.ok
       expect(outerHTML(r)).to.be.equal '<div><span>a</span></div>'
+
+    it 'should compile text only template', ->
+      c = new Compiler()
+      t = c.compile $parseHTML 'hello, world'
+      r = t.render()
+
+      expect(t.$node.data('hasActions')).not.to.be.ok
+      expect(outerHTML(r)).to.be.equal 'hello, world'
 
     it 'should compile node w/ element directive', ->
       c = new Compiler()
@@ -143,6 +151,13 @@ define (require) ->
       class window.Hello extends View
         template: "<span>hello</span>"
 
+      class window.Hello2 extends View
+        @parameterizable: true
+        render: ($template) ->
+          $wrap = $ document.createElement('div')
+          $wrap.append this.renderTemplate($template)
+          this.$el.append $wrap
+
       it 'should instantiate view from view element', ->
         v = render '<div><view name="Hello" a="a" b="b" id="v"></view></div>', {a: 42}
         expect(v.$el.html()).to.be.equal '<div><div><span>hello</span></div></div>'
@@ -160,3 +175,16 @@ define (require) ->
         expect(v.v instanceof window.Hello).to.be.ok
         expect(v.v.options.a).to.be.equal 42
         expect(v.v.options.b).to.be.equal 'b'
+
+      it 'should pass view innerHTML as arg to render() when rendered via elem', ->
+        v = render '<view name="Hello2" id="v"><span>Hello</span></view>'
+        expect(v.$el.html()).to.be.equal '<div><div><span>Hello</span></div></div>'
+
+      it 'should pass view innerHTML as arg to render() when rendered via elem', ->
+        v = render '<div view="Hello2" view-id="v"><span>Hello</span></div>'
+        expect(v.$el.html()).to.be.equal '<div><div><span>Hello</span></div></div>'
+
+      it 'should handle context chaining', ->
+        v = render '<view name="Hello2" b="c" id="v">{{a}} - {{options.b}}</view>',
+          {a: 'parent', c: 'child'}
+        expect(v.$el.html()).to.be.equal '<div><div>parent - child</div></div>'

@@ -21,7 +21,7 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 define(function(require) {
-  var $fromArray, ActiveView, Backbone, Compiler, Promise, Template, View, extend, hypensToCamelCase, isBoolean, isEqual, isPromise, isString, join, knownAttrs, knownTags, promise, promiseRequire, some, textNodeSplitRe, toArray, _ref;
+  var $fromArray, $parseHTML, ActiveView, Backbone, Compiler, Promise, Template, View, extend, hypensToCamelCase, isBoolean, isEqual, isPromise, isString, join, knownAttrs, knownTags, promise, promiseRequire, some, textNodeSplitRe, toArray, _ref;
   _ref = require('underscore'), some = _ref.some, extend = _ref.extend, toArray = _ref.toArray, isEqual = _ref.isEqual, isBoolean = _ref.isBoolean, isString = _ref.isString;
   Backbone = require('backbone');
   Promise = (function() {
@@ -219,6 +219,13 @@ define(function(require) {
     }
     return o;
   };
+  $parseHTML = function(nodes) {
+    if (isString(nodes)) {
+      return $fromArray($.parseHTML(nodes));
+    } else {
+      return nodes;
+    }
+  };
   /*
       HTML compiler
   */
@@ -233,8 +240,11 @@ define(function(require) {
     }
 
     Compiler.prototype.compile = function($node) {
-      this.compileImpl($node);
-      return new Template($node);
+      var $wrap;
+      $wrap = $(document.createElement('div'));
+      $wrap.append($node);
+      this.compileImpl($wrap);
+      return new Template($wrap);
     };
 
     Compiler.prototype.directiveFor = function(name) {
@@ -354,7 +364,8 @@ define(function(require) {
         scope = {};
       }
       $rendered = this.$node.clone(true, true);
-      return this.renderImpl(scope, $rendered);
+      this.renderImpl(scope, $rendered);
+      return $rendered.contents();
     };
 
     Template.prototype.renderImpl = function(scope, $node) {
@@ -386,6 +397,8 @@ define(function(require) {
   View = (function(_super) {
 
     __extends(View, _super);
+
+    View.parameterizable = false;
 
     View.prototype.template = void 0;
 
@@ -517,7 +530,7 @@ define(function(require) {
     };
 
     View.prototype.compileView = function($node, name, value) {
-      var element, node, spec, viewClass, viewId, viewIdAttr;
+      var element, node, spec, template, viewClass, viewId, viewIdAttr;
       node = $node[0];
       element = !(name != null);
       viewClass = (function() {
@@ -535,6 +548,7 @@ define(function(require) {
       viewIdAttr = element ? 'id' : 'view-id';
       viewId = $node.attr(viewIdAttr);
       $node.removeAttr(viewIdAttr);
+      template = element || viewClass.parameterizable ? $node.contents().detach() : void 0;
       return function(scope, $node) {
         var a, attrName, view, viewParams, _i, _len, _ref1;
         viewParams = {};
@@ -556,7 +570,7 @@ define(function(require) {
           viewParams.el = $node;
         }
         view = new viewClass(viewParams);
-        view.render();
+        view.render(template);
         if (element) {
           $node.replaceWith(view.$el);
         }
@@ -736,6 +750,7 @@ define(function(require) {
     Compiler: Compiler,
     Template: Template,
     View: View,
-    ActiveView: ActiveView
+    ActiveView: ActiveView,
+    $parseHTML: $parseHTML
   };
 });

@@ -21,7 +21,6 @@ define (require) ->
   {some, extend, toArray, isEqual, isBoolean, isString} = require 'underscore'
   Backbone = require 'backbone'
 
-
   class Promise
     extend this.prototype, Backbone.Events
 
@@ -161,6 +160,12 @@ define (require) ->
       o = o.add(node)
     o
 
+  $parseHTML = (nodes) ->
+    if isString(nodes)
+      $fromArray $.parseHTML(nodes)
+    else
+      nodes
+
   ###
     HTML compiler
   ###
@@ -170,8 +175,10 @@ define (require) ->
       this.directives = directives
 
     compile: ($node) ->
-      this.compileImpl($node)
-      new Template($node)
+      $wrap = $ document.createElement('div')
+      $wrap.append($node)
+      this.compileImpl($wrap)
+      new Template($wrap)
 
     directiveFor: (name) ->
       name = 'attr' if name.slice(0, 5) == 'attr-'
@@ -248,6 +255,7 @@ define (require) ->
     render: (scope = {}) ->
       $rendered = this.$node.clone(true, true)
       this.renderImpl(scope, $rendered)
+      $rendered.contents()
 
     renderImpl: (scope, $node) ->
       return $node unless $node.data('hasActions')
@@ -263,6 +271,7 @@ define (require) ->
       $node
 
   class View extends Backbone.View
+    @parameterizable: false
     template: undefined
     compilerClass: Compiler
 
@@ -359,6 +368,9 @@ define (require) ->
       viewId = $node.attr(viewIdAttr)
       $node.removeAttr(viewIdAttr)
 
+      template = if element or viewClass.parameterizable
+        $node.contents().detach()
+
       (scope, $node) ->
 
         viewParams = {}
@@ -378,7 +390,7 @@ define (require) ->
         viewParams.el = $node if not element
 
         view = new viewClass(viewParams)
-        view.render()
+        view.render(template)
 
         $node.replaceWith(view.$el) if element
         scope.addView(view, viewId)
@@ -478,4 +490,4 @@ define (require) ->
         if observe
           scope.listenTo scope, "change:#{value}", react
 
-  {Compiler, Template, View, ActiveView}
+  {Compiler, Template, View, ActiveView, $parseHTML}
