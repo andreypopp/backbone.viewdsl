@@ -1,0 +1,12 @@
+{
+  "name": "backbone.viewdsl",
+  "version": "0.12.0",
+  "main": [
+    "./backbone.viewdsl.js"
+  ],
+  "dependencies": {
+    "jquery": "~1.9.0",
+    "backbone": "~0.9.10",
+    "underscore": "~1.4.4"
+  }
+}
