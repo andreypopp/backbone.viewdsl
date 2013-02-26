@@ -17,8 +17,7 @@
 
 ) this, (_, Backbone) ->
 
-  {some, extend, toArray, isEqual, isBoolean, isString} = require 'underscore'
-  Backbone = require 'backbone'
+  {some, extend, toArray, isEqual, isBoolean, isString} = _
 
   resolvePath = (o, p) ->
     p = p.trim()

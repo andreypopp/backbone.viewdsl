@@ -20,18 +20,17 @@ var __hasProp = {}.hasOwnProperty,
     return root.Backbone.ViewDSL = factory(root._, root.Backbone);
   }
 })(this, function(_, Backbone) {
-  var $fromArray, $parseHTML, ActiveView, Compiler, Template, View, extend, hypensToCamelCase, isBoolean, isEqual, isString, knownAttrs, knownTags, resolvePath, resolveSpec, some, textNodeSplitRe, toArray, _ref;
-  _ref = require('underscore'), some = _ref.some, extend = _ref.extend, toArray = _ref.toArray, isEqual = _ref.isEqual, isBoolean = _ref.isBoolean, isString = _ref.isString;
-  Backbone = require('backbone');
+  var $fromArray, $parseHTML, ActiveView, Compiler, Template, View, extend, hypensToCamelCase, isBoolean, isEqual, isString, knownAttrs, knownTags, resolvePath, resolveSpec, some, textNodeSplitRe, toArray;
+  some = _.some, extend = _.extend, toArray = _.toArray, isEqual = _.isEqual, isBoolean = _.isBoolean, isString = _.isString;
   resolvePath = function(o, p) {
-    var n, _i, _len, _ref1;
+    var n, _i, _len, _ref;
     p = p.trim();
     if (p.trim().length === 0) {
       return o;
     }
-    _ref1 = p.split('.');
-    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-      n = _ref1[_i];
+    _ref = p.split('.');
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      n = _ref[_i];
       o = o[n];
       if (o === void 0) {
         break;
@@ -40,9 +39,9 @@ var __hasProp = {}.hasOwnProperty,
     return o;
   };
   resolveSpec = function(spec) {
-    var mod, name, _ref1;
+    var mod, name, _ref;
     if (/:/.test(spec)) {
-      _ref1 = spec.split(':', 2), mod = _ref1[0], name = _ref1[1];
+      _ref = spec.split(':', 2), mod = _ref[0], name = _ref[1];
       return resolvePath(require(mod), name);
     } else {
       return resolvePath(window, spec);
@@ -156,11 +155,11 @@ var __hasProp = {}.hasOwnProperty,
       }
       actions = directive ? [directive($node)] : [];
       attrActions = (function() {
-        var _i, _len, _ref1, _results;
-        _ref1 = toArray(node.attributes);
+        var _i, _len, _ref, _results;
+        _ref = toArray(node.attributes);
         _results = [];
-        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-          attr = _ref1[_i];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          attr = _ref[_i];
           if (knownAttrs.test(attr.name)) {
             continue;
           }
@@ -174,11 +173,11 @@ var __hasProp = {}.hasOwnProperty,
       }).call(this);
       actions = actions.concat(attrActions);
       hasChildActions = node.childNodes.length > 0 && some((function() {
-        var _i, _len, _ref1, _results;
-        _ref1 = node.childNodes;
+        var _i, _len, _ref, _results;
+        _ref = node.childNodes;
         _results = [];
-        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-          child = _ref1[_i];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          child = _ref[_i];
           _results.push(this.compileImpl($(child)));
         }
         return _results;
@@ -215,7 +214,7 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Template.prototype.renderImpl = function(scope, $node) {
-      var action, actions, child, stop, _i, _j, _len, _len1, _ref1;
+      var action, actions, child, stop, _i, _j, _len, _len1, _ref;
       if (!$node.data('hasActions')) {
         return $node;
       }
@@ -229,9 +228,9 @@ var __hasProp = {}.hasOwnProperty,
           }
         }
       }
-      _ref1 = toArray($node[0].childNodes);
-      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-        child = _ref1[_j];
+      _ref = toArray($node[0].childNodes);
+      for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+        child = _ref[_j];
         this.renderImpl(scope, $(child));
       }
       return $node;
@@ -275,11 +274,11 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     View.prototype.remove = function() {
-      var view, _i, _len, _ref1;
+      var view, _i, _len, _ref;
       View.__super__.remove.apply(this, arguments);
-      _ref1 = this.views;
-      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-        view = _ref1[_i];
+      _ref = this.views;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        view = _ref[_i];
         view.remove();
       }
       return this.parent = void 0;
@@ -293,20 +292,20 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     View.prototype.get = function(p, options) {
-      var _ref1;
-      return this.getOwn(p, options) || ((_ref1 = this.parent) != null ? _ref1.get(p, options) : void 0);
+      var _ref;
+      return this.getOwn(p, options) || ((_ref = this.parent) != null ? _ref.get(p, options) : void 0);
     };
 
     View.prototype.getOwn = function(p, options) {
-      var ctx, n, o, _i, _len, _ref1;
+      var ctx, n, o, _i, _len, _ref;
       p = p.trim();
       o = this;
       if (p.trim().length === 0) {
         return o;
       }
-      _ref1 = p.split('.');
-      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-        n = _ref1[_i];
+      _ref = p.split('.');
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        n = _ref[_i];
         ctx = o;
         o = ctx instanceof Backbone.Model ? ctx.get(n) || ctx[n] : ctx[n];
         if (o === void 0) {
@@ -396,11 +395,11 @@ var __hasProp = {}.hasOwnProperty,
       $node.removeAttr(viewIdAttr);
       template = element || viewClass.parameterizable ? $node.contents().detach() : void 0;
       return function(scope, $node) {
-        var a, attrName, view, viewParams, _i, _len, _ref1;
+        var a, attrName, view, viewParams, _i, _len, _ref;
         viewParams = {};
-        _ref1 = toArray(node.attributes);
-        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-          a = _ref1[_i];
+        _ref = toArray(node.attributes);
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          a = _ref[_i];
           if (!element && a.name.slice(0, 5) !== 'view-') {
             continue;
           }
@@ -448,11 +447,11 @@ var __hasProp = {}.hasOwnProperty,
     }
 
     ActiveView.prototype.digest = function() {
-      var newValue, path, updates, value, _ref1, _results;
+      var newValue, path, updates, value, _ref, _results;
       updates = {};
-      _ref1 = this.observe;
-      for (path in _ref1) {
-        value = _ref1[path];
+      _ref = this.observe;
+      for (path in _ref) {
+        value = _ref[path];
         newValue = this.get(path);
         if (!isEqual(newValue, value)) {
           updates[path] = newValue;
