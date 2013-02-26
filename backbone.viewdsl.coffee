@@ -83,7 +83,8 @@
     directiveFor: (name) ->
       name = 'attr' if name.slice(0, 5) == 'attr-'
       name = 'class' if name.slice(0, 6) == 'class-'
-      this.directives[hypensToCamelCase("compile-#{name}")]
+      directive = this.directives[hypensToCamelCase("compile-#{name}")]
+      directive?.bind(this.directives)
 
     compileImpl: ($node) ->
       node = $node[0]

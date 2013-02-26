@@ -97,13 +97,15 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Compiler.prototype.directiveFor = function(name) {
+      var directive;
       if (name.slice(0, 5) === 'attr-') {
         name = 'attr';
       }
       if (name.slice(0, 6) === 'class-') {
         name = 'class';
       }
-      return this.directives[hypensToCamelCase("compile-" + name)];
+      directive = this.directives[hypensToCamelCase("compile-" + name)];
+      return directive != null ? directive.bind(this.directives) : void 0;
     };
 
     Compiler.prototype.compileImpl = function($node) {
