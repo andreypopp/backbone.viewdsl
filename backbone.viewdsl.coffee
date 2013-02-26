@@ -1,22 +1,21 @@
 ###
 
-  Backbone.ViewDSL2
+  Backbone.ViewDSL
 
   2013 (c) Andrey Popp <8mayday@gmail.com>
 
 ###
 
-###
-  Minimal promise implementation
+((root, factory) ->
+  if typeof exports == 'object'
+    module.exports = factory(require('underscore'), require('backbone'))
+  else if typeof define == 'function' and define.amd
+    define ['underscore', 'backbone'], (_, Backbone) ->
+      root.Backbone.ViewDSL = factory(_, Backbone)
+  else
+    root.Backbone.ViewDSL = factory(root._, root.Backbone)
 
-  Promise.resolve() and Promise.reject() methods execute callbacks
-  immediatelly if a result is already available. This is done mostly because
-  of performance reasons and to minimize possible UI flicks.
-
-  To prevent uncatched and unlogged exception it is always useful to call
-  Promise.done() method at the end of the chain.
-###
-define (require) ->
+) this, (_, Backbone) ->
 
   {some, extend, toArray, isEqual, isBoolean, isString} = require 'underscore'
   Backbone = require 'backbone'
