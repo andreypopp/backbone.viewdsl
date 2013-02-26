@@ -1,0 +1,29 @@
+{
+  "name": "backbone.viewdsl",
+  "version": "0.14.0",
+  "description": "declarative view technology for Backbone",
+  "main": "backbone.viewdsl.js",
+  "dependencies": {
+    "jquery-browserify": "~1.8.1",
+    "backbone": "~0.9.10",
+    "underscore": "~1.4.4"
+  },
+  "repository": {
+      "type": "git",
+      "url": "git://github.com/andreypopp/backbone.viewdsl.git"
+  },
+  "homepage": "https://github.com/andreypopp/backbone.viewdsl",
+  "keywords": [
+      "browser",
+      "backbone",
+      "data-binding",
+      "view",
+      "mvc"
+  ],
+  "author": {
+      "name": "Andrey Popp",
+      "email": "8mayday@gmail.com",
+      "url": "http://andreypopp.com"
+  },
+  "license": "MIT"
+}
