@@ -21,122 +21,20 @@ define (require) ->
   {some, extend, toArray, isEqual, isBoolean, isString} = require 'underscore'
   Backbone = require 'backbone'
 
-  class Promise
-    extend this.prototype, Backbone.Events
+  resolvePath = (o, p) ->
+    p = p.trim()
+    return o if p.trim().length == 0
+    for n in p.split('.')
+      o = o[n]
+      break if o == undefined
+    o
 
-    noop = ->
-
-    resolve = (promise, value) ->
-      promise.trigger 'promise:resolved', detail: value
-      promise.isResolved = true
-      promise.resolvedValue = value
-
-    reject = (promise, value) ->
-      promise.trigger 'promise:failed', detail: value
-      promise.isRejected = true
-      promise.rejectedValue = value
-
-    invokeCallback = (type, promise, callback, event) ->
-      hasCallback = typeof callback == 'function'
-
-      if hasCallback
-        try
-          value = callback(event.detail)
-          succeeded = true
-        catch e
-          throw e if promise.isDone
-          failed = true
-          error = e
-      else
-        value = event.detail
-        succeeded = true
-
-      if value and typeof value.then == 'function'
-        value.then(
-          ((value) -> promise.resolve(value)),
-          ((value) -> promise.reject(value)))
-      else if hasCallback and succeeded
-        promise.resolve(value)
-      else if failed
-        promise.reject(error)
-      else
-        promise[type](value)
-
-    constructor: ->
-      this.isDone = false
-
-    then: (done, fail) ->
-      thenPromise = new Promise()
-      if this.isResolved
-        invokeCallback('resolve', thenPromise, done, detail: this.resolvedValue)
-      if this.isRejected
-        invokeCallback('reject', thenPromise, fail, detail: this.rejectedValue)
-      this.on 'promise:resolved', (event) ->
-        invokeCallback('resolve', thenPromise, done, event)
-      this.on 'promise:failed', (event) ->
-        invokeCallback('reject', thenPromise, fail, event)
-      thenPromise
-
-    resolve: (value) ->
-      resolve this, value
-      this.resolve = noop
-      this.reject = noop
-
-    reject: (value) ->
-      reject this, value
-      this.resolve = noop
-      this.reject = noop
-
-    done: ->
-      this.isDone = true
-      throw this.rejectedValue if this.rejectedValue
-
-    appendTo: (target) ->
-      this.then (node) -> $(node).appendTo(target)
-
-    prependTo: (target) ->
-      this.then (node) -> $(node).prependTo(target)
-
-  isPromise = (o) ->
-    typeof o.then == 'function'
-
-  promise = (value) ->
-    return value if typeof value?.then == 'function'
-    p = new Promise()
-    p.resolve(value)
-    p
-
-  ###
-    Join several `promises` into one which resolves only when all `promises` are
-    resolved or fail fast.
-  ###
-  join = (promises) ->
-    p = new Promise()
-    results = []
-    if promises.length > 0
-      resultsToGo = promises.length
-      for pr, idx in promises
-        do (pr, idx) =>
-          pr = promise(pr) if not isPromise(pr)
-          success = (result) ->
-            results[idx] = result
-            resultsToGo = resultsToGo - 1
-            if resultsToGo == 0
-              p.resolve(results)
-          fail = (reason) ->
-            p.reject(reason)
-          pr.then success, fail
+  resolveSpec = (spec) ->
+    if /:/.test spec
+      [mod, name] = spec.split(':', 2)
+      resolvePath(require(mod), name)
     else
-      p.resolve(results)
-    p
-
-  ###
-    Promise-based version of AMD require() call.
-  ###
-  promiseRequire = (moduleName) ->
-    p = new Promise()
-    require [moduleName], (module) -> p.resolve(module)
-    p
+      resolvePath(window, spec)
 
   hypensToCamelCase = (o) ->
     o.replace /-([a-z])/g, (g) -> g[1].toUpperCase()
@@ -359,10 +257,10 @@ define (require) ->
       viewClass = if element
         spec = $node.attr('name')
         throw new Error("provide view attr") unless spec
-        window[spec]
+        resolveSpec(spec)
       else
         $node.removeAttr(name)
-        window[value]
+        resolveSpec(value)
 
       viewIdAttr = if element then 'id' else 'view-id'
       viewId = $node.attr(viewIdAttr)
