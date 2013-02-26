@@ -2,7 +2,7 @@ define (require) ->
 
   {extend} = require 'underscore'
   {Model} = require 'backbone'
-  {Compiler, View, ActiveView, $parseHTML} = require 'backbone.viewdsl2'
+  {Compiler, View, ActiveView, $parseHTML} = require 'backbone.viewdsl'
 
   describe 'Compiler', ->
 
