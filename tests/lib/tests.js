@@ -162,6 +162,11 @@ define(function(require) {
       v = render('<div></div>');
       return expect(v.$el.html()).to.be.equal('<div></div>');
     });
+    it('should render view w/ text only template', function() {
+      var v;
+      v = render('hello, world');
+      return expect(v.$el.html()).to.be.equal('hello, world');
+    });
     it('should process attr-* directives', function() {
       var v;
       v = render('<div attr-c="c" attr-b="b"><span attr-a="a.a">a</span></div>', {

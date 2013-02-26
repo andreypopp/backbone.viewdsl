@@ -264,7 +264,7 @@ var __hasProp = {}.hasOwnProperty,
 
     View.prototype.renderTemplate = function(template) {
       if (!(template instanceof Template)) {
-        template = this.compiler.compile($(template));
+        template = this.compiler.compile($parseHTML(template));
       }
       return template.render(this);
     };
@@ -274,7 +274,7 @@ var __hasProp = {}.hasOwnProperty,
         throw new Error("undefined template");
       }
       if (!(this.template instanceof Template)) {
-        this.template = this.compiler.compile($(this.template));
+        this.template = this.compiler.compile($parseHTML(this.template));
       }
       return this.$el.append(this.template.render(this));
     };

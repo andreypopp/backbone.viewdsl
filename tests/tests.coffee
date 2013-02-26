@@ -109,6 +109,10 @@ define (require) ->
       v = render '<div></div>'
       expect(v.$el.html()).to.be.equal '<div></div>'
 
+    it 'should render view w/ text only template', ->
+      v = render 'hello, world'
+      expect(v.$el.html()).to.be.equal 'hello, world'
+
     it 'should process attr-* directives', ->
 
       v = render '<div attr-c="c" attr-b="b"><span attr-a="a.a">a</span></div>',

@@ -184,13 +184,13 @@
 
     renderTemplate: (template) ->
       if not (template instanceof Template)
-        template = this.compiler.compile($ template)
+        template = this.compiler.compile($parseHTML template)
       template.render(this)
 
     render: ->
       throw new Error("undefined template") unless this.template
       if not (this.template instanceof Template)
-        this.template = this.compiler.compile($ this.template)
+        this.template = this.compiler.compile($parseHTML this.template)
       this.$el.append(this.template.render(this))
 
     remove: ->
