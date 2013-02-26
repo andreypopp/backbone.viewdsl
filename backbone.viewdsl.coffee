@@ -27,10 +27,14 @@
       break if o == undefined
     o
 
-  resolveSpec = (spec) ->
+  resolveSpec = (spec, ctx) ->
     if /:/.test spec
       [mod, name] = spec.split(':', 2)
       resolvePath(require(mod), name)
+    else if /^this\./.test(spec)
+      resolvePath(ctx, spec.substring(5))
+    else if /^@/.test(spec)
+      resolvePath(ctx, spec.substring(1))
     else
       resolvePath(window, spec)
 
@@ -255,10 +259,10 @@
       viewClass = if element
         spec = $node.attr('name')
         throw new Error("provide view attr") unless spec
-        resolveSpec(spec)
+        resolveSpec(spec, this)
       else
         $node.removeAttr(name)
-        resolveSpec(value)
+        resolveSpec(value, this)
 
       viewIdAttr = if element then 'id' else 'view-id'
       viewId = $node.attr(viewIdAttr)

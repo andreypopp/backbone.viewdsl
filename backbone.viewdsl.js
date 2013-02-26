@@ -38,11 +38,15 @@ var __hasProp = {}.hasOwnProperty,
     }
     return o;
   };
-  resolveSpec = function(spec) {
+  resolveSpec = function(spec, ctx) {
     var mod, name, _ref;
     if (/:/.test(spec)) {
       _ref = spec.split(':', 2), mod = _ref[0], name = _ref[1];
       return resolvePath(require(mod), name);
+    } else if (/^this\./.test(spec)) {
+      return resolvePath(ctx, spec.substring(5));
+    } else if (/^@/.test(spec)) {
+      return resolvePath(ctx, spec.substring(1));
     } else {
       return resolvePath(window, spec);
     }
@@ -384,12 +388,12 @@ var __hasProp = {}.hasOwnProperty,
           if (!spec) {
             throw new Error("provide view attr");
           }
-          return resolveSpec(spec);
+          return resolveSpec(spec, this);
         } else {
           $node.removeAttr(name);
-          return resolveSpec(value);
+          return resolveSpec(value, this);
         }
-      })();
+      }).call(this);
       viewIdAttr = element ? 'id' : 'view-id';
       viewId = $node.attr(viewIdAttr);
       $node.removeAttr(viewIdAttr);
