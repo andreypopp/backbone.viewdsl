@@ -10,16 +10,21 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 (function(root, factory) {
+  var Backbone, _;
   if (typeof exports === 'object') {
-    return module.exports = factory(require('underscore'), require('backbone'));
+    _ = require('underscore');
+    Backbone = require('backbone');
+    return module.exports = factory(_, Backbone, require);
   } else if (typeof define === 'function' && define.amd) {
-    return define(['underscore', 'backbone'], function(_, Backbone) {
-      return root.Backbone.ViewDSL = factory(_, Backbone);
+    return define(function(require) {
+      _ = require('underscore');
+      Backbone = require('backbone');
+      return root.Backbone.ViewDSL = factory(_, Backbone, require);
     });
   } else {
     return root.Backbone.ViewDSL = factory(root._, root.Backbone);
   }
-})(this, function(_, Backbone) {
+})(this, function(_, Backbone, require) {
   var $fromArray, $parseHTML, ActiveView, Compiler, Template, View, extend, hypensToCamelCase, isBoolean, isEqual, isString, knownAttrs, knownTags, resolvePath, resolveSpec, some, textNodeSplitRe, toArray;
   some = _.some, extend = _.extend, toArray = _.toArray, isEqual = _.isEqual, isBoolean = _.isBoolean, isString = _.isString;
   resolvePath = function(o, p) {
@@ -41,6 +46,9 @@ var __hasProp = {}.hasOwnProperty,
   resolveSpec = function(spec, ctx) {
     var mod, name, _ref;
     if (/:/.test(spec)) {
+      if (require == null) {
+        throw new Error('not a CommonJS environment');
+      }
       _ref = spec.split(':', 2), mod = _ref[0], name = _ref[1];
       return resolvePath(require(mod), name);
     } else if (/^this\./.test(spec)) {

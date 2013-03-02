@@ -8,14 +8,18 @@
 
 ((root, factory) ->
   if typeof exports == 'object'
-    module.exports = factory(require('underscore'), require('backbone'))
+    _ = require 'underscore'
+    Backbone = require 'backbone'
+    module.exports = factory(_, Backbone, require)
   else if typeof define == 'function' and define.amd
-    define ['underscore', 'backbone'], (_, Backbone) ->
-      root.Backbone.ViewDSL = factory(_, Backbone)
+    define (require) ->
+      _ = require 'underscore'
+      Backbone = require 'backbone'
+      root.Backbone.ViewDSL = factory(_, Backbone, require)
   else
     root.Backbone.ViewDSL = factory(root._, root.Backbone)
 
-) this, (_, Backbone) ->
+) this, (_, Backbone, require) ->
 
   {some, extend, toArray, isEqual, isBoolean, isString} = _
 
@@ -29,6 +33,7 @@
 
   resolveSpec = (spec, ctx) ->
     if /:/.test spec
+      throw new Error('not a CommonJS environment') unless require?
       [mod, name] = spec.split(':', 2)
       resolvePath(require(mod), name)
     else if /^this\./.test(spec)
