@@ -71,6 +71,16 @@
     else
       nodes
 
+  $nodify = (o) ->
+    if isString(o)
+      $parseHTML(o)
+    else if o.jquery?
+      o
+    else if o.nodeType?
+      $ o
+    else
+      $ document.createTextNode(String(o))
+
   ###
     HTML compiler
   ###
@@ -229,6 +239,7 @@
     compileInterpolation: ($node, path) ->
       (scope, $node) ->
         got = scope.get(path)
+        got = $nodify(got or '')
         got = document.createTextNode(got) if isString(got)
         $node.replaceWith(got)
 
@@ -348,7 +359,7 @@
         scope.reactOn value,
           observe: observe
           react: (got) ->
-            got = $(document.createTextNode(got)) if isString(got)
+            got = $nodify(got or '')
             $point.replaceWith(got)
             $point = got
 

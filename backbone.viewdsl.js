@@ -25,7 +25,7 @@ var __hasProp = {}.hasOwnProperty,
     return root.Backbone.ViewDSL = factory(root._, root.Backbone);
   }
 })(this, function(_, Backbone, require) {
-  var $fromArray, $parseHTML, ActiveView, Compiler, Template, View, extend, hypensToCamelCase, isBoolean, isEqual, isString, knownAttrs, knownTags, resolvePath, resolveSpec, some, textNodeSplitRe, toArray;
+  var $fromArray, $nodify, $parseHTML, ActiveView, Compiler, Template, View, extend, hypensToCamelCase, isBoolean, isEqual, isString, knownAttrs, knownTags, resolvePath, resolveSpec, some, textNodeSplitRe, toArray;
   some = _.some, extend = _.extend, toArray = _.toArray, isEqual = _.isEqual, isBoolean = _.isBoolean, isString = _.isString;
   resolvePath = function(o, p) {
     var n, _i, _len, _ref;
@@ -81,6 +81,17 @@ var __hasProp = {}.hasOwnProperty,
       return $fromArray($.parseHTML(nodes));
     } else {
       return nodes;
+    }
+  };
+  $nodify = function(o) {
+    if (isString(o)) {
+      return $parseHTML(o);
+    } else if (o.jquery != null) {
+      return o;
+    } else if (o.nodeType != null) {
+      return $(o);
+    } else {
+      return $(document.createTextNode(String(o)));
     }
   };
   /*
@@ -336,6 +347,7 @@ var __hasProp = {}.hasOwnProperty,
       return function(scope, $node) {
         var got;
         got = scope.get(path);
+        got = $nodify(got || '');
         if (isString(got)) {
           got = document.createTextNode(got);
         }
@@ -512,9 +524,7 @@ var __hasProp = {}.hasOwnProperty,
         return scope.reactOn(value, {
           observe: observe,
           react: function(got) {
-            if (isString(got)) {
-              got = $(document.createTextNode(got));
-            }
+            got = $nodify(got || '');
             $point.replaceWith(got);
             return $point = got;
           }
