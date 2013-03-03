@@ -356,7 +356,7 @@ define(function(require) {
       v = new MyView({
         collection: collection
       }).render();
-      return expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+      return expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div>');
     });
     it('should render collection from text template as an argument', function() {
       var MyView, v;
@@ -374,7 +374,7 @@ define(function(require) {
       v = new MyView({
         collection: collection
       }).render("{{model.name}}");
-      return expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+      return expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div>');
     });
     it('should render collection from itemView', function() {
       var ItemView, MyView, v;
@@ -407,7 +407,7 @@ define(function(require) {
       v = new MyView({
         collection: collection
       }).render();
-      return expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+      return expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div>');
     });
     it('should re-render collection on reset', function() {
       var MyView, v;
@@ -428,13 +428,13 @@ define(function(require) {
       v = new MyView({
         collection: collection
       }).render();
-      expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+      expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div>');
       collection.reset([
         new Model({
           name: 'x'
         })
       ]);
-      return expect(v.$el.html()).to.be.equal('<div class="__item_view">x</div>');
+      return expect(v.$el.html()).to.be.equal('<div>x</div>');
     });
     it('should re-order item views on sort', function() {
       var MyView, v;
@@ -455,9 +455,9 @@ define(function(require) {
       v = new MyView({
         collection: collection
       }).render();
-      expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+      expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div>');
       collection.sort();
-      return expect(v.$el.html()).to.be.equal('<div class="__item_view">c</div><div class="__item_view">a</div><div class="__item_view">b</div>');
+      return expect(v.$el.html()).to.be.equal('<div>c</div><div>a</div><div>b</div>');
     });
     describe('add to collection', function() {
       it('should react on add new item to the end of the collection', function() {
@@ -479,13 +479,13 @@ define(function(require) {
         v = new MyView({
           collection: collection
         }).render();
-        expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+        expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div>');
         collection.add(new Model({
           name: 'd'
         }), {
           sort: false
         });
-        return expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div><div class="__item_view">d</div>');
+        return expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div><div>d</div>');
       });
       it('should react on add new item to the start of the collection', function() {
         var MyView, v;
@@ -506,13 +506,13 @@ define(function(require) {
         v = new MyView({
           collection: collection
         }).render();
-        expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+        expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div>');
         collection.add(new Model({
           name: 'd'
         }), {
           at: 0
         });
-        return expect(v.$el.html()).to.be.equal('<div class="__item_view">d</div><div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+        return expect(v.$el.html()).to.be.equal('<div>d</div><div>a</div><div>b</div><div>c</div>');
       });
       return it('should react on add new item by index to the collection', function() {
         var MyView, v;
@@ -533,13 +533,13 @@ define(function(require) {
         v = new MyView({
           collection: collection
         }).render();
-        expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+        expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div>');
         collection.add(new Model({
           name: 'd'
         }), {
           at: 2
         });
-        return expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">d</div><div class="__item_view">c</div>');
+        return expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>d</div><div>c</div>');
       });
     });
     return describe('remove from collection', function() {
@@ -562,9 +562,9 @@ define(function(require) {
         v = new MyView({
           collection: collection
         }).render();
-        expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+        expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div>');
         collection.remove(collection.at(0));
-        return expect(v.$el.html()).to.be.equal('<div class="__item_view">b</div><div class="__item_view">c</div>');
+        return expect(v.$el.html()).to.be.equal('<div>b</div><div>c</div>');
       });
       it('should react on remove item from the end of the collection', function() {
         var MyView, v;
@@ -585,9 +585,9 @@ define(function(require) {
         v = new MyView({
           collection: collection
         }).render();
-        expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+        expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div>');
         collection.remove(collection.last());
-        return expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div>');
+        return expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div>');
       });
       return it('should react on remove item from the middle of the collection', function() {
         var MyView, v;
@@ -608,9 +608,9 @@ define(function(require) {
         v = new MyView({
           collection: collection
         }).render();
-        expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+        expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div>');
         collection.remove(collection.at(1));
-        return expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">c</div>');
+        return expect(v.$el.html()).to.be.equal('<div>a</div><div>c</div>');
       });
     });
   });

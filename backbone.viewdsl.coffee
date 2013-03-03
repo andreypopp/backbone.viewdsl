@@ -402,21 +402,20 @@
         (model) =>
           view = new this.itemView(model: model)
           view.render()
-          view.$el.addClass('__item_view')
           view
       else if this.template
         (model) =>
           view = new View(template: this.template, model: model)
           view.render()
-          view.$el.addClass('__item_view')
           view
       else
         throw new Error("provide either 'template' or 'itemView' attr")
 
     viewByModel: (model) ->
-      for view in this.views
+      for view, idx in this.views
         if view.model.cid == model.cid
-          return view
+          return {view, idx}
+      {view: undefined, idx: undefined}
 
     onReset: ->
       this.removeViews()
@@ -427,8 +426,10 @@
 
     onSort: ->
       $cur = undefined
-      this.collection.forEach (model) =>
-        view = this.viewByModel(model)
+      this.collection.forEach (model, newIdx) =>
+        {view, idx} = this.viewByModel(model)
+        this.views.splice(idx, 1)[0]
+        this.views.splice(newIdx, view)
         view.$el.detach()
         if not $cur
           this.$el.append view.$el
@@ -439,17 +440,16 @@
     onAdd: (model) ->
       idx = this.collection.indexOf(model)
       view = this.makeItemView(model)
-      if idx >= this.$el.children('.__item_view').size()
+      if idx >= this.$el.children().size()
         this.$el.append(view.$el)
       else
-        this.$el.children('.__item_view').eq(idx).before(view.$el)
+        this.$el.children().eq(idx).before(view.$el)
       this.views.push(view)
 
     onRemove: (model) ->
-      for view, idx in this.views
-        if view.model.cid == model.cid
-          view.remove()
-          this.views.splice(idx, 1)
-          break
+      {view, idx} = this.viewByModel(model)
+      if view
+        view.remove()
+        this.views.splice(idx, 1)
 
   {Compiler, Template, View, CollectionView, $parseHTML}

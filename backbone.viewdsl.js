@@ -584,7 +584,6 @@ var __hasProp = {}.hasOwnProperty,
               model: model
             });
             view.render();
-            view.$el.addClass('__item_view');
             return view;
           };
         } else if (this.template) {
@@ -595,7 +594,6 @@ var __hasProp = {}.hasOwnProperty,
               model: model
             });
             view.render();
-            view.$el.addClass('__item_view');
             return view;
           };
         } else {
@@ -605,14 +603,21 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     CollectionView.prototype.viewByModel = function(model) {
-      var view, _i, _len, _ref;
+      var idx, view, _i, _len, _ref;
       _ref = this.views;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        view = _ref[_i];
+      for (idx = _i = 0, _len = _ref.length; _i < _len; idx = ++_i) {
+        view = _ref[idx];
         if (view.model.cid === model.cid) {
-          return view;
+          return {
+            view: view,
+            idx: idx
+          };
         }
       }
+      return {
+        view: void 0,
+        idx: void 0
+      };
     };
 
     CollectionView.prototype.onReset = function() {
@@ -630,9 +635,11 @@ var __hasProp = {}.hasOwnProperty,
       var $cur,
         _this = this;
       $cur = void 0;
-      return this.collection.forEach(function(model) {
-        var view;
-        view = _this.viewByModel(model);
+      return this.collection.forEach(function(model, newIdx) {
+        var idx, view, _ref;
+        _ref = _this.viewByModel(model), view = _ref.view, idx = _ref.idx;
+        _this.views.splice(idx, 1)[0];
+        _this.views.splice(newIdx, view);
         view.$el.detach();
         if (!$cur) {
           return _this.$el.append(view.$el);
@@ -647,29 +654,21 @@ var __hasProp = {}.hasOwnProperty,
       var idx, view;
       idx = this.collection.indexOf(model);
       view = this.makeItemView(model);
-      if (idx >= this.$el.children('.__item_view').size()) {
+      if (idx >= this.$el.children().size()) {
         this.$el.append(view.$el);
       } else {
-        this.$el.children('.__item_view').eq(idx).before(view.$el);
+        this.$el.children().eq(idx).before(view.$el);
       }
       return this.views.push(view);
     };
 
     CollectionView.prototype.onRemove = function(model) {
-      var idx, view, _i, _len, _ref, _results;
-      _ref = this.views;
-      _results = [];
-      for (idx = _i = 0, _len = _ref.length; _i < _len; idx = ++_i) {
-        view = _ref[idx];
-        if (view.model.cid === model.cid) {
-          view.remove();
-          this.views.splice(idx, 1);
-          break;
-        } else {
-          _results.push(void 0);
-        }
+      var idx, view, _ref;
+      _ref = this.viewByModel(model), view = _ref.view, idx = _ref.idx;
+      if (view) {
+        view.remove();
+        return this.views.splice(idx, 1);
       }
-      return _results;
     };
 
     return CollectionView;

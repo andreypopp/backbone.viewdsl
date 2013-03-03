@@ -211,12 +211,12 @@ define (require) ->
           {{model.name}}
           """
       v = new MyView(collection: collection).render()
-      expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+      expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div>'
 
     it 'should render collection from text template as an argument', ->
       class MyView extends CollectionView
       v = new MyView(collection: collection).render("{{model.name}}")
-      expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+      expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div>'
 
     it 'should render collection from itemView', ->
       class ItemView extends View
@@ -227,7 +227,7 @@ define (require) ->
         itemView: ItemView
 
       v = new MyView(collection: collection).render()
-      expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+      expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div>'
 
     it 'should re-render collection on reset', ->
       collection = makeCollection()
@@ -236,9 +236,9 @@ define (require) ->
           {{model.name}}
           """
       v = new MyView(collection: collection).render()
-      expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+      expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div>'
       collection.reset([new Model(name: 'x')])
-      expect(v.$el.html()).to.be.equal '<div class="__item_view">x</div>'
+      expect(v.$el.html()).to.be.equal '<div>x</div>'
 
     it 'should re-order item views on sort', ->
       collection = makeCollection()
@@ -247,9 +247,9 @@ define (require) ->
           {{model.name}}
           """
       v = new MyView(collection: collection).render()
-      expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+      expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div>'
       collection.sort()
-      expect(v.$el.html()).to.be.equal '<div class="__item_view">c</div><div class="__item_view">a</div><div class="__item_view">b</div>'
+      expect(v.$el.html()).to.be.equal '<div>c</div><div>a</div><div>b</div>'
 
     describe 'add to collection', ->
 
@@ -260,9 +260,9 @@ define (require) ->
             {{model.name}}
             """
         v = new MyView(collection: collection).render()
-        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+        expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div>'
         collection.add new Model(name: 'd'), {sort: false}
-        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div><div class="__item_view">d</div>'
+        expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div><div>d</div>'
 
       it 'should react on add new item to the start of the collection', ->
         collection = makeCollection()
@@ -271,9 +271,9 @@ define (require) ->
             {{model.name}}
             """
         v = new MyView(collection: collection).render()
-        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+        expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div>'
         collection.add new Model(name: 'd'), {at: 0}
-        expect(v.$el.html()).to.be.equal '<div class="__item_view">d</div><div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+        expect(v.$el.html()).to.be.equal '<div>d</div><div>a</div><div>b</div><div>c</div>'
 
       it 'should react on add new item by index to the collection', ->
         collection = makeCollection()
@@ -282,9 +282,9 @@ define (require) ->
             {{model.name}}
             """
         v = new MyView(collection: collection).render()
-        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+        expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div>'
         collection.add new Model(name: 'd'), {at: 2}
-        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">d</div><div class="__item_view">c</div>'
+        expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>d</div><div>c</div>'
 
     describe 'remove from collection', ->
 
@@ -295,9 +295,9 @@ define (require) ->
             {{model.name}}
             """
         v = new MyView(collection: collection).render()
-        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+        expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div>'
         collection.remove(collection.at(0))
-        expect(v.$el.html()).to.be.equal '<div class="__item_view">b</div><div class="__item_view">c</div>'
+        expect(v.$el.html()).to.be.equal '<div>b</div><div>c</div>'
 
       it 'should react on remove item from the end of the collection', ->
         collection = makeCollection()
@@ -306,9 +306,9 @@ define (require) ->
             {{model.name}}
             """
         v = new MyView(collection: collection).render()
-        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+        expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div>'
         collection.remove(collection.last())
-        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div>'
+        expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div>'
 
       it 'should react on remove item from the middle of the collection', ->
         collection = makeCollection()
@@ -317,6 +317,6 @@ define (require) ->
             {{model.name}}
             """
         v = new MyView(collection: collection).render()
-        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+        expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div>'
         collection.remove(collection.at(1))
-        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">c</div>'
+        expect(v.$el.html()).to.be.equal '<div>a</div><div>c</div>'
