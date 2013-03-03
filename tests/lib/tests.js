@@ -3,10 +3,10 @@ var __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 define(function(require) {
-  var $parseHTML, ActiveView, Compiler, Model, View, extend, _ref;
+  var $parseHTML, Collection, CollectionView, Compiler, Model, View, extend, _ref, _ref1;
   extend = require('underscore').extend;
-  Model = require('backbone').Model;
-  _ref = require('backbone.viewdsl'), Compiler = _ref.Compiler, View = _ref.View, ActiveView = _ref.ActiveView, $parseHTML = _ref.$parseHTML;
+  _ref = require('backbone'), Model = _ref.Model, Collection = _ref.Collection;
+  _ref1 = require('backbone.viewdsl'), Compiler = _ref1.Compiler, View = _ref1.View, CollectionView = _ref1.CollectionView, $parseHTML = _ref1.$parseHTML;
   describe('Compiler', function() {
     var outerHTML;
     outerHTML = function($node) {
@@ -56,7 +56,7 @@ define(function(require) {
       return expect(outerHTML(r)).to.be.equal('<div><div><span>Huh?!</span></div></div>');
     });
   });
-  describe('ActiveView', function() {
+  describe('View with bindings', function() {
     var render;
     render = function(t, s) {
       var MyView, v;
@@ -72,7 +72,7 @@ define(function(require) {
 
         return MyView;
 
-      })(ActiveView);
+      })(View);
       v = new MyView({
         model: new Backbone.Model()
       });
@@ -135,7 +135,7 @@ define(function(require) {
       });
     });
   });
-  return describe('View', function() {
+  describe('View', function() {
     var render;
     render = function(t, s) {
       var MyView, v;
@@ -306,6 +306,311 @@ define(function(require) {
           c: 'child'
         });
         return expect(v.$el.html()).to.be.equal('<div><div>parent - child</div></div>');
+      });
+    });
+  });
+  return describe('CollectionView', function() {
+    var collection, makeCollection;
+    makeCollection = function() {
+      var c;
+      c = new Collection([], {
+        comparator: function(model) {
+          return model.get('ord');
+        }
+      });
+      c.add(new Model({
+        name: 'a',
+        ord: 1
+      }), {
+        sort: false
+      });
+      c.add(new Model({
+        name: 'b',
+        ord: 2
+      }), {
+        sort: false
+      });
+      return c.add(new Model({
+        name: 'c',
+        ord: 0
+      }), {
+        sort: false
+      });
+    };
+    collection = makeCollection();
+    it('should render collection from text template', function() {
+      var MyView, v;
+      MyView = (function(_super) {
+
+        __extends(MyView, _super);
+
+        function MyView() {
+          MyView.__super__.constructor.apply(this, arguments);
+        }
+
+        MyView.prototype.template = "{{model.name}}";
+
+        return MyView;
+
+      })(CollectionView);
+      v = new MyView({
+        collection: collection
+      }).render();
+      return expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+    });
+    it('should render collection from text template as an argument', function() {
+      var MyView, v;
+      MyView = (function(_super) {
+
+        __extends(MyView, _super);
+
+        function MyView() {
+          MyView.__super__.constructor.apply(this, arguments);
+        }
+
+        return MyView;
+
+      })(CollectionView);
+      v = new MyView({
+        collection: collection
+      }).render("{{model.name}}");
+      return expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+    });
+    it('should render collection from itemView', function() {
+      var ItemView, MyView, v;
+      ItemView = (function(_super) {
+
+        __extends(ItemView, _super);
+
+        function ItemView() {
+          ItemView.__super__.constructor.apply(this, arguments);
+        }
+
+        ItemView.prototype.template = "{{model.name}}";
+
+        return ItemView;
+
+      })(View);
+      MyView = (function(_super) {
+
+        __extends(MyView, _super);
+
+        function MyView() {
+          MyView.__super__.constructor.apply(this, arguments);
+        }
+
+        MyView.prototype.itemView = ItemView;
+
+        return MyView;
+
+      })(CollectionView);
+      v = new MyView({
+        collection: collection
+      }).render();
+      return expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+    });
+    it('should re-render collection on reset', function() {
+      var MyView, v;
+      collection = makeCollection();
+      MyView = (function(_super) {
+
+        __extends(MyView, _super);
+
+        function MyView() {
+          MyView.__super__.constructor.apply(this, arguments);
+        }
+
+        MyView.prototype.template = "{{model.name}}";
+
+        return MyView;
+
+      })(CollectionView);
+      v = new MyView({
+        collection: collection
+      }).render();
+      expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+      collection.reset([
+        new Model({
+          name: 'x'
+        })
+      ]);
+      return expect(v.$el.html()).to.be.equal('<div class="__item_view">x</div>');
+    });
+    it('should re-order item views on sort', function() {
+      var MyView, v;
+      collection = makeCollection();
+      MyView = (function(_super) {
+
+        __extends(MyView, _super);
+
+        function MyView() {
+          MyView.__super__.constructor.apply(this, arguments);
+        }
+
+        MyView.prototype.template = "{{model.name}}";
+
+        return MyView;
+
+      })(CollectionView);
+      v = new MyView({
+        collection: collection
+      }).render();
+      expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+      collection.sort();
+      return expect(v.$el.html()).to.be.equal('<div class="__item_view">c</div><div class="__item_view">a</div><div class="__item_view">b</div>');
+    });
+    describe('add to collection', function() {
+      it('should react on add new item to the end of the collection', function() {
+        var MyView, v;
+        collection = makeCollection();
+        MyView = (function(_super) {
+
+          __extends(MyView, _super);
+
+          function MyView() {
+            MyView.__super__.constructor.apply(this, arguments);
+          }
+
+          MyView.prototype.template = "{{model.name}}";
+
+          return MyView;
+
+        })(CollectionView);
+        v = new MyView({
+          collection: collection
+        }).render();
+        expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+        collection.add(new Model({
+          name: 'd'
+        }), {
+          sort: false
+        });
+        return expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div><div class="__item_view">d</div>');
+      });
+      it('should react on add new item to the start of the collection', function() {
+        var MyView, v;
+        collection = makeCollection();
+        MyView = (function(_super) {
+
+          __extends(MyView, _super);
+
+          function MyView() {
+            MyView.__super__.constructor.apply(this, arguments);
+          }
+
+          MyView.prototype.template = "{{model.name}}";
+
+          return MyView;
+
+        })(CollectionView);
+        v = new MyView({
+          collection: collection
+        }).render();
+        expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+        collection.add(new Model({
+          name: 'd'
+        }), {
+          at: 0
+        });
+        return expect(v.$el.html()).to.be.equal('<div class="__item_view">d</div><div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+      });
+      return it('should react on add new item by index to the collection', function() {
+        var MyView, v;
+        collection = makeCollection();
+        MyView = (function(_super) {
+
+          __extends(MyView, _super);
+
+          function MyView() {
+            MyView.__super__.constructor.apply(this, arguments);
+          }
+
+          MyView.prototype.template = "{{model.name}}";
+
+          return MyView;
+
+        })(CollectionView);
+        v = new MyView({
+          collection: collection
+        }).render();
+        expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+        collection.add(new Model({
+          name: 'd'
+        }), {
+          at: 2
+        });
+        return expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">d</div><div class="__item_view">c</div>');
+      });
+    });
+    return describe('remove from collection', function() {
+      it('should react on remove item from the start of the collection', function() {
+        var MyView, v;
+        collection = makeCollection();
+        MyView = (function(_super) {
+
+          __extends(MyView, _super);
+
+          function MyView() {
+            MyView.__super__.constructor.apply(this, arguments);
+          }
+
+          MyView.prototype.template = "{{model.name}}";
+
+          return MyView;
+
+        })(CollectionView);
+        v = new MyView({
+          collection: collection
+        }).render();
+        expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+        collection.remove(collection.at(0));
+        return expect(v.$el.html()).to.be.equal('<div class="__item_view">b</div><div class="__item_view">c</div>');
+      });
+      it('should react on remove item from the end of the collection', function() {
+        var MyView, v;
+        collection = makeCollection();
+        MyView = (function(_super) {
+
+          __extends(MyView, _super);
+
+          function MyView() {
+            MyView.__super__.constructor.apply(this, arguments);
+          }
+
+          MyView.prototype.template = "{{model.name}}";
+
+          return MyView;
+
+        })(CollectionView);
+        v = new MyView({
+          collection: collection
+        }).render();
+        expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+        collection.remove(collection.last());
+        return expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div>');
+      });
+      return it('should react on remove item from the middle of the collection', function() {
+        var MyView, v;
+        collection = makeCollection();
+        MyView = (function(_super) {
+
+          __extends(MyView, _super);
+
+          function MyView() {
+            MyView.__super__.constructor.apply(this, arguments);
+          }
+
+          MyView.prototype.template = "{{model.name}}";
+
+          return MyView;
+
+        })(CollectionView);
+        v = new MyView({
+          collection: collection
+        }).render();
+        expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>');
+        collection.remove(collection.at(1));
+        return expect(v.$el.html()).to.be.equal('<div class="__item_view">a</div><div class="__item_view">c</div>');
       });
     });
   });

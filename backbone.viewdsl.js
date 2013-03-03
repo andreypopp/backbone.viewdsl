@@ -25,7 +25,7 @@ var __hasProp = {}.hasOwnProperty,
     return root.Backbone.ViewDSL = factory(root._, root.Backbone);
   }
 })(this, function(_, Backbone, require) {
-  var $fromArray, $nodify, $parseHTML, ActiveView, Compiler, Template, View, extend, hypensToCamelCase, isBoolean, isEqual, isString, knownAttrs, knownTags, resolvePath, resolveSpec, some, textNodeSplitRe, toArray;
+  var $fromArray, $nodify, $parseHTML, CollectionView, Compiler, Template, View, extend, hypensToCamelCase, isBoolean, isEqual, isString, knownAttrs, knownTags, resolvePath, resolveSpec, some, textNodeSplitRe, toArray;
   some = _.some, extend = _.extend, toArray = _.toArray, isEqual = _.isEqual, isBoolean = _.isBoolean, isString = _.isString;
   resolvePath = function(o, p) {
     var n, _i, _len, _ref;
@@ -275,10 +275,25 @@ var __hasProp = {}.hasOwnProperty,
     View.prototype.compilerClass = Compiler;
 
     function View(options) {
+      var _this = this;
       View.__super__.constructor.apply(this, arguments);
+      if ((options != null ? options.template : void 0) != null) {
+        this.template = options != null ? options.template : void 0;
+      }
       this.parent = options != null ? options.parent : void 0;
       this.views = [];
       this.compiler = new this.compilerClass(this);
+      if (this.model != null) {
+        this.listenTo(this.model, 'change', function() {
+          return _this.digest();
+        });
+      }
+      if (this.collection != null) {
+        this.listenTo(this.collection, 'change add remove reset sort', function() {
+          return _this.digest();
+        });
+      }
+      this.observe = {};
     }
 
     View.prototype.renderTemplate = function(template) {
@@ -299,14 +314,22 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     View.prototype.remove = function() {
-      var view, _i, _len, _ref;
       View.__super__.remove.apply(this, arguments);
+      this.removeViews();
+      this.parent = void 0;
+      this.observe = void 0;
+      return this.views = void 0;
+    };
+
+    View.prototype.removeViews = function() {
+      var view, _i, _len, _ref, _results;
       _ref = this.views;
+      _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         view = _ref[_i];
-        view.remove();
+        _results.push(view.remove());
       }
-      return this.parent = void 0;
+      return _results;
     };
 
     View.prototype.addView = function(view, id) {
@@ -343,60 +366,128 @@ var __hasProp = {}.hasOwnProperty,
       return o;
     };
 
-    View.prototype.compileInterpolation = function($node, path) {
-      return function(scope, $node) {
-        var got;
-        got = scope.get(path);
-        got = $nodify(got || '');
-        if (isString(got)) {
-          got = document.createTextNode(got);
+    View.prototype.reactOn = function(p, options) {
+      var value;
+      value = this.get(p);
+      if (options != null ? options.observe : void 0) {
+        this.observe[p] = value;
+      }
+      if (options != null ? options.react : void 0) {
+        options.react(value);
+        if (options.observe) {
+          return this.listenTo(this, "change:" + p, options.react);
         }
-        return $node.replaceWith(got);
+      }
+    };
+
+    View.prototype.digest = function() {
+      var newValue, path, updates, value, _ref, _results;
+      updates = {};
+      _ref = this.observe;
+      for (path in _ref) {
+        value = _ref[path];
+        newValue = this.get(path);
+        if (!isEqual(newValue, value)) {
+          updates[path] = newValue;
+        }
+      }
+      extend(this.observe, updates);
+      _results = [];
+      for (path in updates) {
+        value = updates[path];
+        _results.push(this.trigger("change:" + path, value));
+      }
+      return _results;
+    };
+
+    View.prototype.compileInterpolation = function($node, value) {
+      var observe;
+      observe = false;
+      if (value.substring(0, 5) === 'bind:') {
+        value = value.substring(5);
+        observe = true;
+      }
+      return function(scope, $node) {
+        var $point;
+        $point = $node;
+        return scope.reactOn(value, {
+          observe: observe,
+          react: function(got) {
+            got = $nodify(got || '');
+            $point.replaceWith(got);
+            return $point = got;
+          }
+        });
       };
     };
 
     View.prototype.compileAttr = function($node, name, value) {
-      var attrName;
+      var attrName, observe;
+      observe = false;
+      if (value.substring(0, 5) === 'bind:') {
+        value = value.substring(5);
+        observe = true;
+      }
       attrName = name.substring(5);
       $node.removeAttr(name);
       return function(scope, $node) {
-        var got;
-        got = scope.get(value);
-        if (isBoolean(got)) {
-          if (got) {
-            return $node.attr(attrName, '');
+        return scope.reactOn(value, {
+          observe: observe,
+          react: function(got) {
+            if (isBoolean(got)) {
+              if (got) {
+                return $node.attr(attrName, '');
+              }
+            } else {
+              return $node.attr(attrName, got);
+            }
           }
-        } else {
-          return $node.attr(attrName, got);
-        }
+        });
       };
     };
 
     View.prototype.compileClass = function($node, name, value) {
-      var className;
+      var className, observe;
+      observe = false;
+      if (value.substring(0, 5) === 'bind:') {
+        value = value.substring(5);
+        observe = true;
+      }
       className = name.slice(6);
       $node.removeAttr(name);
       return function(scope, $node) {
-        var got;
-        got = scope.get(value);
-        if (got) {
-          return $node.addClass(className);
-        } else {
-          return $node.removeClass(className);
-        }
+        return scope.reactOn(value, {
+          observe: observe,
+          react: function(got) {
+            if (got) {
+              return $node.addClass(className);
+            } else {
+              return $node.removeClass(className);
+            }
+          }
+        });
       };
     };
 
     View.prototype.compileShowIf = function($node, name, value) {
+      var observe;
+      observe = false;
+      if (value.substring(0, 5) === 'bind:') {
+        value = value.substring(5);
+        observe = true;
+      }
       $node.removeAttr(name);
       return function(scope, $node) {
-        var got;
-        got = scope.get(value);
-        if (got) {
-          return $node.show();
-        } else {
-          return $node.hide();
-        }
+        return scope.reactOn(value, {
+          observe: observe,
+          react: function(got) {
+            if (got) {
+              return $node.show();
+            } else {
+              return $node.hide();
+            }
+          }
+        });
       };
     };
 
@@ -452,164 +543,143 @@ var __hasProp = {}.hasOwnProperty,
     return View;
 
   })(Backbone.View);
-  ActiveView = (function(_super) {
+  CollectionView = (function(_super) {
 
-    __extends(ActiveView, _super);
+    __extends(CollectionView, _super);
 
-    function ActiveView() {
-      var _this = this;
-      ActiveView.__super__.constructor.apply(this, arguments);
-      if (this.model) {
-        this.listenTo(this.model, 'change', function() {
-          return _this.digest();
-        });
-      }
-      if (this.collection) {
-        this.listenTo(this.collection, 'change add remove reset sort', function() {
-          return _this.digest();
-        });
-      }
-      this.observe = {};
+    CollectionView.parameterizable = true;
+
+    CollectionView.prototype.template = void 0;
+
+    CollectionView.prototype.itemView = void 0;
+
+    CollectionView.prototype.makeItemView = void 0;
+
+    function CollectionView() {
+      CollectionView.__super__.constructor.apply(this, arguments);
+      this.listenTo(this.collection, {
+        reset: this.onReset,
+        sort: this.onSort,
+        add: this.onAdd,
+        remove: this.onRemove
+      });
     }
 
-    ActiveView.prototype.digest = function() {
-      var newValue, path, updates, value, _ref, _results;
-      updates = {};
-      _ref = this.observe;
-      for (path in _ref) {
-        value = _ref[path];
-        newValue = this.get(path);
-        if (!isEqual(newValue, value)) {
-          updates[path] = newValue;
+    CollectionView.prototype.render = function(template) {
+      this.setupItemView(template);
+      this.onReset();
+      return this;
+    };
+
+    CollectionView.prototype.setupItemView = function(maybeTemplate) {
+      if ((maybeTemplate != null) && maybeTemplate.trim() !== '') {
+        this.template = maybeTemplate;
+      }
+      return this.makeItemView = (function() {
+        var _this = this;
+        if (this.itemView != null) {
+          return function(model) {
+            var view;
+            view = new _this.itemView({
+              model: model
+            });
+            view.render();
+            view.$el.addClass('__item_view');
+            return view;
+          };
+        } else if (this.template) {
+          return function(model) {
+            var view;
+            view = new View({
+              template: _this.template,
+              model: model
+            });
+            view.render();
+            view.$el.addClass('__item_view');
+            return view;
+          };
+        } else {
+          throw new Error("provide either 'template' or 'itemView' attr");
+        }
+      }).call(this);
+    };
+
+    CollectionView.prototype.viewByModel = function(model) {
+      var view, _i, _len, _ref;
+      _ref = this.views;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        view = _ref[_i];
+        if (view.model.cid === model.cid) {
+          return view;
         }
       }
-      extend(this.observe, updates);
+    };
+
+    CollectionView.prototype.onReset = function() {
+      var _this = this;
+      this.removeViews();
+      return this.collection.forEach(function(model) {
+        var view;
+        view = _this.makeItemView(model);
+        _this.$el.append(view.$el);
+        return _this.views.push(view);
+      });
+    };
+
+    CollectionView.prototype.onSort = function() {
+      var $cur,
+        _this = this;
+      $cur = void 0;
+      return this.collection.forEach(function(model) {
+        var view;
+        view = _this.viewByModel(model);
+        view.$el.detach();
+        if (!$cur) {
+          return _this.$el.append(view.$el);
+        } else {
+          view.$el.after($cur);
+          return $cur = view.$el;
+        }
+      });
+    };
+
+    CollectionView.prototype.onAdd = function(model) {
+      var idx, view;
+      idx = this.collection.indexOf(model);
+      view = this.makeItemView(model);
+      if (idx >= this.$el.children('.__item_view').size()) {
+        this.$el.append(view.$el);
+      } else {
+        this.$el.children('.__item_view').eq(idx).before(view.$el);
+      }
+      return this.views.push(view);
+    };
+
+    CollectionView.prototype.onRemove = function(model) {
+      var idx, view, _i, _len, _ref, _results;
+      _ref = this.views;
       _results = [];
-      for (path in updates) {
-        value = updates[path];
-        _results.push(this.trigger("change:" + path, value));
+      for (idx = _i = 0, _len = _ref.length; _i < _len; idx = ++_i) {
+        view = _ref[idx];
+        if (view.model.cid === model.cid) {
+          view.remove();
+          this.views.splice(idx, 1);
+          break;
+        } else {
+          _results.push(void 0);
+        }
       }
       return _results;
     };
 
-    ActiveView.prototype.reactOn = function(p, options) {
-      var value;
-      value = this.get(p);
-      if (options != null ? options.observe : void 0) {
-        this.observe[p] = value;
-      }
-      if (options != null ? options.react : void 0) {
-        options.react(value);
-        if (options.observe) {
-          return this.listenTo(this, "change:" + p, options.react);
-        }
-      }
-    };
-
-    ActiveView.prototype.remove = function() {
-      ActiveView.__super__.remove.apply(this, arguments);
-      return this.observe = void 0;
-    };
-
-    ActiveView.prototype.compileInterpolation = function($node, value) {
-      var observe;
-      observe = false;
-      if (value.substring(0, 5) === 'bind:') {
-        value = value.substring(5);
-        observe = true;
-      }
-      return function(scope, $node) {
-        var $point;
-        $point = $node;
-        return scope.reactOn(value, {
-          observe: observe,
-          react: function(got) {
-            got = $nodify(got || '');
-            $point.replaceWith(got);
-            return $point = got;
-          }
-        });
-      };
-    };
-
-    ActiveView.prototype.compileAttr = function($node, name, value) {
-      var attrName, observe;
-      observe = false;
-      if (value.substring(0, 5) === 'bind:') {
-        value = value.substring(5);
-        observe = true;
-      }
-      attrName = name.substring(5);
-      $node.removeAttr(name);
-      return function(scope, $node) {
-        return scope.reactOn(value, {
-          observe: observe,
-          react: function(got) {
-            if (isBoolean(got)) {
-              if (got) {
-                return $node.attr(attrName, '');
-              }
-            } else {
-              return $node.attr(attrName, got);
-            }
-          }
-        });
-      };
-    };
-
-    ActiveView.prototype.compileClass = function($node, name, value) {
-      var className, observe;
-      observe = false;
-      if (value.substring(0, 5) === 'bind:') {
-        value = value.substring(5);
-        observe = true;
-      }
-      className = name.slice(6);
-      $node.removeAttr(name);
-      return function(scope, $node) {
-        return scope.reactOn(value, {
-          observe: observe,
-          react: function(got) {
-            if (got) {
-              return $node.addClass(className);
-            } else {
-              return $node.removeClass(className);
-            }
-          }
-        });
-      };
-    };
-
-    ActiveView.prototype.compileShowIf = function($node, name, value) {
-      var observe;
-      observe = false;
-      if (value.substring(0, 5) === 'bind:') {
-        value = value.substring(5);
-        observe = true;
-      }
-      $node.removeAttr(name);
-      return function(scope, $node) {
-        return scope.reactOn(value, {
-          observe: observe,
-          react: function(got) {
-            if (got) {
-              return $node.show();
-            } else {
-              return $node.hide();
-            }
-          }
-        });
-      };
-    };
-
-    return ActiveView;
+    return CollectionView;
 
   })(View);
   return {
     Compiler: Compiler,
     Template: Template,
     View: View,
-    ActiveView: ActiveView,
+    CollectionView: CollectionView,
     $parseHTML: $parseHTML
   };
 });

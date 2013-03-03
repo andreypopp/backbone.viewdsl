@@ -1,8 +1,8 @@
 define (require) ->
 
   {extend} = require 'underscore'
-  {Model} = require 'backbone'
-  {Compiler, View, ActiveView, $parseHTML} = require 'backbone.viewdsl'
+  {Model, Collection} = require 'backbone'
+  {Compiler, View, CollectionView, $parseHTML} = require 'backbone.viewdsl'
 
   describe 'Compiler', ->
 
@@ -48,9 +48,9 @@ define (require) ->
       expect(t.$node.data('hasActions')).to.be.ok
       expect(outerHTML(r)).to.be.equal '<div><div><span>Huh?!</span></div></div>'
 
-  describe 'ActiveView', ->
+  describe 'View with bindings', ->
     render = (t, s) ->
-      class MyView extends ActiveView
+      class MyView extends View
         template: t
       v = new MyView(model: new Backbone.Model())
       v.model.set s
@@ -194,3 +194,129 @@ define (require) ->
         v = render '<view name="Hello2" b="c" id="v">{{a}} - {{options.b}}</view>',
           {a: 'parent', c: 'child'}
         expect(v.$el.html()).to.be.equal '<div><div>parent - child</div></div>'
+
+  describe 'CollectionView', ->
+
+    makeCollection = ->
+      c = new Collection [], {comparator: (model) -> model.get 'ord'}
+      c.add new Model(name: 'a', ord: 1), {sort: false}
+      c.add new Model(name: 'b', ord: 2), {sort: false}
+      c.add new Model(name: 'c', ord: 0), {sort: false}
+
+    collection = makeCollection()
+
+    it 'should render collection from text template', ->
+      class MyView extends CollectionView
+        template: """
+          {{model.name}}
+          """
+      v = new MyView(collection: collection).render()
+      expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+
+    it 'should render collection from text template as an argument', ->
+      class MyView extends CollectionView
+      v = new MyView(collection: collection).render("{{model.name}}")
+      expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+
+    it 'should render collection from itemView', ->
+      class ItemView extends View
+        template: """
+          {{model.name}}
+          """
+      class MyView extends CollectionView
+        itemView: ItemView
+
+      v = new MyView(collection: collection).render()
+      expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+
+    it 'should re-render collection on reset', ->
+      collection = makeCollection()
+      class MyView extends CollectionView
+        template: """
+          {{model.name}}
+          """
+      v = new MyView(collection: collection).render()
+      expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+      collection.reset([new Model(name: 'x')])
+      expect(v.$el.html()).to.be.equal '<div class="__item_view">x</div>'
+
+    it 'should re-order item views on sort', ->
+      collection = makeCollection()
+      class MyView extends CollectionView
+        template: """
+          {{model.name}}
+          """
+      v = new MyView(collection: collection).render()
+      expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+      collection.sort()
+      expect(v.$el.html()).to.be.equal '<div class="__item_view">c</div><div class="__item_view">a</div><div class="__item_view">b</div>'
+
+    describe 'add to collection', ->
+
+      it 'should react on add new item to the end of the collection', ->
+        collection = makeCollection()
+        class MyView extends CollectionView
+          template: """
+            {{model.name}}
+            """
+        v = new MyView(collection: collection).render()
+        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+        collection.add new Model(name: 'd'), {sort: false}
+        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div><div class="__item_view">d</div>'
+
+      it 'should react on add new item to the start of the collection', ->
+        collection = makeCollection()
+        class MyView extends CollectionView
+          template: """
+            {{model.name}}
+            """
+        v = new MyView(collection: collection).render()
+        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+        collection.add new Model(name: 'd'), {at: 0}
+        expect(v.$el.html()).to.be.equal '<div class="__item_view">d</div><div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+
+      it 'should react on add new item by index to the collection', ->
+        collection = makeCollection()
+        class MyView extends CollectionView
+          template: """
+            {{model.name}}
+            """
+        v = new MyView(collection: collection).render()
+        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+        collection.add new Model(name: 'd'), {at: 2}
+        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">d</div><div class="__item_view">c</div>'
+
+    describe 'remove from collection', ->
+
+      it 'should react on remove item from the start of the collection', ->
+        collection = makeCollection()
+        class MyView extends CollectionView
+          template: """
+            {{model.name}}
+            """
+        v = new MyView(collection: collection).render()
+        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+        collection.remove(collection.at(0))
+        expect(v.$el.html()).to.be.equal '<div class="__item_view">b</div><div class="__item_view">c</div>'
+
+      it 'should react on remove item from the end of the collection', ->
+        collection = makeCollection()
+        class MyView extends CollectionView
+          template: """
+            {{model.name}}
+            """
+        v = new MyView(collection: collection).render()
+        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+        collection.remove(collection.last())
+        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div>'
+
+      it 'should react on remove item from the middle of the collection', ->
+        collection = makeCollection()
+        class MyView extends CollectionView
+          template: """
+            {{model.name}}
+            """
+        v = new MyView(collection: collection).render()
+        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">b</div><div class="__item_view">c</div>'
+        collection.remove(collection.at(1))
+        expect(v.$el.html()).to.be.equal '<div class="__item_view">a</div><div class="__item_view">c</div>'

@@ -193,9 +193,20 @@
 
     constructor: (options) ->
       super
+      this.template = options?.template if options?.template?
       this.parent = options?.parent
       this.views = []
       this.compiler = new this.compilerClass(this)
+
+      if this.model?
+        this.listenTo this.model, 'change', =>
+          this.digest()
+
+      if this.collection?
+        this.listenTo this.collection, 'change add remove reset sort', =>
+          this.digest()
+
+      this.observe = {}
 
     renderTemplate: (template) ->
       if not (template instanceof Template)
@@ -210,9 +221,14 @@
 
     remove: ->
       super
+      this.removeViews()
+      this.parent = undefined
+      this.observe = undefined
+      this.views = undefined
+
+    removeViews: ->
       for view in this.views
         view.remove()
-      this.parent = undefined
 
     addView: (view, id) ->
       this.views.push(view)
@@ -236,93 +252,14 @@
           o = o.call(ctx)
       o
 
-    compileInterpolation: ($node, path) ->
-      (scope, $node) ->
-        got = scope.get(path)
-        got = $nodify(got or '')
-        got = document.createTextNode(got) if isString(got)
-        $node.replaceWith(got)
-
-    compileAttr: ($node, name, value) ->
-      attrName = name.substring(5)
-      $node.removeAttr(name)
-      (scope, $node) ->
-        got = scope.get(value)
-        if isBoolean(got)
-          $node.attr(attrName, '') if got
-        else
-          $node.attr(attrName, got)
-
-    compileClass: ($node, name, value) ->
-      className = name.slice(6)
-      $node.removeAttr(name)
-      (scope, $node) ->
-        got = scope.get(value)
-        if got
-          $node.addClass(className)
-        else
-          $node.removeClass(className)
-
-    compileShowIf: ($node, name, value) ->
-      $node.removeAttr(name)
-      (scope, $node) ->
-        got = scope.get(value)
-        if got then $node.show() else $node.hide()
-
-    compileView: ($node, name, value) ->
-      node = $node[0]
-      element = not name?
-
-      viewClass = if element
-        spec = $node.attr('name')
-        throw new Error("provide view attr") unless spec
-        resolveSpec(spec, this)
-      else
-        $node.removeAttr(name)
-        resolveSpec(value, this)
-
-      viewIdAttr = if element then 'id' else 'view-id'
-      viewId = $node.attr(viewIdAttr)
-      $node.removeAttr(viewIdAttr)
-
-      template = if element or viewClass.parameterizable
-        $node.contents().detach()
-
-      (scope, $node) ->
-
-        viewParams = {}
-
-        for a in toArray(node.attributes)
-          if not element and a.name.slice(0, 5) != 'view-'
-            continue
-
-          attrName = if element then a.name else a.name.slice(5)
-          attrName = hypensToCamelCase(attrName)
-
-          viewParams[attrName] = scope.get(a.value) or a.value
-
-          $node.removeAttr(a.name) if not element
-
-        viewParams.parent = scope
-        viewParams.el = $node if not element
-
-        view = new viewClass(viewParams)
-        view.render(template)
-
-        $node.replaceWith(view.$el) if element
-        scope.addView(view, viewId)
-
-  class ActiveView extends View
-
-    constructor: ->
-      super
-      if this.model
-        this.listenTo this.model, 'change', =>
-          this.digest()
-      if this.collection
-        this.listenTo this.collection, 'change add remove reset sort', =>
-          this.digest()
-      this.observe = {}
+    reactOn: (p, options) ->
+      value = this.get(p)
+      if options?.observe
+        this.observe[p] = value
+      if options?.react
+        options.react(value)
+        if options.observe
+          this.listenTo this, "change:#{p}", options.react
 
     digest: ->
       updates = {}
@@ -335,19 +272,6 @@
 
       for path, value of updates
         this.trigger("change:#{path}", value)
-
-    reactOn: (p, options) ->
-      value = this.get(p)
-      if options?.observe
-        this.observe[p] = value
-      if options?.react
-        options.react(value)
-        if options.observe
-          this.listenTo this, "change:#{p}", options.react
-
-    remove: ->
-      super
-      this.observe = undefined
 
     compileInterpolation: ($node, value) ->
       observe = false
@@ -407,4 +331,125 @@
           react: (got) ->
             if got then $node.show() else $node.hide()
 
-  {Compiler, Template, View, ActiveView, $parseHTML}
+    compileView: ($node, name, value) ->
+      node = $node[0]
+      element = not name?
+
+      viewClass = if element
+        spec = $node.attr('name')
+        throw new Error("provide view attr") unless spec
+        resolveSpec(spec, this)
+      else
+        $node.removeAttr(name)
+        resolveSpec(value, this)
+
+      viewIdAttr = if element then 'id' else 'view-id'
+      viewId = $node.attr(viewIdAttr)
+      $node.removeAttr(viewIdAttr)
+
+      template = if element or viewClass.parameterizable
+        $node.contents().detach()
+
+      (scope, $node) ->
+
+        viewParams = {}
+
+        for a in toArray(node.attributes)
+          if not element and a.name.slice(0, 5) != 'view-'
+            continue
+
+          attrName = if element then a.name else a.name.slice(5)
+          attrName = hypensToCamelCase(attrName)
+
+          viewParams[attrName] = scope.get(a.value) or a.value
+
+          $node.removeAttr(a.name) if not element
+
+        viewParams.parent = scope
+        viewParams.el = $node if not element
+
+        view = new viewClass(viewParams)
+        view.render(template)
+
+        $node.replaceWith(view.$el) if element
+        scope.addView(view, viewId)
+
+  class CollectionView extends View
+    @parameterizable: true
+
+    template: undefined
+    itemView: undefined
+    makeItemView: undefined
+
+    constructor: ->
+      super
+      this.listenTo this.collection,
+        reset: this.onReset
+        sort: this.onSort
+        add: this.onAdd
+        remove: this.onRemove
+
+    render: (template) ->
+      this.setupItemView(template)
+      this.onReset()
+      this
+
+    setupItemView: (maybeTemplate) ->
+      if maybeTemplate? and maybeTemplate.trim() != ''
+        this.template = maybeTemplate
+
+      this.makeItemView = if this.itemView?
+        (model) =>
+          view = new this.itemView(model: model)
+          view.render()
+          view.$el.addClass('__item_view')
+          view
+      else if this.template
+        (model) =>
+          view = new View(template: this.template, model: model)
+          view.render()
+          view.$el.addClass('__item_view')
+          view
+      else
+        throw new Error("provide either 'template' or 'itemView' attr")
+
+    viewByModel: (model) ->
+      for view in this.views
+        if view.model.cid == model.cid
+          return view
+
+    onReset: ->
+      this.removeViews()
+      this.collection.forEach (model) =>
+        view = this.makeItemView(model)
+        this.$el.append(view.$el)
+        this.views.push(view)
+
+    onSort: ->
+      $cur = undefined
+      this.collection.forEach (model) =>
+        view = this.viewByModel(model)
+        view.$el.detach()
+        if not $cur
+          this.$el.append view.$el
+        else 
+          view.$el.after $cur
+          $cur = view.$el
+
+    onAdd: (model) ->
+      idx = this.collection.indexOf(model)
+      view = this.makeItemView(model)
+      if idx >= this.$el.children('.__item_view').size()
+        this.$el.append(view.$el)
+      else
+        this.$el.children('.__item_view').eq(idx).before(view.$el)
+      this.views.push(view)
+
+    onRemove: (model) ->
+      for view, idx in this.views
+        if view.model.cid == model.cid
+          view.remove()
+          this.views.splice(idx, 1)
+          break
+
+  {Compiler, Template, View, CollectionView, $parseHTML}
