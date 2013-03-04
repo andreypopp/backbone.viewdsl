@@ -25,7 +25,7 @@ var __hasProp = {}.hasOwnProperty,
     return root.Backbone.ViewDSL = factory(root._, root.Backbone);
   }
 })(this, function(_, Backbone, require) {
-  var $fromArray, $nodify, $parseHTML, CollectionView, Compiler, Template, View, extend, hypensToCamelCase, isBoolean, isEqual, isString, knownAttrs, knownTags, resolvePath, resolveSpec, some, textNodeSplitRe, toArray;
+  var $fromArray, $isEmpty, $nodify, $parseHTML, CollectionView, Compiler, Template, View, extend, hypensToCamelCase, isBoolean, isEqual, isString, knownAttrs, knownTags, resolvePath, resolveSpec, some, textNodeSplitRe, toArray;
   some = _.some, extend = _.extend, toArray = _.toArray, isEqual = _.isEqual, isBoolean = _.isBoolean, isString = _.isString;
   resolvePath = function(o, p) {
     var n, _i, _len, _ref;
@@ -95,6 +95,18 @@ var __hasProp = {}.hasOwnProperty,
       return $(o);
     } else {
       return $(document.createTextNode(String(o)));
+    }
+  };
+  $isEmpty = function(n) {
+    if (n == null) {
+      return true;
+    }
+    if (isString(n)) {
+      return n.trim() === '';
+    } else if (n.jquery != null) {
+      return n.size() === 0;
+    } else if (n.nodeType != null) {
+      return false;
     }
   };
   /*
@@ -498,12 +510,14 @@ var __hasProp = {}.hasOwnProperty,
       };
     };
 
+    View.prototype.compileForeach = function($node, name, value) {
+      return this.viewDirective(CollectionView, $node, name, value);
+    };
+
     View.prototype.compileView = function($node, name, value) {
-      var element, node, spec, template, viewClass, viewId, viewIdAttr;
-      node = $node[0];
-      element = name == null;
+      var spec, viewClass;
       viewClass = (function() {
-        if (element) {
+        if (name == null) {
           spec = $node.attr('name');
           if (!spec) {
             throw new Error("provide view attr");
@@ -514,6 +528,13 @@ var __hasProp = {}.hasOwnProperty,
           return resolveSpec(value, this);
         }
       }).call(this);
+      return this.viewDirective(viewClass, $node, name, value);
+    };
+
+    View.prototype.viewDirective = function(viewClass, $node, name, value) {
+      var element, node, template, viewId, viewIdAttr;
+      node = $node[0];
+      element = name == null;
       viewIdAttr = element ? 'id' : 'view-id';
       viewId = $node.attr(viewIdAttr);
       $node.removeAttr(viewIdAttr);
@@ -579,7 +600,7 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     CollectionView.prototype.setupItemView = function(maybeTemplate) {
-      if ((maybeTemplate != null) && maybeTemplate.trim() !== '') {
+      if (!$isEmpty(maybeTemplate)) {
         this.template = maybeTemplate;
       }
       return this.makeItemView = (function() {

@@ -83,6 +83,15 @@
     else
       $ document.createTextNode(String(o))
 
+  $isEmpty = (n) ->
+    return true if not n?
+    if isString(n)
+      n.trim() == ''
+    else if n.jquery?
+      n.size() == 0
+    else if n.nodeType?
+      false
+
   ###
     HTML compiler
   ###
@@ -335,17 +344,22 @@
           react: (got) ->
             if got then $node.show() else $node.hide()
 
-    compileView: ($node, name, value) ->
-      node = $node[0]
-      element = not name?
+    compileForeach: ($node, name, value) ->
+      this.viewDirective(CollectionView, $node, name, value)
 
-      viewClass = if element
+    compileView: ($node, name, value) ->
+      viewClass = if not name?
         spec = $node.attr('name')
         throw new Error("provide view attr") unless spec
         resolveSpec(spec, this)
       else
         $node.removeAttr(name)
         resolveSpec(value, this)
+      this.viewDirective(viewClass, $node, name, value)
+
+    viewDirective: (viewClass, $node, name, value) ->
+      node = $node[0]
+      element = not name?
 
       viewIdAttr = if element then 'id' else 'view-id'
       viewId = $node.attr(viewIdAttr)
@@ -399,7 +413,7 @@
       this
 
     setupItemView: (maybeTemplate) ->
-      if maybeTemplate? and maybeTemplate.trim() != ''
+      if not $isEmpty(maybeTemplate)
         this.template = maybeTemplate
 
       this.makeItemView = if this.itemView?
