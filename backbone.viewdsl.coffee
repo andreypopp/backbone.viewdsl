@@ -162,7 +162,7 @@
       actions = actions.concat(attrActions)
 
       hasChildActions = node.childNodes.length > 0 and \
-        some(this.compileImpl($ child) for child in node.childNodes)
+        some(this.compileImpl($ child) for child in toArray(node.childNodes))
 
       hasActions = actions.length > 0 or hasChildActions
 

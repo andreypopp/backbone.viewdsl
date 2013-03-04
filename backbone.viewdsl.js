@@ -214,7 +214,7 @@ var __hasProp = {}.hasOwnProperty,
       actions = actions.concat(attrActions);
       hasChildActions = node.childNodes.length > 0 && some((function() {
         var _i, _len, _ref, _results;
-        _ref = node.childNodes;
+        _ref = toArray(node.childNodes);
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           child = _ref[_i];
