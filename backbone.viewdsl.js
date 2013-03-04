@@ -440,6 +440,12 @@ var __hasProp = {}.hasOwnProperty,
       };
     };
 
+    View.prototype.compileElementId = function($node, name, value) {
+      return function(scope, $node) {
+        return scope[value] = $node;
+      };
+    };
+
     View.prototype.compileAttr = function($node, name, value) {
       var attrName, observe;
       observe = false;
@@ -532,13 +538,14 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     View.prototype.viewDirective = function(viewClass, $node, name, value) {
-      var element, node, template, viewId, viewIdAttr;
+      var className, element, node, template, viewId, viewIdAttr;
       node = $node[0];
       element = name == null;
       viewIdAttr = element ? 'id' : 'view-id';
       viewId = $node.attr(viewIdAttr);
       $node.removeAttr(viewIdAttr);
       template = element || viewClass.parameterizable ? $node.contents().detach() : void 0;
+      className = element && $node.attr('class') ? $node.attr('class') : void 0;
       return function(scope, $node) {
         var a, attrName, view, viewParams, _i, _len, _ref;
         viewParams = {};
@@ -561,6 +568,9 @@ var __hasProp = {}.hasOwnProperty,
         }
         view = new viewClass(viewParams);
         view.render(template);
+        if (className) {
+          view.$el.addClass(className);
+        }
         if (element) {
           $node.replaceWith(view.$el);
         }

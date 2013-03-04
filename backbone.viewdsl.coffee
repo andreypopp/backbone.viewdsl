@@ -300,6 +300,10 @@
             $point.replaceWith(got)
             $point = got
 
+    compileElementId: ($node, name, value) ->
+      (scope, $node) ->
+        scope[value] = $node
+
     compileAttr: ($node, name, value) ->
       observe = false
       if value.substring(0, 5) == 'bind:'
@@ -368,6 +372,9 @@
       template = if element or viewClass.parameterizable
         $node.contents().detach()
 
+      className = if element and $node.attr('class')
+        $node.attr('class')
+
       (scope, $node) ->
 
         viewParams = {}
@@ -388,6 +395,8 @@
 
         view = new viewClass(viewParams)
         view.render(template)
+
+        view.$el.addClass(className) if className
 
         $node.replaceWith(view.$el) if element
         scope.addView(view, viewId)
