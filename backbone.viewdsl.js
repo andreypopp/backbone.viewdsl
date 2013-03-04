@@ -606,6 +606,9 @@ var __hasProp = {}.hasOwnProperty,
       if (this.template != null) {
         this.template = $nodify(this.template);
       }
+      if (this.options.itemView != null) {
+        this.itemView = resolveSpec(this.options.itemView, this);
+      }
       return this.makeItemView = (function() {
         var _this = this;
         if (this.itemView != null) {

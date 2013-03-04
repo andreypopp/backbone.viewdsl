@@ -419,6 +419,9 @@
       if this.template?
         this.template = $nodify(this.template)
 
+      if this.options.itemView?
+        this.itemView = resolveSpec(this.options.itemView, this)
+
       this.makeItemView = if this.itemView?
         (model, index) =>
           view = new this.itemView(model: model, index: index)
