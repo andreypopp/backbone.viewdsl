@@ -416,6 +416,9 @@
       if not $isEmpty(maybeTemplate)
         this.template = maybeTemplate
 
+      if this.template?
+        this.template = $nodify(this.template)
+
       this.makeItemView = if this.itemView?
         (model, index) =>
           view = new this.itemView(model: model, index: index)
@@ -423,7 +426,9 @@
           view
       else if this.template
         (model, index) =>
-          view = new View(template: this.template, model: model, index: index)
+          view = new View(
+            template: this.template.clone(true, true),
+            model: model, index: index)
           view.render()
           view
       else

@@ -603,6 +603,9 @@ var __hasProp = {}.hasOwnProperty,
       if (!$isEmpty(maybeTemplate)) {
         this.template = maybeTemplate;
       }
+      if (this.template != null) {
+        this.template = $nodify(this.template);
+      }
       return this.makeItemView = (function() {
         var _this = this;
         if (this.itemView != null) {
@@ -619,7 +622,7 @@ var __hasProp = {}.hasOwnProperty,
           return function(model, index) {
             var view;
             view = new View({
-              template: _this.template,
+              template: _this.template.clone(true, true),
               model: model,
               index: index
             });
