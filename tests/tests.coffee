@@ -244,12 +244,12 @@ define (require) ->
       collection = makeCollection()
       class MyView extends CollectionView
         template: """
-          {{model.name}}
+          {{model.name}}{{bind:options.index}}
           """
       v = new MyView(collection: collection).render()
-      expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div>'
+      expect(v.$el.html()).to.be.equal '<div>a0</div><div>b1</div><div>c2</div>'
       collection.sort()
-      expect(v.$el.html()).to.be.equal '<div>c</div><div>a</div><div>b</div>'
+      expect(v.$el.html()).to.be.equal '<div>c0</div><div>a1</div><div>b2</div>'
 
     describe 'add to collection', ->
 
@@ -257,34 +257,34 @@ define (require) ->
         collection = makeCollection()
         class MyView extends CollectionView
           template: """
-            {{model.name}}
+            {{model.name}}{{options.index}}
             """
         v = new MyView(collection: collection).render()
-        expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div>'
+        expect(v.$el.html()).to.be.equal '<div>a0</div><div>b1</div><div>c2</div>'
         collection.add new Model(name: 'd'), {sort: false}
-        expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div><div>d</div>'
+        expect(v.$el.html()).to.be.equal '<div>a0</div><div>b1</div><div>c2</div><div>d3</div>'
 
       it 'should react on add new item to the start of the collection', ->
         collection = makeCollection()
         class MyView extends CollectionView
           template: """
-            {{model.name}}
+            {{model.name}}{{bind:options.index}}
             """
         v = new MyView(collection: collection).render()
-        expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div>'
+        expect(v.$el.html()).to.be.equal '<div>a0</div><div>b1</div><div>c2</div>'
         collection.add new Model(name: 'd'), {at: 0}
-        expect(v.$el.html()).to.be.equal '<div>d</div><div>a</div><div>b</div><div>c</div>'
+        expect(v.$el.html()).to.be.equal '<div>d0</div><div>a1</div><div>b2</div><div>c3</div>'
 
       it 'should react on add new item by index to the collection', ->
         collection = makeCollection()
         class MyView extends CollectionView
           template: """
-            {{model.name}}
+            {{model.name}}{{bind:options.index}}
             """
         v = new MyView(collection: collection).render()
-        expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div>'
+        expect(v.$el.html()).to.be.equal '<div>a0</div><div>b1</div><div>c2</div>'
         collection.add new Model(name: 'd'), {at: 2}
-        expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>d</div><div>c</div>'
+        expect(v.$el.html()).to.be.equal '<div>a0</div><div>b1</div><div>d2</div><div>c3</div>'
 
     describe 'remove from collection', ->
 
@@ -292,31 +292,31 @@ define (require) ->
         collection = makeCollection()
         class MyView extends CollectionView
           template: """
-            {{model.name}}
+            {{model.name}}{{bind:options.index}}
             """
         v = new MyView(collection: collection).render()
-        expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div>'
+        expect(v.$el.html()).to.be.equal '<div>a0</div><div>b1</div><div>c2</div>'
         collection.remove(collection.at(0))
-        expect(v.$el.html()).to.be.equal '<div>b</div><div>c</div>'
+        expect(v.$el.html()).to.be.equal '<div>b0</div><div>c1</div>'
 
       it 'should react on remove item from the end of the collection', ->
         collection = makeCollection()
         class MyView extends CollectionView
           template: """
-            {{model.name}}
+            {{model.name}}{{bind:options.index}}
             """
         v = new MyView(collection: collection).render()
-        expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div>'
+        expect(v.$el.html()).to.be.equal '<div>a0</div><div>b1</div><div>c2</div>'
         collection.remove(collection.last())
-        expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div>'
+        expect(v.$el.html()).to.be.equal '<div>a0</div><div>b1</div>'
 
       it 'should react on remove item from the middle of the collection', ->
         collection = makeCollection()
         class MyView extends CollectionView
           template: """
-            {{model.name}}
+            {{model.name}}{{bind:options.index}}
             """
         v = new MyView(collection: collection).render()
-        expect(v.$el.html()).to.be.equal '<div>a</div><div>b</div><div>c</div>'
+        expect(v.$el.html()).to.be.equal '<div>a0</div><div>b1</div><div>c2</div>'
         collection.remove(collection.at(1))
-        expect(v.$el.html()).to.be.equal '<div>a</div><div>c</div>'
+        expect(v.$el.html()).to.be.equal '<div>a0</div><div>c1</div>'

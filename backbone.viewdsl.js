@@ -69,6 +69,9 @@ var __hasProp = {}.hasOwnProperty,
   textNodeSplitRe = /({{)|(}})/;
   $fromArray = function(nodes) {
     var node, o, _i, _len;
+    if (nodes === null) {
+      nodes = [$(document.createTextNode(''))];
+    }
     o = $();
     for (_i = 0, _len = nodes.length; _i < _len; _i++) {
       node = nodes[_i];
@@ -340,8 +343,12 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     View.prototype.get = function(p, options) {
-      var _ref;
-      return this.getOwn(p, options) || ((_ref = this.parent) != null ? _ref.get(p, options) : void 0);
+      var own, _ref;
+      own = this.getOwn(p, options);
+      if (own !== void 0) {
+        return own;
+      }
+      return (_ref = this.parent) != null ? _ref.get(p, options) : void 0;
     };
 
     View.prototype.getOwn = function(p, options) {
@@ -413,7 +420,7 @@ var __hasProp = {}.hasOwnProperty,
         return scope.reactOn(value, {
           observe: observe,
           react: function(got) {
-            got = $nodify(got || '');
+            got = $nodify(got !== void 0 ? got : '');
             $point.replaceWith(got);
             return $point = got;
           }
@@ -578,20 +585,22 @@ var __hasProp = {}.hasOwnProperty,
       return this.makeItemView = (function() {
         var _this = this;
         if (this.itemView != null) {
-          return function(model) {
+          return function(model, index) {
             var view;
             view = new _this.itemView({
-              model: model
+              model: model,
+              index: index
             });
             view.render();
             return view;
           };
         } else if (this.template) {
-          return function(model) {
+          return function(model, index) {
             var view;
             view = new View({
               template: _this.template,
-              model: model
+              model: model,
+              index: index
             });
             view.render();
             return view;
@@ -625,7 +634,9 @@ var __hasProp = {}.hasOwnProperty,
       this.removeViews();
       return this.collection.forEach(function(model) {
         var view;
-        view = _this.makeItemView(model);
+        view = _this.makeItemView(model, function() {
+          return _this.collection.indexOf(model);
+        });
         _this.$el.append(view.$el);
         return _this.views.push(view);
       });
@@ -640,7 +651,9 @@ var __hasProp = {}.hasOwnProperty,
         _ref = _this.viewByModel(model), view = _ref.view, idx = _ref.idx;
         _this.views.splice(idx, 1)[0];
         _this.views.splice(newIdx, view);
+        view.options.index = newIdx;
         view.$el.detach();
+        view.digest();
         if (!$cur) {
           return _this.$el.append(view.$el);
         } else {
@@ -651,23 +664,44 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     CollectionView.prototype.onAdd = function(model) {
-      var idx, view;
+      var idx, view, _i, _len, _ref,
+        _this = this;
       idx = this.collection.indexOf(model);
-      view = this.makeItemView(model);
+      view = this.makeItemView(model, function() {
+        return _this.collection.indexOf(model);
+      });
       if (idx >= this.$el.children().size()) {
         this.$el.append(view.$el);
       } else {
         this.$el.children().eq(idx).before(view.$el);
+        _ref = this.views.slice(idx);
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          view = _ref[_i];
+          if ((view != null ? view.digest : void 0) != null) {
+            view.digest();
+          }
+        }
       }
       return this.views.push(view);
     };
 
     CollectionView.prototype.onRemove = function(model) {
-      var idx, view, _ref;
+      var idx, view, _i, _len, _ref, _ref1, _results;
       _ref = this.viewByModel(model), view = _ref.view, idx = _ref.idx;
       if (view) {
         view.remove();
-        return this.views.splice(idx, 1);
+        this.views.splice(idx, 1);
+        _ref1 = this.views.slice(idx);
+        _results = [];
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          view = _ref1[_i];
+          if ((view != null ? view.digest : void 0) != null) {
+            _results.push(view.digest());
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
       }
     };
 

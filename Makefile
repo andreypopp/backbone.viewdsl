@@ -17,3 +17,7 @@ watch-test:
 %.js: %.coffee
 	coffee -bcp $< > $@
 
+publish:
+	git push
+	git push --tags
+	npm publish

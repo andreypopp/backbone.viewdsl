@@ -447,7 +447,7 @@ define(function(require) {
           MyView.__super__.constructor.apply(this, arguments);
         }
 
-        MyView.prototype.template = "{{model.name}}";
+        MyView.prototype.template = "{{model.name}}{{bind:options.index}}";
 
         return MyView;
 
@@ -455,9 +455,9 @@ define(function(require) {
       v = new MyView({
         collection: collection
       }).render();
-      expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div>');
+      expect(v.$el.html()).to.be.equal('<div>a0</div><div>b1</div><div>c2</div>');
       collection.sort();
-      return expect(v.$el.html()).to.be.equal('<div>c</div><div>a</div><div>b</div>');
+      return expect(v.$el.html()).to.be.equal('<div>c0</div><div>a1</div><div>b2</div>');
     });
     describe('add to collection', function() {
       it('should react on add new item to the end of the collection', function() {
@@ -471,7 +471,7 @@ define(function(require) {
             MyView.__super__.constructor.apply(this, arguments);
           }
 
-          MyView.prototype.template = "{{model.name}}";
+          MyView.prototype.template = "{{model.name}}{{options.index}}";
 
           return MyView;
 
@@ -479,13 +479,13 @@ define(function(require) {
         v = new MyView({
           collection: collection
         }).render();
-        expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div>');
+        expect(v.$el.html()).to.be.equal('<div>a0</div><div>b1</div><div>c2</div>');
         collection.add(new Model({
           name: 'd'
         }), {
           sort: false
         });
-        return expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div><div>d</div>');
+        return expect(v.$el.html()).to.be.equal('<div>a0</div><div>b1</div><div>c2</div><div>d3</div>');
       });
       it('should react on add new item to the start of the collection', function() {
         var MyView, v;
@@ -498,7 +498,7 @@ define(function(require) {
             MyView.__super__.constructor.apply(this, arguments);
           }
 
-          MyView.prototype.template = "{{model.name}}";
+          MyView.prototype.template = "{{model.name}}{{bind:options.index}}";
 
           return MyView;
 
@@ -506,13 +506,13 @@ define(function(require) {
         v = new MyView({
           collection: collection
         }).render();
-        expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div>');
+        expect(v.$el.html()).to.be.equal('<div>a0</div><div>b1</div><div>c2</div>');
         collection.add(new Model({
           name: 'd'
         }), {
           at: 0
         });
-        return expect(v.$el.html()).to.be.equal('<div>d</div><div>a</div><div>b</div><div>c</div>');
+        return expect(v.$el.html()).to.be.equal('<div>d0</div><div>a1</div><div>b2</div><div>c3</div>');
       });
       return it('should react on add new item by index to the collection', function() {
         var MyView, v;
@@ -525,7 +525,7 @@ define(function(require) {
             MyView.__super__.constructor.apply(this, arguments);
           }
 
-          MyView.prototype.template = "{{model.name}}";
+          MyView.prototype.template = "{{model.name}}{{bind:options.index}}";
 
           return MyView;
 
@@ -533,13 +533,13 @@ define(function(require) {
         v = new MyView({
           collection: collection
         }).render();
-        expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div>');
+        expect(v.$el.html()).to.be.equal('<div>a0</div><div>b1</div><div>c2</div>');
         collection.add(new Model({
           name: 'd'
         }), {
           at: 2
         });
-        return expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>d</div><div>c</div>');
+        return expect(v.$el.html()).to.be.equal('<div>a0</div><div>b1</div><div>d2</div><div>c3</div>');
       });
     });
     return describe('remove from collection', function() {
@@ -554,7 +554,7 @@ define(function(require) {
             MyView.__super__.constructor.apply(this, arguments);
           }
 
-          MyView.prototype.template = "{{model.name}}";
+          MyView.prototype.template = "{{model.name}}{{bind:options.index}}";
 
           return MyView;
 
@@ -562,9 +562,9 @@ define(function(require) {
         v = new MyView({
           collection: collection
         }).render();
-        expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div>');
+        expect(v.$el.html()).to.be.equal('<div>a0</div><div>b1</div><div>c2</div>');
         collection.remove(collection.at(0));
-        return expect(v.$el.html()).to.be.equal('<div>b</div><div>c</div>');
+        return expect(v.$el.html()).to.be.equal('<div>b0</div><div>c1</div>');
       });
       it('should react on remove item from the end of the collection', function() {
         var MyView, v;
@@ -577,7 +577,7 @@ define(function(require) {
             MyView.__super__.constructor.apply(this, arguments);
           }
 
-          MyView.prototype.template = "{{model.name}}";
+          MyView.prototype.template = "{{model.name}}{{bind:options.index}}";
 
           return MyView;
 
@@ -585,9 +585,9 @@ define(function(require) {
         v = new MyView({
           collection: collection
         }).render();
-        expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div>');
+        expect(v.$el.html()).to.be.equal('<div>a0</div><div>b1</div><div>c2</div>');
         collection.remove(collection.last());
-        return expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div>');
+        return expect(v.$el.html()).to.be.equal('<div>a0</div><div>b1</div>');
       });
       return it('should react on remove item from the middle of the collection', function() {
         var MyView, v;
@@ -600,7 +600,7 @@ define(function(require) {
             MyView.__super__.constructor.apply(this, arguments);
           }
 
-          MyView.prototype.template = "{{model.name}}";
+          MyView.prototype.template = "{{model.name}}{{bind:options.index}}";
 
           return MyView;
 
@@ -608,9 +608,9 @@ define(function(require) {
         v = new MyView({
           collection: collection
         }).render();
-        expect(v.$el.html()).to.be.equal('<div>a</div><div>b</div><div>c</div>');
+        expect(v.$el.html()).to.be.equal('<div>a0</div><div>b1</div><div>c2</div>');
         collection.remove(collection.at(1));
-        return expect(v.$el.html()).to.be.equal('<div>a</div><div>c</div>');
+        return expect(v.$el.html()).to.be.equal('<div>a0</div><div>c1</div>');
       });
     });
   });

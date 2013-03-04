@@ -60,6 +60,8 @@
   textNodeSplitRe = /({{)|(}})/
 
   $fromArray = (nodes) ->
+    if nodes == null
+      nodes = [$ document.createTextNode('')]
     o = $()
     for node in nodes
       o = o.add(node)
@@ -235,7 +237,9 @@
       this[id] = view if id
 
     get: (p, options) ->
-      this.getOwn(p, options) or this.parent?.get(p, options)
+      own = this.getOwn(p, options)
+      return own if own != undefined
+      this.parent?.get(p, options)
 
     getOwn: (p, options) ->
       p = p.trim()
@@ -283,7 +287,7 @@
         scope.reactOn value,
           observe: observe
           react: (got) ->
-            got = $nodify(got or '')
+            got = $nodify(if got != undefined then got else '')
             $point.replaceWith(got)
             $point = got
 
@@ -399,13 +403,13 @@
         this.template = maybeTemplate
 
       this.makeItemView = if this.itemView?
-        (model) =>
-          view = new this.itemView(model: model)
+        (model, index) =>
+          view = new this.itemView(model: model, index: index)
           view.render()
           view
       else if this.template
-        (model) =>
-          view = new View(template: this.template, model: model)
+        (model, index) =>
+          view = new View(template: this.template, model: model, index: index)
           view.render()
           view
       else
@@ -420,7 +424,7 @@
     onReset: ->
       this.removeViews()
       this.collection.forEach (model) =>
-        view = this.makeItemView(model)
+        view = this.makeItemView(model, => this.collection.indexOf(model))
         this.$el.append(view.$el)
         this.views.push(view)
 
@@ -430,7 +434,9 @@
         {view, idx} = this.viewByModel(model)
         this.views.splice(idx, 1)[0]
         this.views.splice(newIdx, view)
+        view.options.index = newIdx
         view.$el.detach()
+        view.digest()
         if not $cur
           this.$el.append view.$el
         else 
@@ -439,11 +445,13 @@
 
     onAdd: (model) ->
       idx = this.collection.indexOf(model)
-      view = this.makeItemView(model)
+      view = this.makeItemView(model, => this.collection.indexOf(model))
       if idx >= this.$el.children().size()
         this.$el.append(view.$el)
       else
         this.$el.children().eq(idx).before(view.$el)
+        for view in this.views[idx..]
+          view.digest() if view?.digest?
       this.views.push(view)
 
     onRemove: (model) ->
@@ -451,5 +459,7 @@
       if view
         view.remove()
         this.views.splice(idx, 1)
+        for view in this.views[idx..]
+          view.digest() if view?.digest?
 
   {Compiler, Template, View, CollectionView, $parseHTML}
