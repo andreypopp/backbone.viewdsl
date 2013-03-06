@@ -25,8 +25,8 @@ var __hasProp = {}.hasOwnProperty,
     return root.Backbone.ViewDSL = factory(root._, root.Backbone);
   }
 })(this, function(_, Backbone, require) {
-  var $fromArray, $isEmpty, $nodify, $parseHTML, CollectionView, Compiler, Template, View, extend, hypensToCamelCase, isBoolean, isEqual, isString, knownAttrs, knownTags, resolvePath, resolveSpec, some, textNodeSplitRe, toArray;
-  some = _.some, extend = _.extend, toArray = _.toArray, isEqual = _.isEqual, isBoolean = _.isBoolean, isString = _.isString;
+  var $fromArray, $isEmpty, $nodify, $parseHTML, CollectionView, Compiler, Template, View, every, extend, hypensToCamelCase, isBoolean, isEqual, isString, knownAttrs, knownTags, resolvePath, resolveSpec, some, textNodeSplitRe, toArray;
+  some = _.some, every = _.every, extend = _.extend, toArray = _.toArray, isEqual = _.isEqual, isBoolean = _.isBoolean, isString = _.isString;
   resolvePath = function(o, p) {
     var n, _i, _len, _ref;
     p = p.trim();
@@ -104,7 +104,9 @@ var __hasProp = {}.hasOwnProperty,
     if (isString(n)) {
       return n.trim() === '';
     } else if (n.jquery != null) {
-      return n.size() === 0;
+      return n.size() === 0 || every(n, function(n) {
+        return n.nodeType === Node.TEXT_NODE && n.data.trim() === '';
+      });
     } else if (n.nodeType != null) {
       return false;
     }
@@ -617,7 +619,10 @@ var __hasProp = {}.hasOwnProperty,
         this.template = $nodify(this.template);
       }
       if (this.options.itemView != null) {
-        this.itemView = resolveSpec(this.options.itemView, this);
+        this.itemView = this.options.itemView;
+      }
+      if ((this.itemView != null) && isString(this.itemView)) {
+        this.itemView = resolveSpec(this.itemView, this);
       }
       return this.makeItemView = (function() {
         var _this = this;

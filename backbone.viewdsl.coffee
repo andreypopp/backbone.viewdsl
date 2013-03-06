@@ -21,7 +21,7 @@
 
 ) this, (_, Backbone, require) ->
 
-  {some, extend, toArray, isEqual, isBoolean, isString} = _
+  {some, every, extend, toArray, isEqual, isBoolean, isString} = _
 
   resolvePath = (o, p) ->
     p = p.trim()
@@ -88,7 +88,7 @@
     if isString(n)
       n.trim() == ''
     else if n.jquery?
-      n.size() == 0
+      n.size() == 0 or every(n, (n) -> n.nodeType == Node.TEXT_NODE and n.data.trim() == '')
     else if n.nodeType?
       false
 
@@ -434,7 +434,10 @@
         this.template = $nodify(this.template)
 
       if this.options.itemView?
-        this.itemView = resolveSpec(this.options.itemView, this)
+        this.itemView = this.options.itemView
+
+      if this.itemView? and isString(this.itemView)
+        this.itemView = resolveSpec(this.itemView, this)
 
       this.makeItemView = if this.itemView?
         (model, index) =>
