@@ -256,7 +256,9 @@
       for n in p.split('.')
         ctx = o
         o = if (ctx instanceof Backbone.Model)
-          ctx.get(n) or ctx[n]
+          o = ctx.get(n)
+          o = ctx[n] if o == undefined
+          o
         else
           ctx[n]
         break if o == undefined
@@ -274,6 +276,7 @@
           this.listenTo this, "change:#{p}", options.react
 
     digest: ->
+      console.log this.constructor.name, 'digest'
       updates = {}
 
       for path, value of this.observe
@@ -316,7 +319,10 @@
           observe: observe
           react: (got) ->
             if isBoolean(got)
-              $node.attr(attrName, '') if got
+              if got
+                $node.attr(attrName, '')
+              else
+                $node.removeAttr(attrName)
             else
               $node.attr(attrName, got)
 

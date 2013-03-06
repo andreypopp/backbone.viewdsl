@@ -371,7 +371,7 @@ var __hasProp = {}.hasOwnProperty,
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         n = _ref[_i];
         ctx = o;
-        o = ctx instanceof Backbone.Model ? ctx.get(n) || ctx[n] : ctx[n];
+        o = ctx instanceof Backbone.Model ? (o = ctx.get(n), o === void 0 ? o = ctx[n] : void 0, o) : ctx[n];
         if (o === void 0) {
           break;
         }
@@ -398,6 +398,7 @@ var __hasProp = {}.hasOwnProperty,
 
     View.prototype.digest = function() {
       var newValue, path, updates, value, _ref, _results;
+      console.log(this.constructor.name, 'digest');
       updates = {};
       _ref = this.observe;
       for (path in _ref) {
@@ -460,6 +461,8 @@ var __hasProp = {}.hasOwnProperty,
             if (isBoolean(got)) {
               if (got) {
                 return $node.attr(attrName, '');
+              } else {
+                return $node.removeAttr(attrName);
               }
             } else {
               return $node.attr(attrName, got);
