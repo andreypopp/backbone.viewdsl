@@ -631,7 +631,8 @@ var __hasProp = {}.hasOwnProperty,
             var view;
             view = new _this.itemView({
               model: model,
-              index: index
+              index: index,
+              parent: _this
             });
             view.render();
             return view;
@@ -641,6 +642,7 @@ var __hasProp = {}.hasOwnProperty,
             var view;
             view = new View({
               template: _this.template.clone(true, true),
+              parent: _this,
               model: model,
               index: index
             });

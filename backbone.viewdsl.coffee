@@ -441,14 +441,14 @@
 
       this.makeItemView = if this.itemView?
         (model, index) =>
-          view = new this.itemView(model: model, index: index)
+          view = new this.itemView(model: model, index: index, parent: this)
           view.render()
           view
       else if this.template
         (model, index) =>
           view = new View(
             template: this.template.clone(true, true),
-            model: model, index: index)
+            parent: this, model: model, index: index)
           view.render()
           view
       else
