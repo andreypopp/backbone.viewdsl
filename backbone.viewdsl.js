@@ -254,7 +254,7 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     Template.prototype.renderImpl = function(scope, $node) {
-      var action, actions, child, stop, _i, _j, _len, _len1, _ref;
+      var action, actions, child, _i, _j, _len, _len1, _ref;
       if (!$node.data('hasActions')) {
         return $node;
       }
@@ -262,10 +262,7 @@ var __hasProp = {}.hasOwnProperty,
       if (actions) {
         for (_i = 0, _len = actions.length; _i < _len; _i++) {
           action = actions[_i];
-          stop = (action(scope, $node) || {}).stop;
-          if (stop) {
-            break;
-          }
+          action(scope, $node);
         }
       }
       _ref = toArray($node[0].childNodes);
@@ -441,6 +438,7 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     View.prototype.compileElementId = function($node, name, value) {
+      $node.removeAttr(name);
       return function(scope, $node) {
         return scope[value] = $node;
       };

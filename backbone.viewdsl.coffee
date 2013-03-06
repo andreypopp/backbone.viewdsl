@@ -189,8 +189,7 @@
       actions = $node.data('actions')
       if actions
         for action in actions
-          {stop} = action(scope, $node) or {}
-          break if stop
+          action(scope, $node)
 
       for child in toArray($node[0].childNodes)
         this.renderImpl(scope, $(child))
@@ -301,6 +300,7 @@
             $point = got
 
     compileElementId: ($node, name, value) ->
+      $node.removeAttr(name)
       (scope, $node) ->
         scope[value] = $node
 
