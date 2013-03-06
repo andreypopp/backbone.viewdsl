@@ -233,8 +233,21 @@ modifier:
     view = new View(model: new Backbone.Model(name: 'World', red: false))
     view.render()
 
-That way rendered view will react to data changes according to directive
-actions.
+That way rendered view's `el` will have
+
+    <div>Hello, World!</div>
+
+as its `innerHTML` and it will react to data changes according to directive
+actions. So this snippet of code
+
+    view.model.set(name: 'Commrade', red: true)
+
+will result `el.innerHTML` having different contents
+
+    <div class="red">Hello, Commrade!</div>
+
+Remember that `bind:` modifier also works with `attr-*` and `show-if`
+directives.
 
 ## Creating custom directives
 
