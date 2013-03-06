@@ -235,7 +235,7 @@
       this.removeViews()
       this.parent = undefined
       this.observe = undefined
-      this.views = undefined
+      this.views = []
 
     removeViews: ->
       for view in this.views
