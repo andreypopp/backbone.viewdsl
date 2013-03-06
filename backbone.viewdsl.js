@@ -398,7 +398,6 @@ var __hasProp = {}.hasOwnProperty,
 
     View.prototype.digest = function() {
       var newValue, path, updates, value, _ref, _results;
-      console.log(this.constructor.name, 'digest');
       updates = {};
       _ref = this.observe;
       for (path in _ref) {

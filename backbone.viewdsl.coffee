@@ -276,7 +276,6 @@
           this.listenTo this, "change:#{p}", options.react
 
     digest: ->
-      console.log this.constructor.name, 'digest'
       updates = {}
 
       for path, value of this.observe
