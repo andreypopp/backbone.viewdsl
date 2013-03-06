@@ -1,11 +1,8 @@
 all: index.html app.css
 
-watch:
-	watch -n0.3 $(MAKE) all
-
-index.html: ../README.md
+index.html::
 	@cat head.html > $@
-	@redcarpet --smarty ../README.md >> $@
+	@git show master:README.md | redcarpet --smarty >> $@
 	@cat footer.html >> $@
 
 app.css: app.sass
@@ -13,3 +10,6 @@ app.css: app.sass
 
 clean:
 	rm -f app.css index.html
+
+publish: all
+	git push origin gh-pages
