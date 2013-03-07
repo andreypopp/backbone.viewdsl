@@ -432,7 +432,8 @@ var __hasProp = {}.hasOwnProperty,
           observe: observe,
           react: function(got) {
             got = $nodify(got !== void 0 ? got : '');
-            $point.replaceWith(got);
+            $point.first().replaceWith(got);
+            $point.detach();
             return $point = got;
           }
         });

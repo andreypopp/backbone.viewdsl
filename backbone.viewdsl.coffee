@@ -298,7 +298,8 @@
           observe: observe
           react: (got) ->
             got = $nodify(if got != undefined then got else '')
-            $point.replaceWith(got)
+            $point.first().replaceWith(got)
+            $point.detach()
             $point = got
 
     compileElementId: ($node, name, value) ->
