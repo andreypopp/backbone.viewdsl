@@ -1,14 +1,72 @@
-<!doctype html>
-<meta charset="utf-8">
-<title>Backbone.ViewDSL</title>
-<link rel="stylesheet" href="app.css">
-<div class="main">
-<a href="https://github.com/andreypopp/backbone.viewdsl"><img style="position: absolute; top: 0; left:
-  0; border: 0;"
-  src="https://s3.amazonaws.com/github/ribbons/forkme_left_gray_6d6d6d.png"
-  alt="Fork me on GitHub"></a>
-<h1>Backbone.ViewDSL</h1>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv='content-type' value='text/html;charset=utf8'>
+  <meta charset='utf-8'>
+  <meta name='generator' value='Ronn/v0.7.3 (http://github.com/rtomayko/ronn/tree/0.7.3)'>
+  <title>Backbone.ViewDSL</title>
+  <style type='text/css' media='all'>
+  /* style: man */
+  @import url(http://fonts.googleapis.com/css?family=Open+Sans:700,300&subset=latin,cyrillic-ext);html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td,article,aside,canvas,details,embed,figure,figcaption,footer,header,hgroup,menu,nav,output,ruby,section,summary,time,mark,audio,video {margin: 0;padding: 0;border: 0;font: inherit;font-size: 100%;vertical-align: baseline}
+  html {line-height: 1}
+  ol,ul {list-style: none}
+  table {border-collapse: collapse;border-spacing: 0}
+  caption,th,td {text-align: left;font-weight: normal;vertical-align: middle}
+  q,blockquote {quotes: none}
+   q:before,q:after,blockquote:before,blockquote:after {content: "";content: none}
+  a img {border: none}
+  article,aside,details,figcaption,figure,footer,header,hgroup,menu,nav,section,summary {display: block}
+  body {height: 100%;width: 100%;font-family: "Open Sans",sans-serif;background: #f4f4f4;color: #424242}
+  em {border-bottom: 1px dotted #5c5c5c;color: #5c5c5c;cursor: help}
+  .mp {width: 600px;margin: 0 auto}
+  .man-decor {display: none}
+  header,p,ul,ol,aside,figure,article,pre {margin: 1em 0}
+  li {margin: 0.5em 0}
+  pre {margin-left: 2em}
+  pre,code {color: #424242;font-family: Menlo,Monaco,"Bitstream Mono",monospace;font-size: 10pt;line-height: 1.25em}
+  p code {margin: 0 0.3em;padding: 0 0.3em;background: white;white-space: nowrap}
+  ul li {margin-left: 1.5em;list-style-type: square}
+  ol li {margin-left: 1.5em;list-style-type: decimal}
+  p {line-height: 1.4em}
+  a {text-decoration: none;padding: 0 0.1em;color: #3299bb}
+   a:hover {color: #f4f4f4;background: #3299bb}
+  section {margin: 2em 0}
+  h1,h2,h3,h4,h5,h6 {font-weight: bold;color: #3299bb;margin-bottom: 1em;margin-top: 2em;text-transform: uppercase;margin-left: -40px}
+  h1 {font-size: 22pt}
+  h2 {font-size: 16pt}
+  .main {width: 600px;margin: 0 auto;padding: 80px 0;padding-left: 40px}
+  </style>
+</head>
+<!--
+  The following styles are deprecated and will be removed at some point:
+  div#man, div#man ol.man, div#man ol.head, div#man ol.man.
 
+  The .man-page, .man-decor, .man-head, .man-foot, .man-title, and
+  .man-navigation should be used instead.
+-->
+<body id='manpage'>
+  <div class='mp' id='man'>
+
+  <div class='man-navigation' style='display:none'>
+    <a href="#Installation">Installation</a>
+    <a href="#Basic-usage">Basic usage</a>
+    <a href="#Sub-views-instantiation">Sub-views instantiation</a>
+    <a href="#String-and-DOM-values-interpolation">String and DOM values interpolation</a>
+    <a href="#Referencing-DOM-nodes">Referencing DOM nodes</a>
+    <a href="#Other-built-in-directives">Other built-in directives</a>
+    <a href="#Data-binding">Data-binding</a>
+    <a href="#Creating-custom-directives">Creating custom directives</a>
+    <a href="#Rendering-collections">Rendering collections</a>
+    <a href="#Parametrizable-views">Parametrizable views</a>
+  </div>
+
+  <ol class='man-decor man-head man head'>
+    <li class='tl'></li>
+    <li class='tc'></li>
+    <li class='tr'></li>
+  </ol>
+
+  <h1>Backbone.ViewDSL</h1>
 <p>Backbone.ViewDSL provides declarative view technology on top of Backbone.</p>
 
 <p>The main feature of Backbone.ViewDSL is an extensible DOM templating engine
@@ -22,30 +80,31 @@ which allows you to</p>
 <li>Create custom directives as custom HTML tags or attributes</li>
 </ul>
 
-<p>To give a taste of these features there&#39;s a basic example</p>
+
+<p>To give a taste of these features there's a basic example</p>
 
 <pre><code>class App extends Backbone.ViewDSL.View
-  template: &quot;&quot;&quot;
-    &lt;h1 element-id=&quot;$header&quot;&gt;{{bind:user.name}}&#39;s todos&lt;/h1&gt;
-    &lt;view name=&quot;views:UserCard&quot; model=&quot;user&quot;&gt;&lt;/view&gt;
-    &lt;foreach collection=&quot;todos&quot;&gt;
-      &lt;view name=&quot;views:TodoView&quot;&gt;&lt;/view&gt;
+  template: """
+    &lt;h1 element-id="$header"&gt;{{bind:user.name}}'s todos&lt;/h1&gt;
+    &lt;view name="views:UserCard" model="user"&gt;&lt;/view&gt;
+    &lt;foreach collection="todos"&gt;
+      &lt;view name="views:TodoView"&gt;&lt;/view&gt;
     &lt;/foreach&gt;
-    &quot;&quot;&quot;
+    """
 </code></pre>
 
 <p>This work was mainly inspired by <a href="http://angularjs.org/">Angular.js</a> but tries to stay as close to
 Backbone style as possible so it is very easy to use in your application in a
 completely non-intrusive way.</p>
 
-<h2>Installation</h2>
+<h2 id="Installation">Installation</h2>
 
 <p>You can grab <a href="https://raw.github.com/andreypopp/backbone.viewdsl/master/backbone.viewdsl.js">compiled JavaScript code</a> from the <a href="https://github.com/andreypopp/backbone.viewdsl">repo</a> or use <code>npm</code>:</p>
 
 <pre><code>% npm install backbone.viewdsl
 </code></pre>
 
-<p>or <code>bower</code> package managers:</p>
+<p> or <code>bower</code> package managers:</p>
 
 <pre><code>% bower install backbone.viewdsl
 </code></pre>
@@ -55,11 +114,11 @@ the package managers they will be installed automatically, otherwise you should
 download them by hand.</p>
 
 <p>Backbone.ViewDSL designed to work in CommonJS environment as well as with any
-available AMD loader (such as RequireJS). If you don&#39;t use nor AMD neither
+available AMD loader (such as RequireJS). If you don't use nor AMD neither
 CommonJS loading strategies then all the public API will be available through
 the <code>Backbone.ViewDSL</code> browser global.</p>
 
-<h2>Basic usage</h2>
+<h2 id="Basic-usage">Basic usage</h2>
 
 <p>The main usage pattern is exposed via <code>Backbone.ViewDSL.View</code> subclass of
 <code>Backbone.View</code> with a custom implementation of <code>render()</code> method.</p>
@@ -67,29 +126,29 @@ the <code>Backbone.ViewDSL</code> browser global.</p>
 <p>Usually you want to define a new subclass of it and set a <code>template</code> attribute:</p>
 
 <pre><code>class Message extends Backbone.ViewDSL.View
-  template: &quot;&quot;&quot;
+  template: """
     {{greeting}}, {{options.name}}!
-    &quot;&quot;&quot;
+    """
 
   greeting: -&gt;
-    &#39;Hello&#39;
+    'Hello'
 
-view = new Message(name: &#39;World&#39;)
+view = new Message(name: 'World')
 view.render()
 </code></pre>
 
 <p>This template uses string interpolation to insert <code>options.name</code> value and a
-result of <code>greeting()</code> method call inside the DOM text node. That way view&#39;s
+result of <code>greeting()</code> method call inside the DOM text node. That way view's
 <code>el</code> DOM element will have a form of <code>&lt;div&gt;Hello, World!&lt;/div&gt;</code>.</p>
 
 <p>Templates are always rendered in the context of a view so we can reference any
-view&#39;s attribute inside them or call any methods without arguments. If you need
+view's attribute inside them or call any methods without arguments. If you need
 to reach some nested attribute or method then you can use usual dotted-path like
 <code>a.b.c</code>.</p>
 
-<h2>Sub-views instantiation</h2>
+<h2 id="Sub-views-instantiation">Sub-views instantiation</h2>
 
-<p>Backbone doesn&#39;t have an opinion on how to manage view hierarchies inside your
+<p>Backbone doesn't have an opinion on how to manage view hierarchies inside your
 application so usually you cook something by yourself.</p>
 
 <p>Backbone.ViewDSL tries to make this task a lot easier by providing you with a
@@ -100,10 +159,10 @@ attribute.</p>
 <p>The example would be</p>
 
 <pre><code>class App extends Backbone.ViewDSL.View
-  template: &quot;&quot;&quot;
-    &lt;view name=&quot;views.Sidebar&quot; model=&quot;user&quot; id=&quot;sidebar&quot;&gt;&lt;/view&gt;
-    &lt;footer view=&quot;views.Footer&quot; view-model=&quot;user&quot; view-id=&quot;footer&quot;&gt;&lt;/footer&gt;
-    &quot;&quot;&quot;
+  template: """
+    &lt;view name="views.Sidebar" model="user" id="sidebar"&gt;&lt;/view&gt;
+    &lt;footer view="views.Footer" view-model="user" view-id="footer"&gt;&lt;/footer&gt;
+    """
 
 app = new App
 app.render()
@@ -115,9 +174,9 @@ app.render()
 constructor as a <code>model</code> option. After that rendered view will be stored as
 <code>app.sidebar</code> attribute.</p>
 
-<p>There&#39;s a bit different story with <code>views.Footer</code> — it also gets <code>app.user</code> as a
+<p>There's a bit different story with <code>views.Footer</code> — it also gets <code>app.user</code> as a
 constructor <code>model</code> option but instead of creating new DOM node for the view
-itself it will reuse <code>&lt;footer&gt;</code> element. That could be useful if you don&#39;t know
+itself it will reuse <code>&lt;footer&gt;</code> element. That could be useful if you don't know
 before with what kind of element view will be used.</p>
 
 <p>Without using Backbone.ViewDSL all of these would look like this:</p>
@@ -129,44 +188,44 @@ before with what kind of element view will be used.</p>
     this.sidebar.render()
     this.$el.append(this.sidebar.$el)
 
-    this.footer = new Footer(model: this.user, tagName: &#39;footer&#39;)
+    this.footer = new Footer(model: this.user, tagName: 'footer')
     this.footer.render()
     this.$el.append(this.footer.$el)
 </code></pre>
 
-<p>The variant which uses <code>Backbone.ViewDSL.ViewDSL</code> looks a lot cleaner, doesn&#39;t
+<p>The variant which uses <code>Backbone.ViewDSL.ViewDSL</code> looks a lot cleaner, doesn't
 it? Also <code>Backbone.ViewDSL.View</code> keeps track of all instantiated sub-views and
 handles its disposal so no memory leaks will happen.</p>
 
-<h2>String and DOM values interpolation</h2>
+<h2 id="String-and-DOM-values-interpolation">String and DOM values interpolation</h2>
 
 <p>As it was already shown Backbone.ViewDSL allows you to insert specific
-bits of text inside templates. But what&#39;s more interesting — you can also insert
+bits of text inside templates. But what's more interesting — you can also insert
 entire DOM elements into templates, even with attached event handlers.</p>
 
 <pre><code>class View extends Backbone.ViewDSL.ViewDSL
-  template: &quot;&quot;&quot;
+  template: """
     {{element}} {{jquery}}
-    &quot;&quot;&quot;
+    """
   element: -&gt;
-    document.createElement(&#39;div&#39;)
+    document.createElement('div')
   jquery: -&gt;
-    $(&#39;&lt;div&gt;&#39;).addClass(&#39;klass&#39;)
+    $('&lt;div&gt;').addClass('klass')
 </code></pre>
 
-<p>Rendered view will have <code>&lt;div&gt;&lt;/div&gt; &lt;div class=&quot;klass&quot;&gt;&lt;/div&gt;</code> as its content.
+<p>Rendered view will have <code>&lt;div&gt;&lt;/div&gt; &lt;div class="klass"&gt;&lt;/div&gt;</code> as its content.
 As you can see you can also insert jQuery objects into template.</p>
 
-<h2>Referencing DOM nodes</h2>
+<h2 id="Referencing-DOM-nodes">Referencing DOM nodes</h2>
 
 <p>Sometimes you need to reference DOM element from recently rendered template —
 you can select it by using <code>this.$</code> method call but a better way would be to use
 <code>element-id</code> attribute directive.</p>
 
 <pre><code>class View extends Backbone.ViewDSL.View
-  template: &quot;&quot;&quot;
-    &lt;div class=&quot;main&quot; element-id=&quot;block&quot;&gt;&lt;/div&gt;
-    &quot;&quot;&quot;
+  template: """
+    &lt;div class="main" element-id="block"&gt;&lt;/div&gt;
+    """
 
 view = new View
 view.render()
@@ -174,43 +233,43 @@ view.render()
 
 <p>That way rendered <code>&lt;div&gt;</code> element will be available as <code>view.block</code> attribute.</p>
 
-<h2>Other built-in directives</h2>
+<h2 id="Other-built-in-directives">Other built-in directives</h2>
 
 <p>There are a couple of other built-in directives — <code>attr-*</code> and <code>class-*</code>
 wildcard directives and <code>show-if</code> directive.</p>
 
 <p>The <code>attr-*</code> directive can be used to attach attributes to DOM elements based on
-some view&#39;s value. For example given the template</p>
+some view's value. For example given the template</p>
 
-<pre><code>&lt;img attr-src=&quot;model.imageURL&quot;&gt;
+<pre><code>&lt;img attr-src="model.imageURL"&gt;
 </code></pre>
 
-<p>We will get <code>src</code> attribute set to value of <code>model.imageURL</code> view&#39;s attribute.
-There&#39;s also a special case for attributes which has boolean interpretation
-(<code>checked</code>, <code>contenteditable</code> and so on&hellip;)  — if expression evaluates to
+<p>We will get <code>src</code> attribute set to value of <code>model.imageURL</code> view's attribute.
+There's also a special case for attributes which has boolean interpretation
+(<code>checked</code>, <code>contenteditable</code> and so on...)  — if expression evaluates to
 <code>Boolean</code> value then attribute will be present if value is <code>true</code> in case of
 <code>false</code> value attribute will not be rendered.</p>
 
 <pre><code>class View extends Backbone.ViewDSL.View
-  template: &quot;&quot;&quot;
-    &lt;h1 attr-contenteditable=&quot;isEditable&quot;&gt;title&lt;/h1&gt;
-    &quot;&quot;&quot;
+  template: """
+    &lt;h1 attr-contenteditable="isEditable"&gt;title&lt;/h1&gt;
+    """
   isEditable: -&gt;
-    this.model.get(&#39;isEditable&#39;) and this.user.canEdit(this.model)
+    this.model.get('isEditable') and this.user.canEdit(this.model)
 </code></pre>
 
 <p>Note that <code>isEditable</code> method returns boolean value.</p>
 
 <p>The <code>class-*</code> wildcard directive works like a <code>attr-*</code> directive but instead
-regulates if element should receive an additional CSS class based on some view&#39;s
+regulates if element should receive an additional CSS class based on some view's
 attribute or method.</p>
 
 <pre><code>class View extends Backbone.ViewDSL.View
-  template: &quot;&quot;&quot;
-    &lt;h1 class-editable=&quot;isEditable&quot;&gt;title&lt;/h1&gt;
-    &quot;&quot;&quot;
+  template: """
+    &lt;h1 class-editable="isEditable"&gt;title&lt;/h1&gt;
+    """
   isEditable: -&gt;
-    this.model.get(&#39;isEditable&#39;) and this.user.canEdit(this.model)
+    this.model.get('isEditable') and this.user.canEdit(this.model)
 </code></pre>
 
 <p>In this example, <code>&lt;h1&gt;</code> will have class <code>editable</code> if and only if <code>isEditable</code>
@@ -219,17 +278,17 @@ method evaluates to <code>true</code>.</p>
 <p>The last of the built-in directives — <code>show-if</code> controls if element is visible
 based on some expression which evaluates to boolean value:</p>
 
-<pre><code>&lt;div show-if=&quot;this.collection.isEmpty&quot;&gt;No items&quot;&lt;/div&gt;
+<pre><code>&lt;div show-if="this.collection.isEmpty"&gt;No items"&lt;/div&gt;
 </code></pre>
 
 <p>The <code>&lt;div&gt;</code> element will be displayed only if <code>this.collection.isEmpty()</code>
 evaluates to <code>true</code>. Methods <code>$.show()</code> and <code>$.hide()</code> are used to
 correspondingly show and hide elements.</p>
 
-<h2>Data-binding</h2>
+<h2 id="Data-binding">Data-binding</h2>
 
 <p>You want your views to react to underlying data changes but manually maintaining
-a set of <code>change</code> event handlers isn&#39;t an option.</p>
+a set of <code>change</code> event handlers isn't an option.</p>
 
 <p>For that reason a part of Backbone.ViewDSL directives like <code>attr-*</code>, <code>class-*</code>
 and <code>show-if</code> as well as interpolation mechanism allows you to bind their action
@@ -241,18 +300,18 @@ modifier:</p>
 <pre><code>class View extends Backbone.ViewDSL.View
   redAllowed: true
 
-  template: &quot;&quot;&quot;
-    &lt;div class-red=&quot;bind:isRed&quot;&gt;Hello, {{bind:model.name}}!&lt;/div&gt;
-    &quot;&quot;&quot;
+  template: """
+    &lt;div class-red="bind:isRed"&gt;Hello, {{bind:model.name}}!&lt;/div&gt;
+    """
 
   isRed: -&gt;
-    this.model.get(&#39;red&#39;) and this.redAllowed
+    this.model.get('red') and this.redAllowed
 
-view = new View(model: new Backbone.Model(name: &#39;World&#39;, red: false))
+view = new View(model: new Backbone.Model(name: 'World', red: false))
 view.render()
 </code></pre>
 
-<p>That way rendered view&#39;s <code>el</code> will have</p>
+<p>That way rendered view's <code>el</code> will have</p>
 
 <pre><code>&lt;div&gt;Hello, World!&lt;/div&gt;
 </code></pre>
@@ -260,20 +319,30 @@ view.render()
 <p>as its <code>innerHTML</code> and it will react to data changes according to directive
 actions. So this snippet of code</p>
 
-<pre><code>view.model.set(name: &#39;Commrade&#39;, red: true)
+<pre><code>view.model.set(name: 'Commrade', red: true)
 </code></pre>
 
 <p>will result <code>el.innerHTML</code> having different contents</p>
 
-<pre><code>&lt;div class=&quot;red&quot;&gt;Hello, Commrade!&lt;/div&gt;
+<pre><code>&lt;div class="red"&gt;Hello, Commrade!&lt;/div&gt;
 </code></pre>
 
 <p>Remember that <code>bind:</code> modifier also works with <code>attr-*</code> and <code>show-if</code>
 directives.</p>
 
-<h2>Creating custom directives</h2>
+<h2 id="Creating-custom-directives">Creating custom directives</h2>
 
-<h2>Rendering collections</h2>
+<h2 id="Rendering-collections">Rendering collections</h2>
 
-<h2>Parametrizable views</h2>
-</div>
+<h2 id="Parametrizable-views">Parametrizable views</h2>
+
+
+  <ol class='man-decor man-foot man foot'>
+    <li class='tl'></li>
+    <li class='tc'>March 2013</li>
+    <li class='tr'></li>
+  </ol>
+
+  </div>
+</body>
+</html>

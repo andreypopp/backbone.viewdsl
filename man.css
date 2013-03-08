@@ -53,19 +53,26 @@ body {
   background: #f4f4f4;
   color: #424242; }
 
+em {
+  border-bottom: 1px dotted #5c5c5c;
+  color: #5c5c5c;
+  cursor: help; }
+
+.mp {
+  width: 600px;
+  margin: 0 auto; }
+
+.man-decor {
+  display: none; }
+
 header, p, ul, ol, aside, figure, article, pre {
   margin: 1em 0; }
 
 li {
   margin: 0.5em 0; }
 
-em {
-  border-bottom: 1px dotted #5c5c5c;
-  color: #5c5c5c;
-  cursor: help; }
-
 pre {
-  margin-left: 3em; }
+  margin-left: 2em; }
 
 pre,
 code {

@@ -1,15 +1,16 @@
-all: index.html app.css
+all: index.html man.css
 
-index.html::
-	@cat head.html > $@
-	@git show master:README.md | redcarpet --smarty >> $@
-	@cat footer.html >> $@
+watch:
+	watch -n1 $(MAKE) all
 
-app.css: app.sass
+index.html:: man.css
+	@git show master:README.md | RONN_STYLE=. ronn --html --pipe > $@
+
+man.css: man.sass
 	@sass --compass $< > $@
 
 clean:
-	rm -f app.css index.html
+	rm -f man.css index.html
 
 publish: all
 	git push origin gh-pages

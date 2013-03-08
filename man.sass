@@ -6,6 +6,7 @@ $color: #424242
 $acolor: #3299BB
 $vmargin: 1em
 $header-shift: 40px
+$width: 600px
 
 body
   height: 100%
@@ -14,19 +15,26 @@ body
   background: $bg
   color: $color
 
+em
+  border-bottom: 1px dotted lighten($color, 10%)
+  color: lighten($color, 10%)
+  cursor: help
+
+.mp
+  width: $width
+  margin: 0 auto
+
+.man-decor
+  display: none
+
 header, p, ul, ol, aside, figure, article, pre
   margin: $vmargin 0
 
 li
   margin: $vmargin/2 0
 
-em
-  border-bottom: 1px dotted lighten($color, 10%)
-  color: lighten($color, 10%)
-  cursor: help
-
 pre
-  margin-left: 3em
+  margin-left: 2em
 
 pre,
 code
