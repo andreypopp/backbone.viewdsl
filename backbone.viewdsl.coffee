@@ -62,10 +62,10 @@
   $fromArray = (nodes) ->
     if nodes == null
       nodes = [$ document.createTextNode('')]
-    o = $()
+    o = $ document.createDocumentFragment()
     for node in nodes
-      o = o.add(node)
-    o
+      o.append(node)
+    o.contents()
 
   $parseHTML = (nodes) ->
     if isString(nodes)
@@ -138,7 +138,7 @@
         else
           $ document.createTextNode(part)
 
-      $node.replaceWith $fromArray nodes
+      $node.replaceWith($fromArray(nodes))
 
       true
 

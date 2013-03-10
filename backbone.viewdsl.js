@@ -72,12 +72,12 @@ var __hasProp = {}.hasOwnProperty,
     if (nodes === null) {
       nodes = [$(document.createTextNode(''))];
     }
-    o = $();
+    o = $(document.createDocumentFragment());
     for (_i = 0, _len = nodes.length; _i < _len; _i++) {
       node = nodes[_i];
-      o = o.add(node);
+      o.append(node);
     }
-    return o;
+    return o.contents();
   };
   $parseHTML = function(nodes) {
     if (isString(nodes)) {
