@@ -1,6 +1,6 @@
 {
   "name": "backbone.viewdsl",
-  "version": "0.21.7",
+  "version": "0.21.8",
   "description": "declarative view technology for Backbone",
   "main": "backbone.viewdsl.js",
   "dependencies": {
