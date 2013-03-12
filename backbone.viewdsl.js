@@ -528,6 +528,7 @@ var __hasProp = {}.hasOwnProperty,
       viewClass = (function() {
         if (name == null) {
           spec = $node.attr('name');
+          $node.removeAttr('name');
           if (!spec) {
             throw new Error("provide view attr");
           }
@@ -550,7 +551,7 @@ var __hasProp = {}.hasOwnProperty,
       template = element || viewClass.parameterizable ? $node.contents().detach() : void 0;
       className = element && $node.attr('class') ? $node.attr('class') : void 0;
       return function(scope, $node) {
-        var a, attrName, view, viewParams, _i, _len, _ref;
+        var a, attrName, attrValue, view, viewParams, _i, _len, _ref;
         viewParams = {};
         _ref = toArray(node.attributes);
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -560,7 +561,8 @@ var __hasProp = {}.hasOwnProperty,
           }
           attrName = element ? a.name : a.name.slice(5);
           attrName = hypensToCamelCase(attrName);
-          viewParams[attrName] = scope.get(a.value) || a.value;
+          attrValue = scope.get(a.value);
+          viewParams[attrName] = attrValue !== void 0 ? attrValue : a.value;
           if (!element) {
             $node.removeAttr(a.name);
           }

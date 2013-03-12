@@ -360,6 +360,7 @@
     compileView: ($node, name, value) ->
       viewClass = if not name?
         spec = $node.attr('name')
+        $node.removeAttr('name')
         throw new Error("provide view attr") unless spec
         resolveSpec(spec, this)
       else
@@ -392,7 +393,8 @@
           attrName = if element then a.name else a.name.slice(5)
           attrName = hypensToCamelCase(attrName)
 
-          viewParams[attrName] = scope.get(a.value) or a.value
+          attrValue = scope.get(a.value)
+          viewParams[attrName] = if attrValue != undefined then attrValue else a.value
 
           $node.removeAttr(a.name) if not element
 
