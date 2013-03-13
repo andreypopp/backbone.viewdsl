@@ -116,12 +116,6 @@ define (require) ->
         et.trigger 'event'
         expect(v.$el.html()).to.be.equal '<div>Hello, Andrey!</div>'
 
-      it 'should digest on DOM event handling', ->
-        v = renderV '<div>Hello, {{bind:name}}!</div>', {name: 'World'}
-        expect(v.$el.html()).to.be.equal '<div>Hello, World!</div>'
-        v.$el.trigger('event')
-        expect(v.$el.html()).to.be.equal '<div>Hello, Andrey!</div>'
-
   describe 'View', ->
 
     render = (t, s) ->

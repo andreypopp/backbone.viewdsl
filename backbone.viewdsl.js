@@ -26,8 +26,8 @@ var __hasProp = {}.hasOwnProperty,
     return root.Backbone.ViewDSL = factory(root._, root.Backbone);
   }
 })(this, function(_, Backbone, require) {
-  var $fromArray, $isEmpty, $nodify, $parseHTML, CollectionView, Compiler, Directives, Template, View, delegateEventSplitter, every, extend, hypensToCamelCase, isBoolean, isEqual, isString, knownAttrs, knownTags, resolvePath, resolveSpec, some, textNodeSplitRe, toArray;
-  some = _.some, every = _.every, extend = _.extend, toArray = _.toArray, isEqual = _.isEqual, isBoolean = _.isBoolean, isString = _.isString;
+  var $fromArray, $isEmpty, $nodify, $parseHTML, CollectionView, Compiler, Directives, Template, View, contains, delegateEventSplitter, domProperties, every, extend, hypensToCamelCase, isBoolean, isEqual, isString, knownAttrs, knownTags, resolvePath, resolveSpec, some, textNodeSplitRe, toArray;
+  some = _.some, every = _.every, extend = _.extend, toArray = _.toArray, isEqual = _.isEqual, isBoolean = _.isBoolean, isString = _.isString, contains = _.contains;
   resolvePath = function(o, p) {
     var n, _i, _len, _ref;
     p = p.trim();
@@ -279,6 +279,7 @@ var __hasProp = {}.hasOwnProperty,
     return Template;
 
   })();
+  domProperties = ['value', 'checked', 'disabled'];
   Directives = {
     compileInterpolation: function($node, value) {
       var observe;
@@ -308,7 +309,7 @@ var __hasProp = {}.hasOwnProperty,
       };
     },
     compileAttr: function($node, name, value) {
-      var attrName, observe;
+      var attr, attrName, observe, removeAttr, _ref;
       observe = false;
       if (value.substring(0, 5) === 'bind:') {
         value = value.substring(5);
@@ -316,18 +317,25 @@ var __hasProp = {}.hasOwnProperty,
       }
       attrName = name.substring(5);
       $node.removeAttr(name);
+      _ref = contains(domProperties, attrName) ? {
+        attr: 'prop',
+        removeAttr: 'removeProp'
+      } : {
+        attr: 'attr',
+        removeAttr: 'removeAttr'
+      }, attr = _ref.attr, removeAttr = _ref.removeAttr;
       return function(scope, $node) {
         return scope.reactOn(value, {
           observe: observe,
           react: function(got) {
             if (isBoolean(got)) {
               if (got) {
-                return $node.attr(attrName, '');
+                return $node[attr](attrName, '');
               } else {
-                return $node.removeAttr(attrName);
+                return $node[removeAttr](attrName);
               }
             } else {
-              return $node.attr(attrName, got);
+              return $node[attr](attrName, got);
             }
           }
         });
@@ -458,21 +466,21 @@ var __hasProp = {}.hasOwnProperty,
       if (options == null) {
         options = {};
       }
-      View.__super__.constructor.apply(this, arguments);
       if (options.template != null) {
         this.template = options.template;
       }
       this.parent = options.parent;
       this.views = [];
       this.compiler = new Compiler(this.constructor);
-      if (this.model != null) {
-        this.listenTo(this.model, 'change');
+      if (options.model != null) {
+        this.listenTo(options.model, 'change');
       }
-      if (this.collection != null) {
-        this.listenTo(this.collection, 'change add remove reset sort');
+      if (options.collection != null) {
+        this.listenTo(options.collection, 'change add remove reset sort');
       }
       this.digestScheduled = false;
       this.observe = {};
+      View.__super__.constructor.apply(this, arguments);
     }
 
     View.prototype.renderTemplate = function(template) {
@@ -561,34 +569,6 @@ var __hasProp = {}.hasOwnProperty,
           return this.listenTo(this, "change:" + p, options.react);
         }
       }
-    };
-
-    View.prototype.delegateEvents = function(events) {
-      var eventName, key, match, method, selector;
-      if (!(events || (events = _.result(this, 'events')))) {
-        return this;
-      }
-      this.undelegateEvents();
-      for (key in events) {
-        method = events[key];
-        if (!_.isFunction(method)) {
-          method = this[events[key]];
-        }
-        if (!method) {
-          throw new Error("Method \"" + events[key] + "\" does not exist");
-        }
-        match = key.match(delegateEventSplitter);
-        eventName = match[1];
-        selector = match[2];
-        method = this.mutating(_.bind(method, this));
-        eventName += '.delegateEvents' + this.cid;
-        if (selector === '') {
-          this.$el.on(eventName, method);
-        } else {
-          this.$el.on(eventName, selector, method);
-        }
-      }
-      return this;
     };
 
     View.prototype.listenTo = function(obj, name, cb) {

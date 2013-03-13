@@ -163,7 +163,7 @@ define(function(require) {
         v.render();
         return v;
       };
-      it('should digest on object event handling', function() {
+      return it('should digest on object event handling', function() {
         var v;
         v = renderV('<div>Hello, {{bind:name}}!</div>', {
           name: 'World'
@@ -173,15 +173,6 @@ define(function(require) {
           return v.name = 'Andrey';
         });
         et.trigger('event');
-        return expect(v.$el.html()).to.be.equal('<div>Hello, Andrey!</div>');
-      });
-      return it('should digest on DOM event handling', function() {
-        var v;
-        v = renderV('<div>Hello, {{bind:name}}!</div>', {
-          name: 'World'
-        });
-        expect(v.$el.html()).to.be.equal('<div>Hello, World!</div>');
-        v.$el.trigger('event');
         return expect(v.$el.html()).to.be.equal('<div>Hello, Andrey!</div>');
       });
     });

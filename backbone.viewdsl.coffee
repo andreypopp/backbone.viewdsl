@@ -21,7 +21,7 @@
 
 ) this, (_, Backbone, require) ->
 
-  {some, every, extend, toArray, isEqual, isBoolean, isString} = _
+  {some, every, extend, toArray, isEqual, isBoolean, isString, contains} = _
 
   resolvePath = (o, p) ->
     p = p.trim()
@@ -196,6 +196,8 @@
 
       $node
 
+  domProperties = ['value', 'checked', 'disabled']
+
   Directives =
 
     compileInterpolation: ($node, value) ->
@@ -225,17 +227,21 @@
         observe = true
       attrName = name.substring(5)
       $node.removeAttr(name)
+      {attr, removeAttr} = if contains(domProperties, attrName)
+        {attr: 'prop', removeAttr: 'removeProp'}
+      else
+        {attr: 'attr', removeAttr: 'removeAttr'}
       (scope, $node) ->
         scope.reactOn value,
           observe: observe
           react: (got) ->
             if isBoolean(got)
               if got
-                $node.attr(attrName, '')
+                $node[attr](attrName, '')
               else
-                $node.removeAttr(attrName)
+                $node[removeAttr](attrName)
             else
-              $node.attr(attrName, got)
+              $node[attr](attrName, got)
 
     compileClass: ($node, name, value) ->
       observe = false
@@ -330,20 +336,21 @@
     template: undefined
 
     constructor: (options = {}) ->
-      super
       this.template = options.template if options.template?
       this.parent = options.parent
       this.views = []
       this.compiler = new Compiler(this.constructor)
 
-      if this.model?
-        this.listenTo this.model, 'change'
+      if options.model?
+        this.listenTo options.model, 'change'
 
-      if this.collection?
-        this.listenTo this.collection, 'change add remove reset sort'
+      if options.collection?
+        this.listenTo options.collection, 'change add remove reset sort'
 
       this.digestScheduled = false
       this.observe = {}
+
+      super
 
     renderTemplate: (template) ->
       if not (template instanceof Template)
@@ -400,24 +407,6 @@
         options.react(value)
         if options.observe
           this.listenTo this, "change:#{p}", options.react
-
-    delegateEvents: (events) ->
-      if not (events or (events = _.result(this, 'events')))
-        return this
-      this.undelegateEvents()
-      for key, method of events
-        method = this[events[key]] unless _.isFunction(method)
-        throw new Error("Method \"#{events[key]}\" does not exist") unless method
-        match = key.match(delegateEventSplitter)
-        eventName = match[1]
-        selector = match[2]
-        method = @mutating _.bind(method, this)
-        eventName += '.delegateEvents' + this.cid
-        if selector == ''
-          this.$el.on(eventName, method)
-        else
-          this.$el.on(eventName, selector, method)
-      this
 
     listenTo: (obj, name, cb) ->
       if typeof name == 'object'
