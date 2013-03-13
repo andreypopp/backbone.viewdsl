@@ -1,7 +1,7 @@
 define (require) ->
 
   {extend} = require 'underscore'
-  {Model, Collection} = require 'backbone'
+  {Events, Model, Collection} = require 'backbone'
   {Compiler, View, CollectionView, $parseHTML} = require 'backbone.viewdsl'
 
   describe 'Compiler', ->
@@ -93,6 +93,33 @@ define (require) ->
         v = render '<div>Hello, {{bind:model.name}}!</div>', {name: 'World'}
         expect(v.$el.html()).to.be.equal '<div>Hello, World!</div>'
         v.model.set 'name', 'Andrey'
+        expect(v.$el.html()).to.be.equal '<div>Hello, Andrey!</div>'
+
+    describe 'digest on events', ->
+
+      et = extend {}, Events
+
+      renderV = (t, s) ->
+        class MyView extends View
+          template: t
+          events:
+            'event': -> this.name = 'Andrey'
+        v = new MyView()
+        extend v, s
+        v.render()
+        v
+
+      it 'should digest on object event handling', ->
+        v = renderV '<div>Hello, {{bind:name}}!</div>', {name: 'World'}
+        expect(v.$el.html()).to.be.equal '<div>Hello, World!</div>'
+        v.listenTo et, 'event', -> v.name = 'Andrey'
+        et.trigger 'event'
+        expect(v.$el.html()).to.be.equal '<div>Hello, Andrey!</div>'
+
+      it 'should digest on DOM event handling', ->
+        v = renderV '<div>Hello, {{bind:name}}!</div>', {name: 'World'}
+        expect(v.$el.html()).to.be.equal '<div>Hello, World!</div>'
+        v.$el.trigger('event')
         expect(v.$el.html()).to.be.equal '<div>Hello, Andrey!</div>'
 
   describe 'View', ->

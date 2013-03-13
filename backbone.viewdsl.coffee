@@ -196,96 +196,7 @@
 
       $node
 
-  class View extends Backbone.View
-    @parameterizable: false
-    template: undefined
-    compilerClass: Compiler
-
-    constructor: (options) ->
-      super
-      this.template = options?.template if options?.template?
-      this.parent = options?.parent
-      this.views = []
-      this.compiler = new this.compilerClass(this)
-
-      if this.model?
-        this.listenTo this.model, 'change', =>
-          this.digest()
-
-      if this.collection?
-        this.listenTo this.collection, 'change add remove reset sort', =>
-          this.digest()
-
-      this.observe = {}
-
-    renderTemplate: (template) ->
-      if not (template instanceof Template)
-        template = this.compiler.compile($parseHTML template)
-      template.render(this)
-
-    render: ->
-      throw new Error("undefined template") unless this.template
-      if not (this.template instanceof Template)
-        this.template = this.compiler.compile($parseHTML this.template)
-      this.$el.append(this.template.render(this))
-
-    remove: ->
-      super
-      this.removeViews()
-      this.parent = undefined
-      this.observe = undefined
-      this.views = []
-
-    removeViews: ->
-      for view in this.views
-        view.remove()
-
-    addView: (view, id) ->
-      this.views.push(view)
-      this[id] = view if id
-
-    get: (p, options) ->
-      own = this.getOwn(p, options)
-      return own if own != undefined
-      this.parent?.get(p, options)
-
-    getOwn: (p, options) ->
-      p = p.trim()
-      o = this
-      return o if p.trim().length == 0
-      for n in p.split('.')
-        ctx = o
-        o = if (ctx instanceof Backbone.Model)
-          o = ctx.get(n)
-          o = ctx[n] if o == undefined
-          o
-        else
-          ctx[n]
-        break if o == undefined
-        if jQuery.isFunction(o)
-          o = o.call(ctx)
-      o
-
-    reactOn: (p, options) ->
-      value = this.get(p)
-      if options?.observe
-        this.observe[p] = value
-      if options?.react
-        options.react(value)
-        if options.observe
-          this.listenTo this, "change:#{p}", options.react
-
-    digest: ->
-      updates = {}
-
-      for path, value of this.observe
-        newValue = this.get(path)
-        updates[path] = newValue unless isEqual(newValue, value)
-
-      extend this.observe, updates
-
-      for path, value of updates
-        this.trigger("change:#{path}", value)
+  Directives =
 
     compileInterpolation: ($node, value) ->
       observe = false
@@ -408,6 +319,160 @@
 
         $node.replaceWith(view.$el) if element
         scope.addView(view, viewId)
+
+  class View extends Backbone.View
+    @extend: (mixins...) ->
+      extend this, mixins...
+
+    @extend Directives
+    @parameterizable: false
+
+    template: undefined
+
+    constructor: (options = {}) ->
+      super
+      this.template = options.template if options.template?
+      this.parent = options.parent
+      this.views = []
+      this.compiler = new Compiler(this.constructor)
+
+      if this.model?
+        this.listenTo this.model, 'change'
+
+      if this.collection?
+        this.listenTo this.collection, 'change add remove reset sort'
+
+      this.digestScheduled = false
+      this.observe = {}
+
+    renderTemplate: (template) ->
+      if not (template instanceof Template)
+        template = this.compiler.compile($parseHTML template)
+      template.render(this)
+
+    render: ->
+      throw new Error("undefined template") unless this.template
+      if not (this.template instanceof Template)
+        this.template = this.compiler.compile($parseHTML this.template)
+      this.$el.append(this.template.render(this))
+
+    remove: ->
+      super
+      this.removeViews()
+      this.parent = undefined
+      this.observe = undefined
+      this.views = []
+
+    removeViews: ->
+      for view in this.views
+        view.remove()
+
+    addView: (view, id) ->
+      this.views.push(view)
+      this[id] = view if id
+
+    get: (p, options) ->
+      own = this.getOwn(p, options)
+      return own if own != undefined
+      this.parent?.get(p, options)
+
+    getOwn: (p, options) ->
+      p = p.trim()
+      o = this
+      return o if p.trim().length == 0
+      for n in p.split('.')
+        ctx = o
+        o = if (ctx instanceof Backbone.Model)
+          o = ctx.get(n)
+          o = ctx[n] if o == undefined
+          o
+        else
+          ctx[n]
+        break if o == undefined
+        o = o.call(ctx) if jQuery.isFunction(o)
+      o
+
+    reactOn: (p, options) ->
+      value = this.get(p)
+      if options?.observe
+        this.observe[p] = value
+      if options?.react
+        options.react(value)
+        if options.observe
+          this.listenTo this, "change:#{p}", options.react
+
+    delegateEvents: (events) ->
+      if not (events or (events = _.result(this, 'events')))
+        return this
+      this.undelegateEvents()
+      for key, method of events
+        method = this[events[key]] unless _.isFunction(method)
+        throw new Error("Method \"#{events[key]}\" does not exist") unless method
+        match = key.match(delegateEventSplitter)
+        eventName = match[1]
+        selector = match[2]
+        method = @mutating _.bind(method, this)
+        eventName += '.delegateEvents' + this.cid
+        if selector == ''
+          this.$el.on(eventName, method)
+        else
+          this.$el.on(eventName, selector, method)
+      this
+
+    listenTo: (obj, name, cb) ->
+      if typeof name == 'object'
+        for k, v of name
+          name[k] = @mutating v
+        super(obj, name)
+      else
+        super(obj, name, @mutating (cb or ->))
+
+    digest: ->
+      if not this.digestScheduled
+        this.startDigest()
+        this.completeDigest()
+
+    startDigest: ->
+      this.digestScheduled = true
+
+    completeDigest: ->
+      try
+        updates = {}
+
+        for path, value of this.observe
+          newValue = this.get(path)
+          updates[path] = newValue unless isEqual(newValue, value)
+
+        extend this.observe, updates
+
+        for path, value of updates
+          this.trigger("change:#{path}", value)
+      finally
+        this.digestScheduled = false
+
+    @mutating: (f) ->
+      ->
+        if not this.digestScheduled
+          this.startDigest()
+          try
+            f.apply(this, arguments)
+          finally
+            this.completeDigest()
+        else
+          f.apply(this, arguments)
+
+    mutating: (f) ->
+      =>
+        if not this.digestScheduled
+          this.startDigest()
+          try
+            f.apply(this, arguments)
+          finally
+            this.completeDigest()
+        else
+          f.apply(this, arguments)
+
+  delegateEventSplitter = /^(\S+)\s*(.*)$/
 
   class CollectionView extends View
     @parameterizable: true
