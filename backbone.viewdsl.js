@@ -456,6 +456,12 @@ var __hasProp = {}.hasOwnProperty,
       return extend.apply(null, [this].concat(__slice.call(mixins)));
     };
 
+    View.include = function() {
+      var mixins;
+      mixins = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      return extend.apply(null, [this.prototype].concat(__slice.call(mixins)));
+    };
+
     View.extend(Directives);
 
     View.parameterizable = false;

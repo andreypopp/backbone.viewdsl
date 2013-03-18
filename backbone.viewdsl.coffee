@@ -330,6 +330,9 @@
     @extend: (mixins...) ->
       extend this, mixins...
 
+    @include: (mixins...) ->
+      extend this.prototype, mixins...
+
     @extend Directives
     @parameterizable: false
 
