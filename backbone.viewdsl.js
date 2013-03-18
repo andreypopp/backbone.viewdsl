@@ -785,7 +785,7 @@ var __hasProp = {}.hasOwnProperty,
     };
 
     CollectionView.prototype.onAdd = function(model) {
-      var idx, view, _i, _len, _ref,
+      var idx, view, _i, _len, _ref, _results,
         _this = this;
       idx = this.collection.indexOf(model);
       view = this.makeItemView(model, function() {
@@ -793,17 +793,22 @@ var __hasProp = {}.hasOwnProperty,
       });
       if (idx >= this.$el.children().size()) {
         this.$el.append(view.$el);
+        return this.views.push(view);
       } else {
         this.$el.children().eq(idx).before(view.$el);
+        this.views.splice(idx, 0, view);
         _ref = this.views.slice(idx);
+        _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           view = _ref[_i];
           if ((view != null ? view.digest : void 0) != null) {
-            view.digest();
+            _results.push(view.digest());
+          } else {
+            _results.push(void 0);
           }
         }
+        return _results;
       }
-      return this.views.push(view);
     };
 
     CollectionView.prototype.onRemove = function(model) {

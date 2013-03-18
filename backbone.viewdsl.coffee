@@ -547,11 +547,12 @@
       view = this.makeItemView(model, => this.collection.indexOf(model))
       if idx >= this.$el.children().size()
         this.$el.append(view.$el)
+        this.views.push(view)
       else
         this.$el.children().eq(idx).before(view.$el)
+        this.views.splice(idx, 0, view)
         for view in this.views[idx..]
           view.digest() if view?.digest?
-      this.views.push(view)
 
     onRemove: (model) ->
       {view, idx} = this.viewByModel(model)
