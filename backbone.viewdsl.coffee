@@ -196,7 +196,7 @@
 
       $node
 
-  domProperties = ['value', 'checked', 'disabled']
+  domProperties = ['value', 'disabled', 'selected']
 
   Directives =
 
@@ -227,10 +227,14 @@
         observe = true
       attrName = name.substring(5)
       $node.removeAttr(name)
-      {attr, removeAttr} = if contains(domProperties, attrName)
+
+      isProp = contains(domProperties, attrName)
+
+      {attr, removeAttr} = if isProp
         {attr: 'prop', removeAttr: 'removeProp'}
       else
         {attr: 'attr', removeAttr: 'removeAttr'}
+
       (scope, $node) ->
         scope.reactOn value,
           observe: observe
@@ -239,7 +243,15 @@
               if got
                 $node[attr](attrName, '')
               else
-                $node[removeAttr](attrName)
+                if isProp
+                  if contains(['disabled', 'selected'], attrName)
+                    $node.prop(attrName, false)
+                  else if attrName == 'value'
+                    $node.prop(attrName, '')
+                  else
+                    $node[removeAttr](attrName)
+                else
+                  $node[removeAttr](attrName)
             else
               $node[attr](attrName, got)
 
