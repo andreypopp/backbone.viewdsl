@@ -1,10 +1,9 @@
 {
   "name": "backbone.viewdsl",
-  "version": "0.22.2",
+  "version": "0.22.3",
   "description": "declarative view technology for Backbone",
   "main": "backbone.viewdsl.js",
   "dependencies": {
-    "jquery-browserify": "~1.8.1",
     "backbone": "~0.9.10",
     "underscore": "~1.4.4"
   },
