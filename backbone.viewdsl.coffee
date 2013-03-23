@@ -404,7 +404,7 @@
       return o if p.trim().length == 0
       for n in p.split('.')
         ctx = o
-        o = if (ctx instanceof Backbone.Model)
+        o = if ctx.attributes? and ctx.get?
           o = ctx.get(n)
           o = ctx[n] if o == undefined
           o

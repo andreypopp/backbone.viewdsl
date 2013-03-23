@@ -588,7 +588,7 @@ var __hasProp = {}.hasOwnProperty,
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         n = _ref[_i];
         ctx = o;
-        o = ctx instanceof Backbone.Model ? (o = ctx.get(n), o === void 0 ? o = ctx[n] : void 0, o) : ctx[n];
+        o = (ctx.attributes != null) && (ctx.get != null) ? (o = ctx.get(n), o === void 0 ? o = ctx[n] : void 0, o) : ctx[n];
         if (o === void 0) {
           break;
         }
