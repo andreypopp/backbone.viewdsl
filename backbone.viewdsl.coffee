@@ -544,13 +544,13 @@
       this.collection.forEach (model, newIdx) =>
         {view, idx} = this.viewByModel(model)
         this.views.splice(idx, 1)[0]
-        this.views.splice(newIdx, view)
+        this.views.splice(newIdx, 0, view)
         view.options.index = newIdx
         view.$el.detach()
         view.digest()
         if not $cur
           this.$el.append view.$el
-        else 
+        else
           view.$el.after $cur
           $cur = view.$el
 
